@@ -66,3 +66,28 @@ final List<Song> songs = [
     audioPath: 'assets/audio/track5.mp3',
   ),
 ];
+class PlaylistScreen extends StatelessWidget {
+  const PlaylistScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF503663),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: songs.length,
+                itemBuilder: (context, index) {
+                  return _buildSongTile(context, songs[index], index);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
