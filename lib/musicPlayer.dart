@@ -130,3 +130,38 @@ class PlaylistScreen extends StatelessWidget {
       ),
     );
   }
+  Widget _buildSongTile(BuildContext context, Song song, int index) {
+    return ListTile(
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.asset(
+          song.imagePath,
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
+        ),
+      ),
+      title: Text(
+        song.title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        song.artist,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.7),
+        ),
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PlayerScreen(initialSongIndex: index),
+          ),
+        );
+      },
+    );
+  }
+}
