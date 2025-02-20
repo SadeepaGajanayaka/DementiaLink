@@ -314,7 +314,7 @@ class PlayerScreenState extends State<PlayerScreen> {
   Widget _buildAlbumArt() {
     return Container(
       margin: const EdgeInsets.only(
-        top: 65,  // Increased top margin to move image down
+        top: 65, // Increased top margin to move image down
         left: 24,
         right: 24,
         bottom: 24,
