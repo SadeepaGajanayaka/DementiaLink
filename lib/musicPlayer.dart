@@ -91,3 +91,42 @@ class PlaylistScreen extends StatelessWidget {
       ),
     );
   }
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {},
+          ),
+          const Expanded(
+            child: Text(
+              'PLAYLIST',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Container(
+            // margin: const EdgeInsets.only(top: 50),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/brain_icon.png', // Replace with your image path
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
