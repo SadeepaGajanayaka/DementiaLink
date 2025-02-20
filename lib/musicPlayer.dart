@@ -364,3 +364,43 @@ class PlayerScreenState extends State<PlayerScreen> {
       ),
     );
   }
+  Widget _buildProgressBar() {
+    return Column(
+      children: [
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 4,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            activeTrackColor: Colors.green,
+            inactiveTrackColor: Colors.white.withOpacity(0.2),
+            thumbColor: Colors.white,
+            overlayColor: Colors.white.withOpacity(0.2),
+          ),
+          child: Slider(
+            value: _position.inSeconds.toDouble(),
+            max: _duration.inSeconds.toDouble(),
+            onChanged: (value) {
+              _audioPlayer.seek(Duration(seconds: value.toInt()));
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _formatDuration(_position),
+                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+              ),
+              Text(
+                _formatDuration(_duration),
+                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
