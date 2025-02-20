@@ -165,3 +165,29 @@ class PlaylistScreen extends StatelessWidget {
     );
   }
 }
+class PlayerScreen extends StatefulWidget {
+  final int initialSongIndex;
+
+  const PlayerScreen({
+    Key? key,
+    required this.initialSongIndex,
+  }) : super(key: key);
+
+  @override
+  PlayerScreenState createState() => PlayerScreenState();
+}
+
+class PlayerScreenState extends State<PlayerScreen> {
+  late AudioPlayer _audioPlayer;
+  late int _currentIndex;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialSongIndex;
+    _audioPlayer = AudioPlayer();
+    _setupAudioPlayer();
+  }
