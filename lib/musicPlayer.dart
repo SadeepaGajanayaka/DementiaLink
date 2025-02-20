@@ -191,6 +191,7 @@ class PlayerScreenState extends State<PlayerScreen> {
     _audioPlayer = AudioPlayer();
     _setupAudioPlayer();
   }
+
   void _setupAudioPlayer() async {
     // Duration state
     _audioPlayer.positionStream.listen((pos) {
@@ -309,6 +310,7 @@ class PlayerScreenState extends State<PlayerScreen> {
       ),
     );
   }
+
   Widget _buildAlbumArt() {
     return Container(
       margin: const EdgeInsets.only(
@@ -364,6 +366,7 @@ class PlayerScreenState extends State<PlayerScreen> {
       ),
     );
   }
+
   Widget _buildProgressBar() {
     return Column(
       children: [
@@ -404,3 +407,85 @@ class PlayerScreenState extends State<PlayerScreen> {
       ],
     );
   }
+
+  Widget _buildControls() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Previous button
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              iconSize: 35,
+              padding: const EdgeInsets.all(12),
+              icon: const Icon(Icons.skip_previous, color: Colors.white),
+              onPressed: _playPrevious,
+            ),
+          ),
+          // Play/Pause button
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white,
+                  Colors.white,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: IconButton(
+              iconSize: 50,
+              padding: const EdgeInsets.all(16),
+              icon: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: Colors.purple,
+              ),
+              onPressed: _playPause,
+            ),
+          ),
+          // Next button
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              iconSize: 35,
+              padding: const EdgeInsets.all(12),
+              icon: const Icon(Icons.skip_next, color: Colors.white),
+              onPressed: _playNext,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
