@@ -191,3 +191,121 @@ class PlayerScreenState extends State<PlayerScreen> {
     _audioPlayer = AudioPlayer();
     _setupAudioPlayer();
   }
+  void _setupAudioPlayer() async {
+    // Duration state
+    _audioPlayer.positionStream.listen((pos) {
+      setState(() => _position = pos);
+    });
+    _audioPlayer.durationStream.listen((dur) {
+      setState(() => _duration = dur ?? Duration.zero);
+    });
+    // Playing state
+    _audioPlayer.playerStateStream.listen((state) {
+      setState(() => _isPlaying = state.playing);
+    });
+    // Load the initial song
+    await _loadCurrentSong();
+  }
+
+  Future<void> _loadCurrentSong() async {
+    try {
+      await _audioPlayer.setAsset(songs[_currentIndex].audioPath);
+      await _audioPlayer.play();
+    } catch (e) {
+      debugPrint("Error loading audio source: $e");
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$minutes:$seconds";
+  }
+
+  void _playPause() async {
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+    } else {
+      await _audioPlayer.play();
+    }
+  }
+
+  void _playNext() async {
+    if (_currentIndex < songs.length - 1) {
+      setState(() => _currentIndex++);
+      await _loadCurrentSong();
+    }
+  }
+
+  void _playPrevious() async {
+    if (_currentIndex > 0) {
+      setState(() => _currentIndex--);
+      await _loadCurrentSong();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF4A2B5C),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _buildAlbumArt(),
+            const Spacer(),
+            _buildSongInfo(),
+            _buildProgressBar(),
+            _buildControls(),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Expanded(
+            child: Text(
+              'Now Playing...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                /*  fontWeight: FontWeight.w500,*/
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/brain_icon.png', // Replace with your image path
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
