@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '374672873475',
     projectId: 'dementialink-15c06',
     storageBucket: 'dementialink-15c06.firebasestorage.app',
+    iosClientId: '374672873475-jcbtck06coastdch72s0170194rcisdu.apps.googleusercontent.com',
     iosBundleId: 'com.dementialink.dementialink',
   );
+
 }
