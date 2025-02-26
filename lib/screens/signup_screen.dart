@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'welcome_screen.dart';
+import '../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -16,13 +17,18 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _isLoading = false;
 
-// Form validation
+  // Auth service
+  final AuthService _authService = AuthService();
+
+  // Form validation
   final _formKey = GlobalKey<FormState>();
   String? _nameError;
   String? _emailError;
   String? _passwordError;
   String? _confirmPasswordError;
+  String? _generalError;
 
   @override
   void dispose() {
@@ -79,7 +85,50 @@ class _SignupScreenState extends State<SignupScreen> {
 
     return isValid;
   }
- 
+
+  // Handle signup
+  Future<void> _handleSignup() async {
+    if (_validateForm()) {
+      setState(() {
+        _isLoading = true;
+        _generalError = null;
+      });
+      try {
+        // Sign up with Firebase
+        await _authService.signUpWithEmailAndPassword(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+        
+        // Navigate to welcome screen on success
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WelcomeScreen(
+                userName: _nameController.text.trim(),
+              ),
+            ),
+          );
+        }
+      } catch (error) {
+        // Handle errors
+        setState(() {
+          _generalError = error.toString();
+          _isLoading = false;
+        });
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_generalError ?? 'An error occurred during signup'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +220,22 @@ class _SignupScreenState extends State<SignupScreen> {
                           ],
                         ),
                         const SizedBox(height: 24),
+                        
+                        // General error message
+                        if (_generalError != null)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _generalError!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        if (_generalError != null) const SizedBox(height: 16),
+                        
                         // Name field
                         const Text(
                           'Name',
@@ -296,19 +361,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 24),
                         // Signup button
                         ElevatedButton(
-                          onPressed: () {
-                            if (_validateForm()) {
-                              // Add any additional signup logic here (e.g., API calls)
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => WelcomeScreen(
-                                    userName: _nameController.text.trim(),
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: _isLoading ? null : _handleSignup,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF77588D),
                             foregroundColor: Colors.white,
@@ -317,13 +370,15 @@ class _SignupScreenState extends State<SignupScreen> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Text(
-                            'SIGN UP',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  'SIGN UP',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                         const SizedBox(height: 24),
                         // Login link
