@@ -4,6 +4,39 @@ void main() {
   runApp(DementiaFormApp());
 }
 
+class DementiaFormApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: DementiaFormScreen(),
+    );
+  }
+}
+
+class DementiaFormScreen extends StatefulWidget {
+  @override
+  _DementiaFormScreenState createState() => _DementiaFormScreenState();
+}
+
+class _DementiaFormScreenState extends State<DementiaFormScreen> {
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController otherSymptomsController = TextEditingController();
+  final TextEditingController otherNeedsController = TextEditingController();
+  
+  bool forgetfulness = false;
+  bool aggressiveness = false;
+  bool disorientation = false;
+  bool empathy = false;
+  bool personalityChanges = false;
+
+  bool physicalStimulation = false;
+  bool socialStimulation = false;
+  bool dailyRoutine = false;
+  bool personalCare = false;
+  bool cognitiveStimulation = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
