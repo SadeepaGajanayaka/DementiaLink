@@ -116,6 +116,36 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
+    try {
+      // Perform login with Firebase
+      await _authService.loginWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      // Get user's name from Firebase Auth
+      final displayName = _authService.currentUser?.displayName ?? 'User';
+      
+      // Navigate to welcome screen on success
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WelcomeScreen(
+              userName: displayName,
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      // Handle errors
+      setState(() {
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
+  
   // Social authentication methods
   Future<void> _handleGoogleSignIn() async {
     setState(() {

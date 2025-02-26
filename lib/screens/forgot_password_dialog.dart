@@ -1,10 +1,42 @@
 import 'package:flutter/material.dart';
 import 'verification_screen.dart';
 
-class ForgotPasswordDialog extends StatelessWidget {
-  final TextEditingController _emailController = TextEditingController();
+class ForgotPasswordDialog extends StatefulWidget {
+  final Function(String) onSubmit;
 
-  ForgotPasswordDialog({super.key, required Null Function(dynamic submittedEmail) onSubmit});
+  const ForgotPasswordDialog({
+    super.key,
+    required this.onSubmit,
+  });
+
+  @override
+  State<ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
+  final TextEditingController _emailController = TextEditingController();
+  String? _emailError;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  bool _validateEmail() {
+    final email = _emailController.text.trim();
+    
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Please enter your email');
+      return false;
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      setState(() => _emailError = 'Please enter a valid email');
+      return false;
+    }
+    
+    setState(() => _emailError = null);
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,29 +127,14 @@ class ForgotPasswordDialog extends StatelessWidget {
                           width: 1.5,
                         ),
                       ),
+                      errorText: _emailError,
                     ),
                   ),
                  const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: () {
-                      if (_emailController.text.isNotEmpty) {
-                        Navigator.pop(context); // Close the dialog
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VerificationScreen(
-                              email: _emailController.text,
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Show error message if email is empty
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter your email address'),
-                            backgroundColor: Color(0xFF503663),
-                          ),
-                        );
+                      if (_validateEmail()) {
+                        widget.onSubmit(_emailController.text.trim());
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -175,4 +192,4 @@ class ForgotPasswordDialog extends StatelessWidget {
       ),
     );
   }
-}                  
+}

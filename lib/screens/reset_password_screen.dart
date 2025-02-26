@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import '../services/auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  final String resetCode;
+
+  const ResetPasswordScreen({
+    super.key, 
+    required this.resetCode,
+  });
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -14,6 +20,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -22,16 +32,66 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.dispose();
   }
 
-  void _resetPassword() {
-    // Here you would typically implement password validation and API call
-    // For now, we'll just navigate back to login screen
+  bool _validatePasswords() {
+    if (_passwordController.text.length < 8) {
+      setState(() {
+        _errorMessage = 'Password must be at least 8 characters long';
+      });
+      return false;
+    }
+    
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorMessage = 'Passwords do not match';
+      });
+      return false;
+    }
+    
+    setState(() {
+      _errorMessage = null;
+    });
+    return true;
+  }
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const LoginScreen(),
-      ),
-      (route) => false, // This removes all previous routes
-    );
+  Future<void> _resetPassword() async {
+    if (!_validatePasswords()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Confirm password reset with Firebase
+      await _authService.confirmPasswordReset(
+        widget.resetCode,
+        _passwordController.text,
+      );
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password successfully reset!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Navigate to login screen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+          (route) => false, // This removes all previous routes
+        );
+      }
+    } catch (error) {
+      setState(() {
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -118,6 +178,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
+                      
+                      // Error message
+                      if (_errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      
                       const Text(
                         'Enter your new password',
                         style: TextStyle(
@@ -205,7 +281,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _resetPassword,
+                          onPressed: _isLoading ? null : _resetPassword,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF77588D),
                             foregroundColor: Colors.white,
@@ -215,13 +291,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ),
                             elevation: 2,
                           ),
-                          child: const Text(
-                            'Save Password',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  'Save Password',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
