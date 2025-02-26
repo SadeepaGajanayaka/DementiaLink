@@ -97,6 +97,28 @@ class ForgotPasswordDialog extends StatelessWidget {
                       ),
                     ),
                   ),
+                 const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_emailController.text.isNotEmpty) {
+                        Navigator.pop(context); // Close the dialog
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VerificationScreen(
+                              email: _emailController.text,
+                            ),
+                          ),
+                        );
+                      } else {
+                        // Show error message if email is empty
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter your email address'),
+                            backgroundColor: Color(0xFF503663),
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF503663),

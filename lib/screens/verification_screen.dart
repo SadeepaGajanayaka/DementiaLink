@@ -228,6 +228,55 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         ),
                       ),
                       const Spacer(),
+ // Didn't receive code text
+                      Text(
+                        "Didn't receive the code?",
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Resend email button
+                      TextButton(
+                        onPressed: _resendCode,
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Resend email',
+                          style: TextStyle(
+                            color: Color(0xFF503663),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      // Continue Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _verifyCode,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF77588D),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Text(
+                            'CONTINUE',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       // Back Button with enhanced shadow
                       SizedBox(
