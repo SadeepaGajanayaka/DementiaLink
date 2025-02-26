@@ -366,3 +366,47 @@ class AuthService {
     }
   }
 
+  // Handle Firebase Auth exceptions with user-friendly messages
+  String _handleAuthException(FirebaseAuthException e) {
+    String message;
+
+    switch (e.code) {
+      case 'email-already-in-use':
+        message = 'This email is already registered. Please login instead.';
+        break;
+      case 'invalid-email':
+        message = 'The email address is not valid.';
+        break;
+      case 'user-disabled':
+        message = 'This user account has been disabled.';
+        break;
+      case 'user-not-found':
+        message = 'No user found with this email address.';
+        break;
+      case 'wrong-password':
+        message = 'Incorrect password. Please try again.';
+        break;
+      case 'weak-password':
+        message = 'The password is too weak. Please use a stronger password.';
+        break;
+      case 'operation-not-allowed':
+        message = 'This operation is not allowed.';
+        break;
+      case 'account-exists-with-different-credential':
+        message =
+            'An account already exists with the same email address but different sign-in credentials.';
+        break;
+      case 'invalid-credential':
+        message = 'The authentication credential is invalid.';
+        break;
+      case 'requires-recent-login':
+        message =
+            'This operation requires recent authentication. Please log in again.';
+        break;
+      default:
+        message = e.message ?? 'An unknown error occurred.';
+    }
+
+    return message;
+  }
+}

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_password_dialog.dart';
 import 'verification_screen.dart';
+import 'welcome_screen.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +16,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // Auth service
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -27,26 +34,133 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (context) => ForgotPasswordDialog(
-        onSubmit: (submittedEmail) {
+        onSubmit: (submittedEmail) async {
+          final emailToReset = submittedEmail.isEmpty ? email : submittedEmail;
           // Close the dialog
           Navigator.of(context).pop();
-          // Navigate to verification screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerificationScreen(
-                email: submittedEmail.isEmpty ? email : submittedEmail,
+          
+          if (emailToReset.isNotEmpty) {
+            try {
+              // Show loading
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Sending password reset email...'),
+                ),
+              );
+              
+              // Send password reset email
+              await _authService.resetPassword(emailToReset);
+              
+              // Show success message
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Password reset email sent. Please check your inbox.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                
+                // Navigate to verification screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VerificationScreen(
+                      email: emailToReset,
+                    ),
+                  ),
+                );
+              }
+            } catch (error) {
+              // Show error message
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error.toString()),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          } else {
+            // Show error if email is empty
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please enter an email address'),
+                backgroundColor: Colors.red,
               ),
-            ),
-          );
+            );
+          }
         },
       ),
     );
   }
 
-  void _handleLogin() {
-    // Add your login logic here
-    // This is where you would typically validate credentials and make API calls
+  Future<void> _handleLogin() async {
+    // Clear previous errors
+    setState(() {
+      _errorMessage = null;
+    });
+    
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    
+    // Simple validation
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter both email and password';
+      });
+      return;
+    }
+    
+    // Set loading state
+    setState(() {
+      _isLoading = true;
+    });
+  // Social authentication methods
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      // Uncomment when you've added the google_sign_in package
+      // await _authService.signInWithGoogle();
+      
+      // For now, show a placeholder message
+      setState(() {
+        _isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google Sign-In will be implemented'),
+        ),
+      );
+    } catch (error) {
+      setState(() {
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _handleFacebookSignIn() async {
+    // Similar placeholder for Facebook login
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Facebook Sign-In will be implemented'),
+      ),
+    );
+  }
+  
+  Future<void> _handleAppleSignIn() async {
+    // Similar placeholder for Apple login
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Apple Sign-In will be implemented'),
+      ),
+    );
   }
 
   @override
@@ -94,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-     // Login/Sign up tabs
+                      // Login/Sign up tabs
                       Row(
                         children: [
                           Expanded(
@@ -137,6 +251,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                      
+                      // Error message
+                      if (_errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      if (_errorMessage != null) const SizedBox(height: 16),
+                      
                       // Email field
                       const Text(
                         'Email',
@@ -148,6 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: 'name@example.com',
                           hintStyle: TextStyle(color: Colors.grey[500]),
@@ -209,9 +340,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-      // Login button
+                      // Login button
                       ElevatedButton(
-                        onPressed: _handleLogin,
+                        onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF77588D),
                           foregroundColor: Colors.white,
@@ -220,13 +351,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'LOGIN',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 24),
                       const Row(
@@ -255,9 +388,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _socialLoginButton('lib/assets/google_logo.png'),
-                          _socialLoginButton('lib/assets/facebook_logo.png'),
-                          _socialLoginButton('lib/assets/apple_logo.png'),
+                          _socialLoginButton('lib/assets/google_logo.png', _handleGoogleSignIn),
+                          _socialLoginButton('lib/assets/facebook_logo.png', _handleFacebookSignIn),
+                          _socialLoginButton('lib/assets/apple_logo.png', _handleAppleSignIn),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -304,7 +437,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _socialLoginButton(String iconPath) {
+  Widget _socialLoginButton(String iconPath, VoidCallback onPressed) {
     return Container(
       width: 50,
       height: 50,
@@ -323,14 +456,11 @@ class _LoginScreenState extends State<LoginScreen> {
       child: IconButton(
         icon: Image.asset(
           iconPath,
-          width: 500,
-          height: 500,
+          width: 24,
+          height: 24,
         ),
-        onPressed: () {
-          // Add social login functionality
-        },
+        onPressed: onPressed,
       ),
     );
   }
-}  
-                                    
+}
