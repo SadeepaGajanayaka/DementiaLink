@@ -93,6 +93,7 @@ class _SignupScreenState extends State<SignupScreen> {
         _isLoading = true;
         _generalError = null;
       });
+
       try {
         // Sign up with Firebase
         await _authService.signUpWithEmailAndPassword(

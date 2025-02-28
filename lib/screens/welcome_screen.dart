@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile_screen.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   final String userName;
@@ -11,6 +13,8 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AuthService _authService = AuthService();
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -31,11 +35,36 @@ class WelcomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 32),
-                  // App Logo without background
-                  Image.asset(
-                    'lib/assets/brain_logo.png',
-                    width: 60,
-                    height: 60,
+                  // App Logo and Sign Out row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40), // For centering
+                      Image.asset(
+                        'lib/assets/brain_logo.png',
+                        width: 60,
+                        height: 60,
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        onPressed: () async {
+                          await _authService.signOut();
+                          if (context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          }
+                        },
+                        tooltip: 'Sign Out',
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -103,7 +132,7 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen(),
+                                  builder: (context) => const ProfileScreen(userName: '',),
                                 ),
                               );
                             },
@@ -134,7 +163,7 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen(),
+                                  builder: (context) => const ProfileScreen(userName: '',),
                                 ),
                               );
                             },

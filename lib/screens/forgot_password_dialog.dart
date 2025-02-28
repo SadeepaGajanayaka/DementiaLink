@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'verification_screen.dart';
 
 class ForgotPasswordDialog extends StatefulWidget {
   final Function(String) onSubmit;

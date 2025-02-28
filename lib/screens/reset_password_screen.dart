@@ -6,7 +6,7 @@ class ResetPasswordScreen extends StatefulWidget {
   final String resetCode;
 
   const ResetPasswordScreen({
-    super.key, 
+    super.key,
     required this.resetCode,
   });
 
@@ -39,14 +39,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       });
       return false;
     }
-    
+
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
         _errorMessage = 'Passwords do not match';
       });
       return false;
     }
-    
+
     setState(() {
       _errorMessage = null;
     });
@@ -68,7 +68,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         widget.resetCode,
         _passwordController.text,
       );
-      
+
       // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +77,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Navigate to login screen
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -178,7 +178,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      
+
                       // Error message
                       if (_errorMessage != null)
                         Container(
@@ -193,7 +193,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             style: const TextStyle(color: Colors.red),
                           ),
                         ),
-                      
+
                       const Text(
                         'Enter your new password',
                         style: TextStyle(
@@ -292,7 +292,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             elevation: 2,
                           ),
                           child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
                               : const Text(
                                   'Save Password',
                                   style: TextStyle(

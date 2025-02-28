@@ -116,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
+    
     try {
       // Perform login with Firebase
       await _authService.loginWithEmailAndPassword(
@@ -154,24 +155,40 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
-      // Uncomment when you've added the google_sign_in package
-      // await _authService.signInWithGoogle();
+      // Call the Google sign-in method from auth service
+      // This will show the Google account picker dialog
+      await _authService.signInWithGoogle();
       
-      // For now, show a placeholder message
-      setState(() {
-        _isLoading = false;
-      });
+      // Get user's name from Firebase Auth
+      final displayName = _authService.currentUser?.displayName ?? 'User';
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Google Sign-In will be implemented'),
-        ),
-      );
+      // Navigate to welcome screen on success
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WelcomeScreen(
+              userName: displayName,
+            ),
+          ),
+        );
+      }
     } catch (error) {
-      setState(() {
-        _errorMessage = error.toString();
-        _isLoading = false;
-      });
+      // Handle errors
+      if (mounted) {
+        setState(() {
+          _errorMessage = error.toString();
+          _isLoading = false;
+        });
+        
+        // Show a more user-friendly error in Snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage ?? 'Failed to sign in with Google'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
   
