@@ -1,131 +1,540 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-void main() {
-  runApp(DementiaFormApp());
+class AssistLoved extends StatefulWidget {
+  const AssistLoved({super.key, required String userName});
+
+  @override
+  State<AssistLoved> createState() => _AssistLovedState();
 }
 
-class DementiaFormApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: DementiaFormScreen(),
+class _AssistLovedState extends State<AssistLoved> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _dateController = TextEditingController();
+  final _otherSymptomsController = TextEditingController();
+  final _otherNeedsController = TextEditingController();
+  String _selectedGender = 'Male';
+  String _selectedRelation = 'Father';
+
+  // Symptoms checklist
+  Map<String, bool> symptoms = {
+    'Forgetfulness': false,
+    'Aggressiveness': false,
+    'Disorientation': false,
+    'Empathy': false,
+    'Personality Changes': false,
+  };
+
+  // Needs checklist
+  Map<String, bool> needs = {
+    'Physical stimulation': false,
+    'Social stimulation': false,
+    'Daily routine': false,
+    'Personal care': false,
+    'Cognitive stimulation': false,
+    'Personality Changes': false,
+  };
+
+  bool _otherSymptomsChecked = false;
+  bool _otherNeedsChecked = false;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF77588D),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Color(0xFF503663),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Color(0xFF77588D),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
+
+    if (picked != null) {
+      setState(() {
+        _dateController.text = DateFormat('MM/dd/yyyy').format(picked);
+      });
+    }
   }
-}
-
-class DementiaFormScreen extends StatefulWidget {
-  @override
-  _DementiaFormScreenState createState() => _DementiaFormScreenState();
-}
-
-class _DementiaFormScreenState extends State<DementiaFormScreen> {
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
-  final TextEditingController otherSymptomsController = TextEditingController();
-  final TextEditingController otherNeedsController = TextEditingController();
-  
-  bool forgetfulness = false;
-  bool aggressiveness = false;
-  bool disorientation = false;
-  bool empathy = false;
-  bool personalityChanges = false;
-
-  bool physicalStimulation = false;
-  bool socialStimulation = false;
-  bool dailyRoutine = false;
-  bool personalCare = false;
-  bool cognitiveStimulation = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF5A3D69),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTextField("First Name", firstNameController),
-              _buildTextField("Last Name", lastNameController),
-              SizedBox(height: 10),
-              _buildTextField("Gender", null, isDate: true),
-              _buildTextField("Date of Birth", null, isDate: true),
-              _buildTextField("Relation to Caregiver", null, initialValue: "Father"),
-              SizedBox(height: 20),
-              _buildCheckboxGroup("What symptoms does the patient have?", [
-                _buildCheckbox("Forgetfulness", forgetfulness, (val) => setState(() => forgetfulness = val)),
-                _buildCheckbox("Aggressiveness", aggressiveness, (val) => setState(() => aggressiveness = val)),
-                _buildCheckbox("Disorientation", disorientation, (val) => setState(() => disorientation = val)),
-                _buildCheckbox("Empathy", empathy, (val) => setState(() => empathy = val)),
-                _buildCheckbox("Personality Changes", personalityChanges, (val) => setState(() => personalityChanges = val)),
-                _buildTextField("Other", otherSymptomsController)
-              ]),
-              SizedBox(height: 20),
-              _buildCheckboxGroup("What are the main needs of the patient?", [
-                _buildCheckbox("Physical Stimulation", physicalStimulation, (val) => setState(() => physicalStimulation = val)),
-                _buildCheckbox("Social Stimulation", socialStimulation, (val) => setState(() => socialStimulation = val)),
-                _buildCheckbox("Daily Routine", dailyRoutine, (val) => setState(() => dailyRoutine = val)),
-                _buildCheckbox("Personal Care", personalCare, (val) => setState(() => personalCare = val)),
-                _buildCheckbox("Cognitive Stimulation", cognitiveStimulation, (val) => setState(() => cognitiveStimulation = val)),
-                _buildTextField("Other", otherNeedsController)
-              ]),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Color(0xFF5A3D69),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
-                  ),
-                  onPressed: () {},
-                  child: Text("CONFIRM", style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
+        body: Container(
+        decoration: const BoxDecoration(
+        gradient: LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+        Color(0xFF77588D),
+    Color(0xFF503663),
+    ],
+    ),
+    ),
+    child: SafeArea(
+    child: Column(
+    children: [
+    // AppBar
+    Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Row(
+    children: [
+    IconButton(
+    icon: const Icon(Icons.arrow_back, color: Colors.white),
+    onPressed: () => Navigator.pop(context),
+    ),
+    const Expanded(
+    child: Text(
+    'Profile',
+    style: TextStyle(
+    color: Colors.white,
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    ),
+    textAlign: TextAlign.center,
+    ),
+    ),
+    const SizedBox(width: 48),
+    ],
+    ),
+    ),
+    // Main Content
+    Expanded(
+    child: SingleChildScrollView(
+    child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+    child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    // Profile Image
+    Center(
+    child: Container(
+    width: 120,
+    height: 120,
+    decoration: BoxDecoration(
+    shape: BoxShape.circle,
+    border: Border.all(color: Colors.white, width: 2),
+    ),
+    child: ClipOval(
+    child: Image.asset(
+    'lib/assets/patient_profile.png',
+    fit: BoxFit.cover,
+    ),
+    ),
+    ),
+    ),
+    const SizedBox(height: 24),
+
+    // Name Section
+    _buildQuestionBox(
+    'What is your name ?',
+    Column(
+    children: [
+    _buildTextInput('First Name'),
+    const SizedBox(height: 12),
+    _buildTextInput('Last Name'),
+    ],
+    ),
+    ),
+
+    // Gender Section
+    _buildQuestionBox(
+    'What is your gender ?',
+    Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(8),
+    ),
+    child: DropdownButtonHideUnderline(
+    child: DropdownButton<String>(
+    isExpanded: true,
+    value: _selectedGender,
+    style: const TextStyle(
+    color: Color(0xFF503663),
+    fontSize: 16,
+    ),
+    items: ['Male', 'Female', 'Other']
+        .map((String value) {
+    return DropdownMenuItem<String>(
+    value: value,
+    child: Text(value),
+    );
+    }).toList(),
+    onChanged: (String? newValue) {
+    if (newValue != null) {
+    setState(() {
+    _selectedGender = newValue;
+    });
+    }
+    },
+    ),
+    ),
+    ),
+    ),
+
+    // Date of Birth Section
+    _buildQuestionBox(
+    'What is your date of birth ?',
+    _buildTextInput(
+    'MM/DD/YYYY',
+    controller: _dateController,
+    onTap: () => _selectDate(context),
+    readOnly: true,
+    suffixIcon: const Icon(Icons.calendar_today, color: Color(0xFF77588D)),
+    ),
+    ),
+
+    // Relation Section
+    _buildQuestionBox(
+    'Relation to care giver ?',
+    Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(8),
+    ),
+    child: DropdownButtonHideUnderline(
+    child: DropdownButton<String>(
+    isExpanded: true,
+    value: _selectedRelation,
+    style: const TextStyle(
+    color: Color(0xFF503663),
+    fontSize: 16,
+    ),
+    items: ['Father', 'Mother', 'Spouse', 'Other']
+        .map((String value) {
+    return DropdownMenuItem<String>(
+    value: value,
+    child: Text(value),
+    );
+    }).toList(),
+    onChanged: (String? newValue) {
+    if (newValue != null) {
+    setState(() {
+    _selectedRelation = newValue;
+    });
+    }
+    },
+    ),
+    ),
+    ),
+    ),
+
+    // Symptoms Section
+    _buildQuestionBox(
+    'What symptoms does the patient have ?',
+    Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Wrap(
+    spacing: 16,
+    runSpacing: 8,
+    children: symptoms.keys.map((String key) {
+    return SizedBox(
+    width: MediaQuery.of(context).size.width * 0.4,
+    child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    SizedBox(
+    width: 24,
+    height: 24,
+    child: Checkbox(
+    value: symptoms[key],
+    onChanged: (bool? value) {
+    setState(() {
+    symptoms[key] = value ?? false;
+    });
+    },
+    fillColor: MaterialStateProperty.resolveWith(
+    (states) => states.contains(MaterialState.selected)
+    ? Colors.white
+        : Colors.white,
+    ),
+    checkColor: const Color(0xFF77588D),
+    ),
+    ),
+    const SizedBox(width: 8),
+    Expanded(
+    child: Text(
+    key,
+    style: const TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    ),
+    ),
+    ),
+    ],
+    ),
+    );
+    }).toList(),
+    ),
+    const SizedBox(height: 8),
+    Row(
+    children: [
+    SizedBox(
+    width: 24,
+    height: 24,
+    child: Checkbox(
+    value: _otherSymptomsChecked,
+    onChanged: (bool? value) {
+    setState(() {
+    _otherSymptomsChecked = value ?? false;
+    });
+    },
+    fillColor: MaterialStateProperty.resolveWith(
+    (states) => states.contains(MaterialState.selected)
+    ? Colors.white
+        : Colors.white,
+    ),
+    checkColor: const Color(0xFF77588D),
+    ),
+    ),
+    const SizedBox(width: 8),
+    const Text(
+    'Other: ',
+    style: TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    ),
+    ),
+    Expanded(
+    child: TextField(
+    controller: _otherSymptomsController,
+    enabled: _otherSymptomsChecked,
+    style: const TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    ),
+    decoration: const InputDecoration(
+    enabledBorder: UnderlineInputBorder(
+    borderSide: BorderSide(color: Colors.white),
+    ),
+    focusedBorder: UnderlineInputBorder(
+    borderSide: BorderSide(color: Colors.white, width: 2),
+    ),
+    isDense: true,
+    contentPadding: EdgeInsets.only(bottom: 4),
+    ),
+    ),
+    ),
+    ],
+    ),
+    ],
+    ),
+    ),
+
+    // Needs Section
+    _buildQuestionBox(
+    'What are the main needs of the patient ?',
+    Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Wrap(
+    spacing: 16,
+    runSpacing: 8,
+    children: needs.keys.map((String key) {
+    return SizedBox(
+    width: MediaQuery.of(context).size.width * 0.4,
+    child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    SizedBox(
+    width: 24,
+    height: 24,
+    child: Checkbox(
+    value: needs[key],
+    onChanged: (bool? value) {
+    setState(() {
+    needs[key] = value ?? false;
+    });
+    },
+    fillColor: MaterialStateProperty.resolveWith(
+    (states) => states.contains(MaterialState.selected)
+    ? Colors.white
+        : Colors.white,
+    ),
+    checkColor: const Color(0xFF77588D),
+    ),
+    ),
+    const SizedBox(width: 8),
+    Expanded(
+    child: Text(
+    key,
+    style: const TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    ),
+    ),
+    ),
+    ],
+    ),
+    );
+    }).toList(),
+    ),
+    const SizedBox(height: 8),
+    Row(
+    children: [
+    SizedBox(
+    width: 24,
+    height: 24,
+    child: Checkbox(
+    value: _otherNeedsChecked,
+    onChanged: (bool? value) {
+    setState(() {
+    _otherNeedsChecked = value ?? false;
+    });
+    },
+    fillColor: MaterialStateProperty.resolveWith(
+    (states) => states.contains(MaterialState.selected)
+    ? Colors.white
+        : Colors.white,
+    ),
+    checkColor: const Color(0xFF77588D),
+    ),
+    ),
+    const SizedBox(width: 8),
+    const Text(
+    'Other: ',
+    style: TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    ),
+    ),
+    Expanded(
+    child: TextField(
+    controller: _otherNeedsController,
+    enabled: _otherNeedsChecked,
+    style: const TextStyle(
+    color: Colors.white,
+    fontSize: 14,
+    ),
+    decoration: const InputDecoration(
+    enabledBorder: UnderlineInputBorder(
+    borderSide: BorderSide(color: Colors.white),
+    ),
+    focusedBorder: UnderlineInputBorder(
+    borderSide: BorderSide(color: Colors.white, width: 2),
+    ),
+    isDense: true,
+    contentPadding: EdgeInsets.only(bottom: 4),
+    ),
+    ),
+    ),
+    ],
+    ),
+    ],
+    ),
+    ),
+
+    const SizedBox(height: 24),
+    // Confirm Button
+    SizedBox(
+    width: double.infinity,
+    height: 56,
+    child: ElevatedButton(
+    onPressed: () {
+    // Handle confirm action
+    },
+    style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white,
+    foregroundColor: const Color(0xFF77588D),
+    shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(30),
+    ),
+    elevation: 0,
+    ),
+    child: const Text(
+    'CONFIRM',
+    style: TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    ),
+    ),
+    ),
+    ),
+      const SizedBox(height: 20),
+    ],
+    ),
+    ),
+    ),
+    ),
+    ],
+    ),
+    ),
         ),
+    );
+  }
+
+  Widget _buildQuestionBox(String title, Widget content) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          content,
+        ],
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController? controller, {bool isDate = false, String? initialValue}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+  Widget _buildTextInput(String hint, {
+    TextEditingController? controller,
+    VoidCallback? onTap,
+    bool readOnly = false,
+    Widget? suffixIcon,
+  }) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: TextField(
         controller: controller,
-        readOnly: isDate || initialValue != null,
+        readOnly: readOnly,
+        onTap: onTap,
         decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          border: InputBorder.none,
+          suffixIcon: suffixIcon,
+        ),
+        style: const TextStyle(
+          color: Color(0xFF503663),
+          fontSize: 16,
         ),
       ),
-    );
-  }
-
-  Widget _buildCheckbox(String title, bool value, Function(bool) onChanged) {
-    return CheckboxListTile(
-      title: Text(title, style: TextStyle(color: Colors.white)),
-      value: value,
-      activeColor: Colors.white,
-      checkColor: Color(0xFF5A3D69),
-      onChanged: (val) => onChanged(val ?? false),
-    );
-  }
-
-  Widget _buildCheckboxGroup(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        ...children,
-      ],
     );
   }
 }

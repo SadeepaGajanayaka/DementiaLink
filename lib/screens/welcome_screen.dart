@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
+import 'assist_me.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import 'assist_loved.dart';
 
 class WelcomeScreen extends StatelessWidget {
   final String userName;
@@ -14,7 +15,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthService _authService = AuthService();
-    
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -22,8 +23,8 @@ class WelcomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF77588D),  // Lighter purple at top
-              Color(0xFF503663),  // Darker purple at bottom
+              Color(0xFF77588D), // Lighter purple at top
+              Color(0xFF503663), // Darker purple at bottom
             ],
           ),
         ),
@@ -132,7 +133,9 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen(userName: '',),
+                                  builder: (context) => const AssistMe(
+                                    userName: '',
+                                  ),
                                 ),
                               );
                             },
@@ -163,7 +166,9 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen(userName: '',),
+                                  builder: (context) => const AssistLoved(
+                                    userName: '',
+                                  ),
                                 ),
                               );
                             },
