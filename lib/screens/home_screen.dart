@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import '../models/storage_provider.dart';
 import '../widgets/custom_tab_bar.dart';
 import 'gallery_screen.dart';
+import 'albums_screen.dart';
+import 'favourites_screen.dart';
+import 'all_photos_screen.dart';
+import 'deleted_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -13,6 +17,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final List<Widget> _screens = [
     GalleryScreen(),
+    AlbumsScreen(),
+    FavouritesScreen(),
+    AllPhotosScreen(),
+    DeletedScreen(),
 
   ];
 
