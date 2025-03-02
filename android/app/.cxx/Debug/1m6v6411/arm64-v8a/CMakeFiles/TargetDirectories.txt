@@ -1,0 +1,2 @@
+C:/Users/pc/Documents/GitHub/DementiaLink/android/app/.cxx/Debug/1m6v6411/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/pc/Documents/GitHub/DementiaLink/android/app/.cxx/Debug/1m6v6411/arm64-v8a/CMakeFiles/rebuild_cache.dir
