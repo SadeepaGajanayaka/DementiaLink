@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'models/storage_provider.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -7,25 +10,17 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Memory Journal',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        scaffoldBackgroundColor: Color(0xFF503663),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: Scaffold(
-        body: Center(
-          child: Text(
-            'Memory Journal',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+    return ChangeNotifierProvider(
+      create: (context) => StorageProvider(),
+      child: MaterialApp(
+        title: 'Story Memory Journal',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.deepPurple,
+          scaffoldBackgroundColor: Color(0xFF503663),
+          visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
+        home: HomeScreen(),
       ),
     );
   }
