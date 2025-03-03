@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           Text(
-            'Memory Journal',
+            'Story Memory Journal',
             style: TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -77,9 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
             ),
             padding: EdgeInsets.all(8),
-            child: Icon(
-              Icons.photo_library,
-              color: Colors.white,
+            child: ClipOval(
+              child: Image.asset('assets/logo.png'),
+
             ),
           ),
         ],
