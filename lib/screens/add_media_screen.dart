@@ -1,30 +1,68 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import '../models/storage_provider.dart';
+import '../models/photo_model.dart';
+import '../models/media_type.dart';
 
-
-class AddPhotoScreen extends StatefulWidget {
+class AddMediaScreen extends StatefulWidget {
   final String albumId;
-  final File imageFile;
+  final File mediaFile;
+  final MediaType mediaType;
 
-  const AddPhotoScreen({
+  const AddMediaScreen({
     Key? key,
     required this.albumId,
-    required this.imageFile,
+    required this.mediaFile,
+    required this.mediaType,
   }) : super(key: key);
 
   @override
-  _AddPhotoScreenState createState() => _AddPhotoScreenState();
+  _AddMediaScreenState createState() => _AddMediaScreenState();
 }
 
-class _AddPhotoScreenState extends State<AddPhotoScreen> {
+class _AddMediaScreenState extends State<AddMediaScreen> {
+  final TextEditingController _noteController = TextEditingController();
+  VideoPlayerController? _videoController;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mediaType == MediaType.video) {
+      _videoController = VideoPlayerController.file(widget.mediaFile)
+        ..initialize().then((_) {
+          setState(() {});
+        });
+    }
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  void _toggleVideoPlayback() {
+    setState(() {
+      if (_videoController!.value.isPlaying) {
+        _videoController!.pause();
+        _isPlaying = false;
+      } else {
+        _videoController!.play();
+        _isPlaying = true;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF673AB7),
       appBar: AppBar(
-        title: Text('Add Photo'),
+        title: Text(widget.mediaType == MediaType.video ? 'Add Video' : 'Add Photo'),
         backgroundColor: Color(0xFF673AB7),
         elevation: 0,
       ),
@@ -34,7 +72,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Display selected image
+              // Display selected media
               Container(
                 height: 350,
                 width: double.infinity,
@@ -44,10 +82,31 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    widget.imageFile,
+                  child: widget.mediaType == MediaType.video
+                      ? _buildVideoPreview()
+                      : Image.file(
+                    widget.mediaFile,
                     fit: BoxFit.cover,
                   ),
+                ),
+              ),
+              SizedBox(height: 24),
+
+              // Note input field
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TextField(
+                  controller: _noteController,
+                  decoration: InputDecoration(
+                    hintText: 'Add some note....',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  maxLines: 3,
                 ),
               ),
               SizedBox(height: 24),
@@ -56,10 +115,10 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Cancel button
+                  // Skip button
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      _saveMediaToAlbum(context, null);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey.shade700,
@@ -68,13 +127,16 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: Text('CANCEL'),
+                    child: Text('SKIP'),
                   ),
 
                   // Save button
                   ElevatedButton(
                     onPressed: () {
-                      _savePhotoToAlbum(context);
+                      String? note = _noteController.text.isNotEmpty
+                          ? _noteController.text.trim()
+                          : null;
+                      _saveMediaToAlbum(context, note);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -95,18 +157,55 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     );
   }
 
-  Future<void> _savePhotoToAlbum(BuildContext context) async {
+  Widget _buildVideoPreview() {
+    if (_videoController == null || !_videoController!.value.isInitialized) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: _videoController!.value.aspectRatio,
+          child: VideoPlayer(_videoController!),
+        ),
+        IconButton(
+          icon: Icon(
+            _isPlaying ? Icons.pause_circle_outline : Icons.play_circle_outline,
+            color: Colors.white,
+            size: 64,
+          ),
+          onPressed: _toggleVideoPlayback,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveMediaToAlbum(BuildContext context, String? note) async {
     final storageProvider = Provider.of<StorageProvider>(context, listen: false);
 
     try {
-      await storageProvider.addPhoto(
-        widget.albumId,
-        widget.imageFile,
-      );
+      if (widget.mediaType == MediaType.video) {
+        await storageProvider.addMediaWithNote(
+          widget.albumId,
+          widget.mediaFile,
+          MediaType.video,
+          note: note,
+        );
+      } else {
+        await storageProvider.addMediaWithNote(
+          widget.albumId,
+          widget.mediaFile,
+          MediaType.image,
+          note: note,
+        );
+      }
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Photo added successfully')),
+        SnackBar(content: Text(widget.mediaType == MediaType.video
+            ? 'Video added successfully'
+            : 'Photo added successfully')),
       );
 
       // Return to previous screen
@@ -114,7 +213,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     } catch (e) {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding photo: ${e.toString()}')),
+        SnackBar(content: Text('Error adding media: ${e.toString()}')),
       );
     }
   }
