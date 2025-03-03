@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../models/storage_provider.dart';
 //import '../widgets/album_category.dart';
 import '../widgets/memory_card.dart';
@@ -9,8 +10,124 @@ import '../models/media_type.dart';
 import '../utils/video_thumbnail_util.dart';
 import '../screens/album_details_screen.dart';
 
-class GalleryScreen extends StatelessWidget {
+class GalleryScreen extends StatefulWidget {
   @override
+  _GalleryScreenState createState() => _GalleryScreenState();
+}
+
+class _GalleryScreenState extends State<GalleryScreen> {
+  bool _isSearchVisible = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Helper method to check if a date matches the search query
+  bool _dateMatchesSearch(DateTime date, String query) {
+    if (query.isEmpty) return false;
+
+    try {
+      // Format the date in various ways to check against the search
+      final DateFormat fullFormat = DateFormat('yyyy-MM-dd');
+      final DateFormat monthYearFormat = DateFormat('MMM yyyy');
+      final DateFormat monthFormat = DateFormat('MMMM');
+      final DateFormat yearFormat = DateFormat('yyyy');
+
+      final String fullDate = fullFormat.format(date);
+      final String monthYear = monthYearFormat.format(date);
+      final String month = monthFormat.format(date);
+      final String year = yearFormat.format(date);
+
+      query = query.toLowerCase();
+
+      return fullDate.toLowerCase().contains(query) ||
+          monthYear.toLowerCase().contains(query) ||
+          month.toLowerCase().contains(query) ||
+          year.contains(query);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _showMoreOptionsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bottomSheetContext) => Container(
+        color: Colors.grey.shade200,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.edit),
+              title: Text('Edit Albums'),
+              trailing: Icon(Icons.edit),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                // Implement edit albums functionality
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.add),
+              title: Text('Add Albums'),
+              trailing: Icon(Icons.add),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                _showAddAlbumDialog(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete),
+              title: Text('Delete Albums'),
+              trailing: Icon(Icons.delete),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                // Implement delete albums functionality
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddAlbumDialog(BuildContext context) {
+    final TextEditingController titleController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Create New Album'),
+        content: TextField(
+          controller: titleController,
+          decoration: InputDecoration(
+            hintText: 'Album title',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (titleController.text.trim().isNotEmpty) {
+                Provider.of<StorageProvider>(context, listen: false)
+                    .addAlbum(titleController.text.trim(), 'custom');
+                Navigator.pop(context);
+              }
+            },
+            child: Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget build(BuildContext context) {
     final storageProvider = Provider.of<StorageProvider>(context);
 
@@ -23,14 +140,8 @@ class GalleryScreen extends StatelessWidget {
       );
     }
 
-    // Get all albums
+    // Get all albums (both system and custom)
     final allAlbums = storageProvider.albums;
-
-    // Get default system albums (Family and Friends)
-    final systemAlbums = allAlbums.where((album) => album.type == 'system').toList();
-
-    // Get custom albums (created by the user)
-    final customAlbums = allAlbums.where((album) => album.type == 'custom').toList();
 
     // Get all photos for memories
     final allPhotos = allAlbums.expand((album) => album.photos).toList();
@@ -41,32 +152,85 @@ class GalleryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // System Albums (Family | Friends)
-            if (systemAlbums.isNotEmpty) ...[
-              Text(
-                'Family | Friends',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+            // Header with search option
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                height: 180,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: systemAlbums.length,
-                  itemBuilder: (context, index) {
-                    return _buildAlbumItem(context, systemAlbums[index]);
+                Row(
+                  children: [
+                    // Search icon
+                    IconButton(
+                      icon: Icon(
+                        Icons.search,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isSearchVisible = !_isSearchVisible;
+                          if (!_isSearchVisible) {
+                            _searchController.clear();
+                          }
+                        });
+                      },
+                    ),
+                    // More options menu
+                    IconButton(
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        _showMoreOptionsMenu(context);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            if (_isSearchVisible)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search albums, dates, notes...',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white24,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.search, color: Colors.white70),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.clear, color: Colors.white70),
+                      onPressed: () {
+                        // Clear the search text and close the search bar
+                        _searchController.clear();
+                        setState(() {
+                          _isSearchVisible = false;
+                        });
+                      },
+                    ),
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  onChanged: (value) {
+                    // This will rebuild the UI with filtered results
+                    setState(() {});
                   },
                 ),
               ),
-              SizedBox(height: 24),
-            ],
-
-            // Custom Albums
-            if (customAlbums.isNotEmpty) ...[
+            // All Albums (single section that includes both system and custom albums)
+            if (allAlbums.isNotEmpty) ...[
               Text(
                 'My Albums',
                 style: TextStyle(
@@ -75,14 +239,20 @@ class GalleryScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 10),
               Container(
                 height: 180,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: customAlbums.length,
+                  itemCount: allAlbums.length,
                   itemBuilder: (context, index) {
-                    return _buildAlbumItem(context, customAlbums[index]);
+                    // If search is active, filter albums by title
+                    if (_isSearchVisible && _searchController.text.isNotEmpty) {
+                      if (!allAlbums[index].title.toLowerCase().contains(_searchController.text.toLowerCase())) {
+                        return Container(); // Return empty container if doesn't match search
+                      }
+                    }
+                    return _buildAlbumItem(context, allAlbums[index]);
                   },
                 ),
               ),
@@ -100,7 +270,12 @@ class GalleryScreen extends StatelessWidget {
             ),
             SizedBox(height: 16),
             MemoryCard(
-              photos: allPhotos,
+              photos: _isSearchVisible && _searchController.text.isNotEmpty
+                  ? allPhotos.where((photo) =>
+              (photo.note?.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false) ||
+                  _dateMatchesSearch(photo.createdAt, _searchController.text)
+              ).toList()
+                  : allPhotos,
             ),
             SizedBox(height: 24),
             _buildCustomizeButton(context),
@@ -273,93 +448,55 @@ class GalleryScreen extends StatelessWidget {
   }
 
   void _showCustomizeOptions(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        content: Container(
-          width: 300,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDialogOption(context, Icons.add, 'Add photos and videos'),
-              Divider(),
-              _buildDialogOption(context, Icons.edit, 'Edit Title and Photos'),
-              Divider(),
-              _buildDialogOption(context, Icons.add_box, 'Add Albums'),
-              Divider(),
-              _buildDialogOption(context, Icons.delete, 'Delete Albums'),
-              Divider(),
-              _buildDialogOption(context, Icons.push_pin, 'Pin'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDialogOption(BuildContext context, IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.pop(context);
-          // Handle option tap based on text
-          if (text == 'Add photos and videos') {
-            // Navigate to add photos screen or show picker
-          } else if (text == 'Add Albums') {
-            _showAddAlbumDialog(context);
-          } else if (text == 'Delete Albums') {
-            // Show album deletion dialog
-          }
-        },
-        child: Row(
+      builder: (BuildContext bottomSheetContext) => Container(
+        color: Colors.grey.shade200,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 16,
-              ),
+            ListTile(
+              leading: Icon(Icons.add_photo_alternate),
+              title: Text('Add photos and videos'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                // Implement add photos functionality
+              },
             ),
-            Spacer(),
-            Icon(icon),
+            ListTile(
+              leading: Icon(Icons.edit),
+              title: Text('Edit Title and Photos'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                // Implement edit functionality
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.add_box),
+              title: Text('Add Albums'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                _showAddAlbumDialog(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete),
+              title: Text('Delete Albums'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                // Implement delete albums functionality
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.push_pin),
+              title: Text('Pin'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop();
+                // Implement pin functionality
+              },
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showAddAlbumDialog(BuildContext context) {
-    final TextEditingController titleController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Create New Album'),
-        content: TextField(
-          controller: titleController,
-          decoration: InputDecoration(
-            hintText: 'Album title',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (titleController.text.trim().isNotEmpty) {
-                Provider.of<StorageProvider>(context, listen: false)
-                    .addAlbum(titleController.text.trim(), 'custom');
-                Navigator.pop(context);
-              }
-            },
-            child: Text('Create'),
-          ),
-        ],
       ),
     );
   }

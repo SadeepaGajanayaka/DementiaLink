@@ -189,6 +189,44 @@ class StorageProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // New method for searching albums by title
+  List<Album> searchAlbumsByTitle(String query) {
+    if (query.isEmpty) return _albums;
+
+    return _albums.where((album) =>
+        album.title.toLowerCase().contains(query.toLowerCase())
+    ).toList();
+  }
+
+  // New method for searching photos by date range
+  Future<List<Photo>> searchPhotosByDateRange(DateTime start, DateTime end) async {
+    if (_database == null) await _initDatabase();
+
+    final startTimestamp = start.millisecondsSinceEpoch;
+    final endTimestamp = end.millisecondsSinceEpoch;
+
+    final photosData = await _database!.query(
+      'photos',
+      where: 'createdAt >= ? AND createdAt <= ?',
+      whereArgs: [startTimestamp, endTimestamp],
+    );
+
+    return photosData.map((map) => Photo.fromMap(map)).toList();
+  }
+
+  // New method for searching photos by note content
+  Future<List<Photo>> searchPhotosByNote(String query) async {
+    if (_database == null) await _initDatabase();
+
+    final photosData = await _database!.query(
+      'photos',
+      where: 'note LIKE ?',
+      whereArgs: ['%$query%'],
+    );
+
+    return photosData.map((map) => Photo.fromMap(map)).toList();
+  }
+
   Future<List<Photo>> getPhotosByAlbum(String albumId) async {
     if (_database == null) await _initDatabase();
 

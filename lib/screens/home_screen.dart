@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             _buildHeader(),
-            _buildSearchBar(),
             CustomTabBar(
               currentIndex: _currentIndex,
               onTap: (index) {
@@ -79,37 +78,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Spacer(),
           Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              padding: EdgeInsets.all(8),
-              child :ClipOval(
-                child: Image.asset('assets/logo.png'),
-              )
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            padding: EdgeInsets.all(8),
+            child: ClipOval(
+              child: Image.asset('assets/logo.png'),
+            ),
           ),
-
         ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search ......',
-            prefixIcon: Icon(Icons.search),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 15),
-          ),
-        ),
       ),
     );
   }
