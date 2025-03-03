@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../models/storage_provider.dart';
 import '../models/album_model.dart';
 import '../models/photo_model.dart';
+import 'package:image_picker/image_picker.dart';
+import '../utils/permission_service.dart';
+import 'add_photo_screen.dart';
 
 class AlbumDetailScreen extends StatelessWidget {
   final Album album;
@@ -71,7 +74,7 @@ class AlbumDetailScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Will implement photo addition in next commit
+          _showAddMediaOptions(context);
         },
         backgroundColor: Colors.white,
         foregroundColor: Color(0xFF503663),
@@ -212,5 +215,101 @@ class AlbumDetailScreen extends StatelessWidget {
     final storageProvider = Provider.of<StorageProvider>(context, listen: false);
     await storageProvider.deleteAlbum(album.id);
     Navigator.pop(context); // Return to albums screen
+  }
+  void _showAddMediaOptions(BuildContext context) {
+    final ImagePicker _picker = ImagePicker();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bottomSheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.photo_camera),
+            title: Text('Take a photo'),
+            onTap: () async {
+              Navigator.of(bottomSheetContext).pop();
+
+              try {
+                bool hasPermission = await PermissionService.requestCameraPermission(context);
+                if (!hasPermission) return;
+
+                final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+                if (photo != null && context.mounted) {
+                  _navigateToAddPhotoScreen(
+                      context,
+                      File(photo.path)
+                  );
+                }
+              } catch (e) {
+                print("Error taking photo: $e");
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error accessing camera: $e')),
+                  );
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_library),
+            title: Text('Choose photo from gallery'),
+            onTap: () async {
+              Navigator.of(bottomSheetContext).pop();
+
+              try {
+                bool hasPermission = await PermissionService.requestStoragePermission(context);
+                if (!hasPermission) return;
+
+                final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+                if (image != null && context.mounted) {
+                  _navigateToAddPhotoScreen(
+                      context,
+                      File(image.path)
+                  );
+                }
+              } catch (e) {
+                print("Error picking photo from gallery: $e");
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error accessing gallery: $e')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToAddPhotoScreen(BuildContext context, File imageFile) {
+    // Verify that the file exists before navigating
+    if (!imageFile.existsSync()) {
+      print("Error: Media file doesn't exist: ${imageFile.path}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error accessing the selected media file')),
+      );
+      return;
+    }
+
+    if (context.mounted) {
+      try {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddPhotoScreen(
+              albumId: album.id,
+              imageFile: imageFile,
+            ),
+          ),
+        );
+      } catch (e) {
+        print("Navigation error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error navigating to the photo screen')),
+        );
+      }
+    }
   }
 }
