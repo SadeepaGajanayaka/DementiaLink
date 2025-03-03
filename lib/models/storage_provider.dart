@@ -156,4 +156,89 @@ class StorageProvider with ChangeNotifier {
 
     notifyListeners();
   }
+  Future<void> updateAlbumTitle(String albumId, String newTitle) async {
+    if (_database == null) await _initDatabase();
+
+    await _database!.update(
+      'albums',
+      {'title': newTitle},
+      where: 'id = ?',
+      whereArgs: [albumId],
+    );
+
+    final albumIndex = _albums.indexWhere((album) => album.id == albumId);
+    if (albumIndex != -1) {
+      _albums[albumIndex].title = newTitle;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteAlbum(String albumId) async {
+    if (_database == null) await _initDatabase();
+
+    // Delete all photos in the album
+    final photos = await getPhotosByAlbum(albumId);
+    for (var photo in photos) {
+      await deletePhoto(photo.id);
+    }
+
+    // Delete the album from the database
+    await _database!.delete(
+      'albums',
+      where: 'id = ?',
+      whereArgs: [albumId],
+    );
+
+    _albums.removeWhere((album) => album.id == albumId);
+    notifyListeners();
+  }
+
+  Future<List<Photo>> getPhotosByAlbum(String albumId) async {
+    if (_database == null) await _initDatabase();
+
+    final photosData = await _database!.query(
+      'photos',
+      where: 'albumId = ?',
+      whereArgs: [albumId],
+    );
+
+    return photosData.map((map) => Photo.fromMap(map)).toList();
+  }
+
+  Future<void> deletePhoto(String photoId) async {
+    if (_database == null) await _initDatabase();
+
+    // Find photo to get its path
+    Photo? targetPhoto;
+    Album? parentAlbum;
+
+    for (var album in _albums) {
+      final index = album.photos.indexWhere((p) => p.id == photoId);
+      if (index != -1) {
+        targetPhoto = album.photos[index];
+        parentAlbum = album;
+        break;
+      }
+    }
+
+    if (targetPhoto != null && parentAlbum != null) {
+      // Delete the file
+      final file = File(targetPhoto.path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      // Delete from database
+      await _database!.delete(
+        'photos',
+        where: 'id = ?',
+        whereArgs: [photoId],
+      );
+
+      // Remove from memory
+      parentAlbum.photos.removeWhere((p) => p.id == photoId);
+
+      notifyListeners();
+    }
+  }
 }

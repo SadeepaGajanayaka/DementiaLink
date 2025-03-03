@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dementialink/screens/album_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/storage_provider.dart';
@@ -92,7 +93,13 @@ class AlbumsScreen extends StatelessWidget {
   Widget _buildAlbumItem(BuildContext context, Album album) {
     return GestureDetector(
       onTap: () {
-        // Navigate to album detail (will implement in next commit)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AlbumDetailScreen(album: album),
+        ),
+      );
+
       },
       child: Container(
         decoration: BoxDecoration(
