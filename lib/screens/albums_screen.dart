@@ -1,11 +1,14 @@
 import 'dart:io';
-import 'package:dementialink/screens/album_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/storage_provider.dart';
 import '../models/album_model.dart';
+import 'album_details_screen.dart';
 
 class AlbumsScreen extends StatelessWidget {
+  final ImagePicker _picker = ImagePicker();
+
   @override
   Widget build(BuildContext context) {
     final storageProvider = Provider.of<StorageProvider>(context);
@@ -93,13 +96,7 @@ class AlbumsScreen extends StatelessWidget {
   Widget _buildAlbumItem(BuildContext context, Album album) {
     return GestureDetector(
       onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AlbumDetailScreen(album: album),
-        ),
-      );
-
+        _navigateToAlbumDetail(context, album);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -117,16 +114,6 @@ class AlbumsScreen extends StatelessWidget {
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.purple.shade300,
-                    child: Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 48,
-                    ),
-                  );
-                },
               ),
             )
                 : Center(
@@ -166,7 +153,7 @@ class AlbumsScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      '${album.photos.length} Items',
+                      '${album.photos.length} Ite',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 12,
@@ -234,6 +221,15 @@ class AlbumsScreen extends StatelessWidget {
             child: Text('Create'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToAlbumDetail(BuildContext context, Album album) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AlbumDetailScreen(album: album),
       ),
     );
   }

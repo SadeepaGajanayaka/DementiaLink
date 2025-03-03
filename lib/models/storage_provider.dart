@@ -23,6 +23,7 @@ class StorageProvider with ChangeNotifier {
     _initDatabase();
   }
 
+
   Future<void> _initDatabase() async {
     // Get a location using path_provider
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -38,7 +39,8 @@ class StorageProvider with ChangeNotifier {
           'CREATE TABLE albums (id TEXT PRIMARY KEY, title TEXT, type TEXT, createdAt INTEGER)',
         );
         await db.execute(
-          'CREATE TABLE photos (id TEXT PRIMARY KEY, albumId TEXT, path TEXT, createdAt INTEGER, isFavorite INTEGER)',
+          'CREATE TABLE photos (id TEXT PRIMARY KEY, albumId TEXT, path TEXT, createdAt INTEGER, isFavorite INTEGER, note TEXT)',
+          // Note the addition of "note TEXT" at the end
         );
       },
     );
@@ -237,6 +239,80 @@ class StorageProvider with ChangeNotifier {
 
       // Remove from memory
       parentAlbum.photos.removeWhere((p) => p.id == photoId);
+
+      notifyListeners();
+    }
+  }
+  // Add this method at the end of your StorageProvider class
+  Future<void> addPhotoWithNote(String albumId, File imageFile, {String? note}) async {
+    if (_database == null) await _initDatabase();
+
+    // Get private directory for storing images
+    final appDir = await getApplicationDocumentsDirectory();
+    final photosDir = '${appDir.path}/photos';
+
+    // Generate a unique ID and filename
+    final id = _uuid.v4();
+    final fileName = '$id.jpg';
+    final targetPath = '$photosDir/$fileName';
+
+    // Copy the file to our app's private directory
+    final savedFile = await imageFile.copy(targetPath);
+
+    final photo = Photo(
+      id: id,
+      albumId: albumId,
+      path: savedFile.path,
+      createdAt: DateTime.now(),
+      isFavorite: false,
+      note: note,
+    );
+
+    // Save to database
+    await _database!.insert(
+      'photos',
+      photo.toMap(),
+    );
+
+    // Update album in memory
+    final album = _albums.firstWhere((a) => a.id == albumId);
+    album.photos.add(photo);
+
+    notifyListeners();
+  }
+
+// Add this method as well
+  Future<void> updatePhotoNote(String photoId, String? note) async {
+    if (_database == null) await _initDatabase();
+
+    // Find photo in albums
+    Photo? targetPhoto;
+    Album? parentAlbum;
+
+    for (var album in _albums) {
+      final photo = album.photos.firstWhere(
+            (p) => p.id == photoId,
+        orElse: () => Photo(id: '', albumId: '', path: '', createdAt: DateTime.now()),
+      );
+
+      if (photo.id.isNotEmpty) {
+        targetPhoto = photo;
+        parentAlbum = album;
+        break;
+      }
+    }
+
+    if (targetPhoto != null) {
+      // Update note
+      targetPhoto.note = note;
+
+      // Update in database
+      await _database!.update(
+        'photos',
+        {'note': note},
+        where: 'id = ?',
+        whereArgs: [photoId],
+      );
 
       notifyListeners();
     }

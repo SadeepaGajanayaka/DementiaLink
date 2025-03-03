@@ -2,22 +2,31 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/storage_provider.dart';
+import '../widgets/photo_note_card.dart';
 
-class AddPhotoScreen extends StatefulWidget {
+class AddPhotoNoteScreen extends StatefulWidget {
   final String albumId;
   final File imageFile;
 
-  const AddPhotoScreen({
+  const AddPhotoNoteScreen({
     Key? key,
     required this.albumId,
     required this.imageFile,
   }) : super(key: key);
 
   @override
-  _AddPhotoScreenState createState() => _AddPhotoScreenState();
+  _AddPhotoNoteScreenState createState() => _AddPhotoNoteScreenState();
 }
 
-class _AddPhotoScreenState extends State<AddPhotoScreen> {
+class _AddPhotoNoteScreenState extends State<AddPhotoNoteScreen> {
+  final TextEditingController _noteController = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,14 +60,33 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
               ),
               SizedBox(height: 24),
 
+              // Note input field
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TextField(
+                  controller: _noteController,
+                  decoration: InputDecoration(
+                    hintText: 'Add some note....',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  maxLines: 3,
+                ),
+              ),
+              SizedBox(height: 24),
+
               // Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Cancel button
+                  // Skip button
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      _savePhotoToAlbum(context, null);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey.shade700,
@@ -67,13 +95,16 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: Text('CANCEL'),
+                    child: Text('SKIP'),
                   ),
 
                   // Save button
                   ElevatedButton(
                     onPressed: () {
-                      _savePhotoToAlbum(context);
+                      String? note = _noteController.text.isNotEmpty
+                          ? _noteController.text.trim()
+                          : null;
+                      _savePhotoToAlbum(context, note);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -94,13 +125,14 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     );
   }
 
-  Future<void> _savePhotoToAlbum(BuildContext context) async {
+  Future<void> _savePhotoToAlbum(BuildContext context, String? note) async {
     final storageProvider = Provider.of<StorageProvider>(context, listen: false);
 
     try {
-      await storageProvider.addPhoto(
+      await storageProvider.addPhotoWithNote(
         widget.albumId,
         widget.imageFile,
+        note: note,
       );
 
       // Show success message
