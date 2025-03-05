@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../services/auth_service.dart';
+import '../services/database_service.dart';
 
 class AssistMe extends StatefulWidget {
-  const AssistMe({super.key, required String userName});
+  final String userName;
+  
+  const AssistMe({super.key, required this.userName});
 
   @override
   State<AssistMe> createState() => _AssistMeState();
 }
 
 class _AssistMeState extends State<AssistMe> {
+  // Services
+  final AuthService _authService = AuthService();
+  final DatabaseService _databaseService = DatabaseService();
+  bool _isSubmitting = false;
+  
   // Controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -43,7 +52,55 @@ class _AssistMeState extends State<AssistMe> {
   bool _hasRoutine = false;
   bool _hasPrimaryCaregiver = false;
 
-
+  // Collect form data to save to Firebase
+  Map<String, dynamic> _collectFormData() {
+    return {
+      'basic_information': {
+        'first_name': _firstNameController.text,
+        'last_name': _lastNameController.text,
+        'gender': _selectedGender,
+        'date_of_birth': _dateController.text,
+        'contact_number': _contactNumberController.text,
+        'address': _addressController.text,
+        'emergency_contact': {
+          'name': _emergencyNameController.text,
+          'phone': _emergencyNumberController.text,
+        },
+      },
+      'medical_information': {
+        'dementia_stage': _selectedDementiaStage,
+        'diagnosing_doctor': _diagnosingDoctorController.text,
+        'other_medical_conditions': {
+          'has_conditions': _hasOtherMedicalConditions,
+          'conditions': _otherMedicalConditionsController.text,
+        },
+        'medications': {
+          'taking_medications': _hasMedications,
+          'medications_list': _medicationsController.text,
+        },
+        'allergies': {
+          'has_allergies': _hasAllergies,
+          'allergies_list': _allergiesController.text,
+        },
+        'preferred_language': _selectedLanguage,
+      },
+      'cognitive_daily_activity': {
+        'difficulty_remembering': _hasDifficultyRemembering,
+        'needs_assistance': _needsAssistance,
+        'preferred_routine': {
+          'has_routine': _hasRoutine,
+          'routine_description': _routineController.text,
+        },
+        'app_comfort': _selectedAppComfort,
+      },
+      'caregiver': {
+        'has_primary_caregiver': _hasPrimaryCaregiver,
+        'caregiver_name': _caregiverNameController.text,
+        'caregiver_contact': _caregiverContactController.text,
+        'relation': _selectedRelation,
+      },
+    };
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -542,16 +599,69 @@ class _AssistMeState extends State<AssistMe> {
                           ),
                         ),
 
-
-
                         const SizedBox(height: 24),
-                        // Confirm Button
+                        // Submit Button
                         SizedBox(
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Handle confirm action
+                            onPressed: _isSubmitting ? null : () async {
+                              // Validate required fields
+                              if (_firstNameController.text.isEmpty || _lastNameController.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please fill out required fields'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+                              
+                              setState(() {
+                                _isSubmitting = true;
+                              });
+                              
+                              try {
+                                final userId = _authService.currentUser?.uid;
+                                if (userId != null) {
+                                  // Collect data from form
+                                  final formData = _collectFormData();
+                                  
+                                  // Save to Firebase
+                                  final patientId = await _databaseService.savePatientData(
+                                    userId: userId,
+                                    formType: 'self',  // This is for "Assist Me"
+                                    patientData: formData,
+                                  );
+                                  
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Information saved successfully'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    Navigator.pop(context);
+                                  }
+                                } else {
+                                  throw Exception('User not authenticated');
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isSubmitting = false;
+                                  });
+                                }
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -561,13 +671,22 @@ class _AssistMeState extends State<AssistMe> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              'SUBMIT',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFF77588D),
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                : const Text(
+                                    'SUBMIT',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 20),
