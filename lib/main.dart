@@ -37,21 +37,22 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  // Center on Sri Lanka
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(40.7128, -74.0060), // New York
-    zoom: 10.0,
+    target: LatLng(7.8731, 80.7718), // Sri Lanka center
+    zoom: 8.0,
   );
 
   GoogleMapController? _mapController;
 
-  // Custom map style that matches the screenshot
+  // Exact map style matching the screenshot
   static const String _mapStyle = '''
 [
   {
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#f5f5f5"
+        "color": "#f8f8f8"
       }
     ]
   },
@@ -59,7 +60,7 @@ class _MapScreenState extends State<MapScreen> {
     "elementType": "labels.icon",
     "stylers": [
       {
-        "visibility": "off"
+        "visibility": "simplified"
       }
     ]
   },
@@ -67,7 +68,7 @@ class _MapScreenState extends State<MapScreen> {
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#616161"
+        "color": "#323232"
       }
     ]
   },
@@ -75,16 +76,36 @@ class _MapScreenState extends State<MapScreen> {
     "elementType": "labels.text.stroke",
     "stylers": [
       {
-        "color": "#f5f5f5"
+        "color": "#ffffff"
+      },
+      {
+        "weight": 3
       }
     ]
   },
   {
-    "featureType": "administrative.land_parcel",
+    "featureType": "administrative.locality",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "weight": 0.5
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#bdbdbd"
+        "color": "#000000"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.neighborhood",
+    "stylers": [
+      {
+        "visibility": "simplified"
       }
     ]
   },
@@ -93,16 +114,31 @@ class _MapScreenState extends State<MapScreen> {
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#eeeeee"
+        "color": "#f0f0f0"
       }
     ]
   },
   {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
+    "featureType": "poi.attraction",
     "stylers": [
       {
-        "color": "#757575"
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.business",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.medical",
+    "stylers": [
+      {
+        "visibility": "off"
       }
     ]
   },
@@ -111,16 +147,31 @@ class _MapScreenState extends State<MapScreen> {
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#e5e5e5"
+        "color": "#e6f0d7"
       }
     ]
   },
   {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
+    "featureType": "poi.place_of_worship",
     "stylers": [
       {
-        "color": "#9e9e9e"
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.school",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.sports_complex",
+    "stylers": [
+      {
+        "visibility": "off"
       }
     ]
   },
@@ -135,91 +186,108 @@ class _MapScreenState extends State<MapScreen> {
   },
   {
     "featureType": "road.arterial",
-    "elementType": "labels.text.fill",
+    "elementType": "geometry.stroke",
     "stylers": [
       {
-        "color": "#757575"
+        "color": "#ffa964"
+      },
+      {
+        "visibility": "on"
+      },
+      {
+        "weight": 1
       }
     ]
   },
   {
     "featureType": "road.highway",
-    "elementType": "geometry",
+    "elementType": "geometry.stroke",
     "stylers": [
       {
-        "color": "#dadada"
+        "color": "#ff8c25"
+      },
+      {
+        "weight": 1
       }
     ]
   },
   {
-    "featureType": "road.highway",
-    "elementType": "labels.text.fill",
+    "featureType": "road.highway.controlled_access",
+    "elementType": "geometry.stroke",
     "stylers": [
       {
-        "color": "#616161"
+        "color": "#ff7b00"
+      },
+      {
+        "weight": 1.5
       }
     ]
   },
   {
     "featureType": "road.local",
-    "elementType": "labels.text.fill",
+    "elementType": "geometry",
     "stylers": [
       {
-        "color": "#9e9e9e"
+        "color": "#ffffff"
+      },
+      {
+        "weight": 0.5
       }
     ]
   },
   {
     "featureType": "transit.line",
-    "elementType": "geometry",
     "stylers": [
       {
-        "color": "#e5e5e5"
+        "visibility": "off"
       }
     ]
   },
   {
     "featureType": "transit.station",
-    "elementType": "geometry",
     "stylers": [
       {
-        "color": "#eeeeee"
+        "visibility": "off"
       }
     ]
   },
   {
     "featureType": "water",
-    "elementType": "geometry",
+    "elementType": "geometry.fill",
     "stylers": [
       {
-        "color": "#c9e9fc"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
+        "color": "#a4dcff"
       }
     ]
   }
 ]
   ''';
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
-    // Apply the custom map style
+
+    // Apply the exact custom style
     _mapController!.setMapStyle(_mapStyle);
+
+    // Optional: Move to Colombo specifically if you want
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        const CameraPosition(
+          target: LatLng(6.9271, 79.8612), // Colombo, Sri Lanka
+          zoom: 12.0,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('DementiaLink Maps'),
-      ),
       body: GoogleMap(
         initialCameraPosition: _initialPosition,
         onMapCreated: _onMapCreated,
@@ -227,6 +295,7 @@ class _MapScreenState extends State<MapScreen> {
         myLocationButtonEnabled: true,
         mapType: MapType.normal,
         zoomControlsEnabled: false,
+        compassEnabled: false,
       ),
     );
   }
