@@ -1,103 +1,217 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'DementiaLink Maps',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      // Start directly with the maps screen
-      home: const MapsScreen(),
+      home: const MapScreen(),
     );
   }
 }
 
-class MapsScreen extends StatefulWidget {
-  const MapsScreen({Key? key}) : super(key: key);
+class MapScreen extends StatefulWidget {
+  const MapScreen({Key? key}) : super(key: key);
 
   @override
-  State<MapsScreen> createState() => _MapsScreenState();
+  State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapsScreenState extends State<MapsScreen> {
-  GoogleMapController? _controller;
-  Location _location = Location();
-  final Set<Marker> _markers = {};
-
-  // Initial camera position (default to a location in Sri Lanka)
+class _MapScreenState extends State<MapScreen> {
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(6.9271, 79.8612), // Colombo, Sri Lanka
-    zoom: 14.0,
+    target: LatLng(40.7128, -74.0060), // New York
+    zoom: 10.0,
   );
 
-  @override
-  void initState() {
-    super.initState();
-    _getUserLocation();
+  GoogleMapController? _mapController;
+
+  // Custom map style that matches the screenshot
+  static const String _mapStyle = '''
+[
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#ffffff"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#dadada"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#c9e9fc"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
   }
+]
+  ''';
 
-  // Get user's current location
-  void _getUserLocation() async {
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
-    LocationData locationData;
-
-    // Check if location services are enabled
-    serviceEnabled = await _location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
-    }
-
-    // Check if permission is granted
-    permissionGranted = await _location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    // Get the current location
-    locationData = await _location.getLocation();
-
-    if (_controller != null && locationData.latitude != null && locationData.longitude != null) {
-      _controller!.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(locationData.latitude!, locationData.longitude!),
-        ),
-      );
-
-      // Add a marker for current location
-      setState(() {
-        _markers.add(
-          Marker(
-            markerId: const MarkerId('currentLocation'),
-            position: LatLng(locationData.latitude!, locationData.longitude!),
-            infoWindow: const InfoWindow(title: 'Your Location'),
-          ),
-        );
-      });
-    }
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    // Apply the custom map style
+    _mapController!.setMapStyle(_mapStyle);
   }
 
   @override
@@ -105,20 +219,14 @@ class _MapsScreenState extends State<MapsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('DementiaLink Maps'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: GoogleMap(
         initialCameraPosition: _initialPosition,
+        onMapCreated: _onMapCreated,
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
-        markers: _markers,
-        onMapCreated: (GoogleMapController controller) {
-          _controller = controller;
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _getUserLocation,
-        child: const Icon(Icons.my_location),
+        mapType: MapType.normal,
+        zoomControlsEnabled: false,
       ),
     );
   }
