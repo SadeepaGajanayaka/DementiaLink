@@ -20,41 +20,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.deepPurple,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        backgroundColor: const Color(0xFF77588D),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MapsScreen(),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF503663),
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          ),
-          child: const Text(
-            'Open Location Tracking',
-            style: TextStyle(fontSize: 18),
-          ),
-        ),
-      ),
+      home: const MapsScreen(),
     );
   }
 }

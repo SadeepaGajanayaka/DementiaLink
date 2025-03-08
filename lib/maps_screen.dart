@@ -138,18 +138,22 @@ class _MapsScreenState extends State<MapsScreen> {
                               color: Colors.white,
                             ),
                             onPressed: () {
-                              Navigator.pop(context);
+                              // Back functionality can be customized or removed
+                              // since this is now the home screen
                             },
                           ),
-                          const Text(
-                            'Location Tracking',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                          const Expanded(
+                            child: Center(
+                              child: Text(
+                                'Location Tracking',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
-                          const Spacer(),
                           // Brain icon
                           Container(
                             margin: const EdgeInsets.only(right: 16),
@@ -211,11 +215,16 @@ class _MapsScreenState extends State<MapsScreen> {
               ),
             ),
 
-            // Tab selection (Safe Zone Alert / Red Alert)
+            // Tab selection (Safe Zone Alert / Red Alert) with rounded corners
             Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.grey[200],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                ),
               ),
               child: Row(
                 children: [
@@ -278,27 +287,36 @@ class _MapsScreenState extends State<MapsScreen> {
               ),
             ),
 
-            // Google Map
+            // Small space after the search bar
+            const SizedBox(height: 4),
+
+            // Google Map with rounded corners
             Expanded(
               child: Stack(
                 children: [
-                  GoogleMap(
-                    initialCameraPosition: _initialCameraPosition,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                    mapToolbarEnabled: false,
-                    compassEnabled: false,
-                    onMapCreated: (controller) {
-                      _mapController = controller;
-                      if (_currentLocation != null) {
-                        _mapController!.animateCamera(
-                          CameraUpdate.newLatLng(
-                            LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-                          ),
-                        );
-                      }
-                    },
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                    ),
+                    child: GoogleMap(
+                      initialCameraPosition: _initialCameraPosition,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                      compassEnabled: false,
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                        if (_currentLocation != null) {
+                          _mapController!.animateCamera(
+                            CameraUpdate.newLatLng(
+                              LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
 
                   // Navigation button (bottom right)
