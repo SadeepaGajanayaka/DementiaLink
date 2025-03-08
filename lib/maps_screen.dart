@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class MapsScreen extends StatefulWidget {
-  const MapsScreen({Key? key}) : super(key: key);
+  const MapsScreen({super.key});
 
   @override
   State<MapsScreen> createState() => _MapsScreenState();
@@ -16,7 +15,7 @@ class _MapsScreenState extends State<MapsScreen> {
   GoogleMapController? _mapController;
 
   // Location data
-  Location _location = Location();
+  final Location _location = Location();
   LocationData? _currentLocation;
   bool _liveLocationEnabled = false;
 
@@ -71,17 +70,6 @@ class _MapsScreenState extends State<MapsScreen> {
     }
   }
 
-  // Send location to Firebase when live tracking is enabled
-  void _sendLocationToFirebase() {
-    if (_liveLocationEnabled && _currentLocation != null) {
-      _locationRef.push().set({
-        'latitude': _currentLocation!.latitude,
-        'longitude': _currentLocation!.longitude,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-    }
-  }
-
   // Toggle live location tracking
   void _toggleLiveLocation(bool value) {
     setState(() {
@@ -93,7 +81,6 @@ class _MapsScreenState extends State<MapsScreen> {
         setState(() {
           _currentLocation = currentLocation;
         });
-        _sendLocationToFirebase();
 
         if (_mapController != null) {
           _mapController!.animateCamera(
@@ -138,8 +125,7 @@ class _MapsScreenState extends State<MapsScreen> {
                               color: Colors.white,
                             ),
                             onPressed: () {
-                              // Back functionality can be customized or removed
-                              // since this is now the home screen
+                              // Back functionality
                             },
                           ),
                           const Expanded(
@@ -215,91 +201,17 @@ class _MapsScreenState extends State<MapsScreen> {
               ),
             ),
 
-            // Tab selection (Safe Zone Alert / Red Alert) with rounded corners
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  topRight: Radius.circular(15),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Safe Zone Alert',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'Red Alert',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Live location toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.deepPurple[800],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Live Location',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: _liveLocationEnabled,
-                    onChanged: _toggleLiveLocation,
-                    activeColor: Colors.white,
-                    activeTrackColor: Colors.deepPurple[400],
-                  ),
-                ],
-              ),
-            ),
-
-            // Small space after the search bar
-            const SizedBox(height: 4),
-
-            // Google Map with rounded corners
+            // Expanded map view with rounded corners and UI elements as overlays
             Expanded(
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                    ),
-                    child: GoogleMap(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(33),
+                  topRight: Radius.circular(33),
+                ),
+                child: Stack(
+                  children: [
+                    // Map background
+                    GoogleMap(
                       initialCameraPosition: _initialCameraPosition,
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
@@ -317,89 +229,186 @@ class _MapsScreenState extends State<MapsScreen> {
                         }
                       },
                     ),
-                  ),
 
-                  // Navigation button (bottom right)
-                  Positioned(
-                    right: 16,
-                    bottom: 120,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
+                    // UI elements on top of map
+                    Column(
+                      children: [
+                        // Safe Zone / Red Alert tabs
+                        Container(
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.navigation),
-                        onPressed: _getCurrentLocation,
-                      ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  child: const Center(
+                                    child: Text(
+                                      'Safe Zone Alert',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  child: const Center(
+                                    child: Text(
+                                      'Red Alert',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Live location toggle
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF503663),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: const [
+                                  Icon(
+                                    Icons.location_on,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Live Location',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Switch(
+                                value: _liveLocationEnabled,
+                                onChanged: _toggleLiveLocation,
+                                activeColor: Colors.white,
+                                inactiveTrackColor: Colors.grey[700],
+                                inactiveThumbColor: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
 
-                  // Center position button (bottom right)
-                  Positioned(
-                    right: 16,
-                    bottom: 60,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.deepPurple,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.my_location,
+                    // Navigation button (bottom right)
+                    Positioned(
+                      right: 16,
+                      bottom: 90,
+                      child: Container(
+                        decoration: BoxDecoration(
                           color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        onPressed: _getCurrentLocation,
+                        child: IconButton(
+                          icon: const Icon(Icons.navigation),
+                          onPressed: _getCurrentLocation,
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Connect button (bottom center)
-                  Positioned(
-                    bottom: 16,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Handle connect action
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple[700],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                    // Target button (bottom right)
+                    Positioned(
+                      right: 16,
+                      bottom: 20,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF77588D),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        child: const Text(
-                          'Connect',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.my_location,
+                            color: Colors.white,
+                          ),
+                          onPressed: _getCurrentLocation,
+                        ),
+                      ),
+                    ),
+
+                    // Connect button (bottom center)
+                    Positioned(
+                      bottom: 20,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF77588D),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                // Handle connect action
+                              },
+                              borderRadius: BorderRadius.circular(30),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 12,
+                                ),
+                                child: Text(
+                                  'Connect',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
