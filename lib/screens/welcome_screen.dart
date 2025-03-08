@@ -1,10 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'assist_me.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'assist_loved.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   final String userName;
 
   const WelcomeScreen({
@@ -13,9 +14,89 @@ class WelcomeScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final AuthService _authService = AuthService();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
 
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final AuthService _authService = AuthService();
+  final ImagePicker _picker = ImagePicker();
+  File? _profileImage;
+
+  Future<void> _selectImage(ImageSource source) async {
+    try {
+      final XFile? pickedImage = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+
+      if (pickedImage != null) {
+        setState(() {
+          _profileImage = File(pickedImage.path);
+        });
+        // Here you would typically upload the image to storage
+        // and update the user's profile in your database
+      }
+    } catch (e) {
+      // Handle errors, such as when a user denies camera permissions
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting image: $e')),
+      );
+    }
+  }
+
+  void _showImageSourceOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Change Profile Picture',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF503663),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF77588D),
+                ),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _selectImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: Color(0xFF77588D),
+                ),
+                title: const Text('Take a Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _selectImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -36,34 +117,14 @@ class WelcomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 32),
-                  // App Logo and Sign Out row
+                  // App Logo centered
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(width: 40), // For centering
                       Image.asset(
                         'lib/assets/brain_logo.png',
                         width: 60,
                         height: 60,
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        onPressed: () async {
-                          await _authService.signOut();
-                          if (context.mounted) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                            );
-                          }
-                        },
-                        tooltip: 'Sign Out',
                       ),
                     ],
                   ),
@@ -87,24 +148,66 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Profile Image
-                        Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF77588D).withOpacity(0.2),
-                          ),
-                          clipBehavior: Clip.hardEdge,
-                          child: Image.asset(
-                            'lib/assets/profile_setup.png',
-                            fit: BoxFit.cover,
-                          ),
+                        // Profile Image with Edit Option
+                        Stack(
+                          children: [
+                            // Profile image container
+                            GestureDetector(
+                              onTap: _showImageSourceOptions,
+                              child: Container(
+                                width: 200,
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color:
+                                      const Color(0xFF77588D).withOpacity(0.2),
+                                ),
+                                clipBehavior: Clip.hardEdge,
+                                child: _profileImage != null
+                                    ? Image.file(
+                                        _profileImage!,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        'lib/assets/profile_setup.png',
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                            ),
+                            // Edit icon positioned at bottom right
+                            Positioned(
+                              right: 10,
+                              bottom: 10,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF77588D),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: _showImageSourceOptions,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 40,
+                                    minWidth: 40,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 32),
                         // Welcome Text
                         Text(
-                          'Welcome $userName!',
+                          'Welcome ${widget.userName}!',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -124,7 +227,7 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 40),
-                        // Assist Me Button
+                        // Edit Profile Button (replacing Assist a Loved One)
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -133,8 +236,8 @@ class WelcomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const AssistMe(
-                                    userName: '',
+                                  builder: (context) => AssistLoved(
+                                    userName: widget.userName,
                                   ),
                                 ),
                               );
@@ -148,7 +251,7 @@ class WelcomeScreen extends StatelessWidget {
                               elevation: 0,
                             ),
                             child: const Text(
-                              'Assist Me',
+                              'Edit Profile',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -157,31 +260,34 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Assist a Loved One Button
+                        // Sign Out Button (formerly BACK)
                         SizedBox(
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const AssistLoved(
-                                    userName: '',
+                            onPressed: () async {
+                              await _authService.signOut();
+                              if (context.mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginScreen(),
                                   ),
-                                ),
-                              );
+                                );
+                              }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF77588D),
-                              foregroundColor: Colors.white,
+                              backgroundColor:
+                                  const Color.fromARGB(236, 240, 235, 235),
+                              foregroundColor: const Color(0xFF77588D),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              elevation: 0,
+                              elevation: 3,
+                              shadowColor: Colors.black26,
                             ),
                             child: const Text(
-                              'Assist a Loved One',
+                              'Sign Out',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
