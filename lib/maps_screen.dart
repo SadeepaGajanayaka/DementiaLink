@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({Key? key}) : super(key: key);
@@ -13,408 +12,381 @@ class MapsScreen extends StatefulWidget {
 }
 
 class _MapsScreenState extends State<MapsScreen> {
-  late GoogleMapController _mapController;
-  Location _location = Location();
-  bool _liveLocation = false;
-  bool _isSafeZoneTab = true;
-  LatLng _currentPosition = const LatLng(40.7128, -74.0060); // Default to New York
+  // Google Maps controller
+  GoogleMapController? _mapController;
 
-  final Set<Marker> _markers = {};
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Location data
+  Location _location = Location();
+  LocationData? _currentLocation;
+  bool _liveLocationEnabled = false;
+
+  // Initial camera position (New York)
+  final CameraPosition _initialCameraPosition = const CameraPosition(
+    target: LatLng(40.7128, -74.0060),
+    zoom: 11,
+  );
+
+  // Firebase reference
+  late DatabaseReference _locationRef;
 
   @override
   void initState() {
     super.initState();
-    _checkLocationPermission();
+    _locationRef = FirebaseDatabase.instance.ref().child('locations');
     _getCurrentLocation();
   }
 
-  Future<void> _checkLocationPermission() async {
-    var status = await Permission.location.request();
-    if (status.isGranted) {
-      _location.enableBackgroundMode(enable: true);
-    }
-  }
-
+  // Get user's current location
   Future<void> _getCurrentLocation() async {
-    try {
-      LocationData locationData = await _location.getLocation();
-      setState(() {
-        _currentPosition = LatLng(
-          locationData.latitude ?? 40.7128,
-          locationData.longitude ?? -74.0060,
-        );
-      });
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
 
-      if (_mapController != null) {
-        _mapController.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: _currentPosition,
-              zoom: 12,
-            ),
-          ),
-        );
+    // Check if location service is enabled
+    serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) {
+        return;
       }
-    } catch (e) {
-      print("Error getting location: $e");
+    }
+
+    // Check location permission
+    permissionGranted = await _location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await _location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    // Get current location
+    _currentLocation = await _location.getLocation();
+
+    if (_mapController != null && _currentLocation != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLng(
+          LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+        ),
+      );
     }
   }
 
+  // Send location to Firebase when live tracking is enabled
+  void _sendLocationToFirebase() {
+    if (_liveLocationEnabled && _currentLocation != null) {
+      _locationRef.push().set({
+        'latitude': _currentLocation!.latitude,
+        'longitude': _currentLocation!.longitude,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+    }
+  }
+
+  // Toggle live location tracking
   void _toggleLiveLocation(bool value) {
     setState(() {
-      _liveLocation = value;
+      _liveLocationEnabled = value;
     });
 
-    if (value) {
-      _startLocationTracking();
-    } else {
-      _stopLocationTracking();
-    }
-  }
-
-  void _startLocationTracking() {
-    _location.onLocationChanged.listen((LocationData currentLocation) {
-      if (_liveLocation) {
+    if (_liveLocationEnabled) {
+      _location.onLocationChanged.listen((LocationData currentLocation) {
         setState(() {
-          _currentPosition = LatLng(
-            currentLocation.latitude ?? 40.7128,
-            currentLocation.longitude ?? -74.0060,
-          );
+          _currentLocation = currentLocation;
         });
-
-        // Update location in Firebase
-        _updateLocationInFirebase();
+        _sendLocationToFirebase();
 
         if (_mapController != null) {
-          _mapController.animateCamera(
-            CameraUpdate.newCameraPosition(
-              CameraPosition(
-                target: _currentPosition,
-                zoom: 12,
-              ),
+          _mapController!.animateCamera(
+            CameraUpdate.newLatLng(
+              LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
             ),
           );
         }
-      }
-    });
-  }
-
-  void _stopLocationTracking() {
-    // Stop tracking logic here
-  }
-
-  Future<void> _updateLocationInFirebase() async {
-    try {
-      // You would typically use the current user's ID here
-      final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-
-      await _firestore.collection('locations').doc(userId).set({
-        'latitude': _currentPosition.latitude,
-        'longitude': _currentPosition.longitude,
-        'timestamp': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      print("Error updating location in Firebase: $e");
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Google Map
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _currentPosition,
-              zoom: 12,
-            ),
-            markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
-            },
-          ),
-
-          // Top Bar with Back Button and Title
-          SafeArea(
-            child: Container(
-              height: 60,
-              color: const Color(0xFF673AB7),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                  const SizedBox(width: 20),
-                  const Text(
-                    'Location Tracking',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  const Icon(
-                    Icons.psychology_outlined,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ],
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: Column(
+          children: [
+            // Purple gradient app bar with location tracking title
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF77588D), Color(0xFF503663)],
+                ),
               ),
-            ),
-          ),
-
-          // Search Bar
-          Positioned(
-            top: 80,
-            left: 20,
-            right: 20,
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 15),
-                  const Icon(
-                    Icons.location_on,
-                    color: Colors.amber,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search Here........',
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    child: const Icon(
-                      Icons.mic,
-                      color: Colors.black,
-                      size: 24,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Tab and Live Location Toggle
-          Positioned(
-            top: 140,
-            left: 20,
-            right: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                children: [
-                  // Tabs
-                  Row(
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isSafeZoneTab = true;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: _isSafeZoneTab ? Colors.deepPurple : Colors.transparent,
-                                  width: 2,
-                                ),
-                              ),
+                      // Back button and title
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
                             ),
-                            child: const Text(
-                              'Safe Zone Alert',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                          const Text(
+                            'Location Tracking',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
+                          const Spacer(),
+                          // Brain icon
+                          Container(
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(
+                              Icons.psychology,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isSafeZoneTab = false;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: !_isSafeZoneTab ? Colors.deepPurple : Colors.transparent,
-                                  width: 2,
+
+                      // Search bar
+                      Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.location_on,
+                                color: Colors.amber[700],
+                              ),
+                            ),
+                            const Expanded(
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: 'Search Here........',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 8),
                                 ),
                               ),
                             ),
-                            child: const Text(
-                              'Red Alert',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              child: const Icon(
+                                Icons.mic,
+                                color: Colors.black54,
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
 
-                  // Live Location Toggle
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    color: const Color(0xFF673AB7).withOpacity(0.8),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.white,
-                          size: 24,
+            // Tab selection (Safe Zone Alert / Red Alert)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Safe Zone Alert',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
                         ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Live Location',
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Red Alert',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Live location toggle
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.deepPurple[800],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Live Location',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: _liveLocationEnabled,
+                    onChanged: _toggleLiveLocation,
+                    activeColor: Colors.white,
+                    activeTrackColor: Colors.deepPurple[400],
+                  ),
+                ],
+              ),
+            ),
+
+            // Google Map
+            Expanded(
+              child: Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: _initialCameraPosition,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
+                    onMapCreated: (controller) {
+                      _mapController = controller;
+                      if (_currentLocation != null) {
+                        _mapController!.animateCamera(
+                          CameraUpdate.newLatLng(
+                            LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+
+                  // Navigation button (bottom right)
+                  Positioned(
+                    right: 16,
+                    bottom: 120,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.navigation),
+                        onPressed: _getCurrentLocation,
+                      ),
+                    ),
+                  ),
+
+                  // Center position button (bottom right)
+                  Positioned(
+                    right: 16,
+                    bottom: 60,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.my_location,
+                          color: Colors.white,
+                        ),
+                        onPressed: _getCurrentLocation,
+                      ),
+                    ),
+                  ),
+
+                  // Connect button (bottom center)
+                  Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Handle connect action
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple[700],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          'Connect',
                           style: TextStyle(
-                            color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const Spacer(),
-                        Switch(
-                          value: _liveLocation,
-                          onChanged: _toggleLiveLocation,
-                          activeColor: Colors.white,
-                          activeTrackColor: Colors.green,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-
-          // Bottom Connect Button
-          Positioned(
-            bottom: 30,
-            right: 30,
-            child: Column(
-              children: [
-                // Center on me button
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 5,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.navigation,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      _getCurrentLocation();
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Purple location button
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF673AB7),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 5,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.my_location,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Connect button
-                ElevatedButton(
-                  onPressed: () {
-                    // Connect logic here
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF673AB7),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Connect',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
   }
 }
