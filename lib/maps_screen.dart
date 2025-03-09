@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -29,15 +28,14 @@ class _MapsScreenState extends State<MapsScreen> {
     zoom: 8, // Zoom out to see more of the island
   );
 
-  // Firebase reference
-  late final DatabaseReference _locationRef;
+  // Database reference (declared but will be used in future implementations)
+  final DatabaseReference _locationRef = FirebaseDatabase.instance.ref().child('locations');
 
   @override
   void initState() {
     super.initState();
-    _locationRef = FirebaseDatabase.instance.ref().child('locations');
     // We'll position to Sri Lanka first, then try to get current location
-    Future.delayed(Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       _moveToSriLanka();
     });
   }
@@ -141,6 +139,7 @@ class _MapsScreenState extends State<MapsScreen> {
                     children: [
                       // Back button and title
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             icon: const Icon(
@@ -167,7 +166,7 @@ class _MapsScreenState extends State<MapsScreen> {
                           Container(
                             margin: const EdgeInsets.only(right: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withAlpha(51), // ~0.2 opacity
                               shape: BoxShape.circle,
                             ),
                             padding: const EdgeInsets.all(8),
@@ -252,13 +251,12 @@ class _MapsScreenState extends State<MapsScreen> {
                         padding: const EdgeInsets.only(top: 10),
                         onMapCreated: (controller) {
                           _mapController = controller;
-                          if (_currentLocation != null) {
-                            _mapController!.animateCamera(
-                              CameraUpdate.newLatLng(
-                                LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-                              ),
-                            );
-                          }
+                          // Explicitly position to Sri Lanka when map is created
+                          _mapController!.moveCamera(
+                            CameraUpdate.newCameraPosition(_initialCameraPosition),
+                          );
+                          // Only after ensuring Sri Lanka positioning, we can try to get current location
+                          _getCurrentLocation();
                         },
                       ),
 
@@ -274,7 +272,7 @@ class _MapsScreenState extends State<MapsScreen> {
                               decoration: BoxDecoration(
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withAlpha(26), // ~0.1 opacity
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -375,23 +373,25 @@ class _MapsScreenState extends State<MapsScreen> {
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Row(
-                                          children: const [
-                                            Icon(
-                                              Icons.location_on,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Live Location',
-                                              style: TextStyle(
+                                        Expanded(
+                                          child: Row(
+                                            children: const [
+                                              Icon(
+                                                Icons.location_on,
                                                 color: Colors.white,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 16,
+                                                size: 20,
                                               ),
-                                            ),
-                                          ],
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Live Location',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                         Switch(
                                           value: _liveLocationEnabled,
@@ -421,7 +421,7 @@ class _MapsScreenState extends State<MapsScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withAlpha(51), // ~0.2 opacity
                                 blurRadius: 6,
                                 offset: const Offset(0, 3),
                               ),
@@ -447,9 +447,9 @@ class _MapsScreenState extends State<MapsScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
+                                color: Colors.black.withAlpha(51), // ~0.2 opacity
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
@@ -459,7 +459,7 @@ class _MapsScreenState extends State<MapsScreen> {
                               color: Colors.white,
                               size: 24,
                             ),
-                            onPressed: _getCurrentLocation,
+                            onPressed: _centerOnCurrentLocation,
                           ),
                         ),
                       ),
@@ -474,7 +474,7 @@ class _MapsScreenState extends State<MapsScreen> {
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withAlpha(51), // ~0.2 opacity
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
