@@ -21,6 +21,7 @@ dependencies:
   firebase_database: ^10.0.15
   google_fonts: ^6.1.0
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -35,4 +36,5 @@ flutter:
     - assets/logo.png
     - assets/mic.png
     - assets/google-maps.png
+    - assets/image.jpeg
 
