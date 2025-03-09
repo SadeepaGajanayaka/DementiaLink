@@ -4,6 +4,7 @@ import 'package:location/location.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'map_style.dart';
+import 'connect.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -481,7 +482,31 @@ class _MapsScreenState extends State<MapsScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            // Handle connect action
+                            // Show a proper full-screen ConnectScreen
+                            Navigator.of(context).push(
+                              PageRouteBuilder(
+                                opaque: false,
+                                pageBuilder: (BuildContext context, _, __) {
+                                  return const ConnectScreen();
+                                },
+                                transitionsBuilder: (_, animation, __, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            ).then((patientId) {
+                              // Handle returned patient ID if needed
+                              if (patientId != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Connected with Patient ID: $patientId'),
+                                    backgroundColor: const Color(0xFF503663),
+                                  ),
+                                );
+                              }
+                            });
                           },
                           borderRadius: BorderRadius.circular(30),
                           child: const Padding(
