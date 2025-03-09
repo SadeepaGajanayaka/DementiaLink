@@ -28,3 +28,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/back_arrow.png
+    - assets/location_pin.png
+    - assets/logo.png
+    - assets/mic.png
+    - assets/google-maps.png
+
