@@ -76,7 +76,7 @@ class photo_note_card extends StatelessWidget {
                     TextButton(
                       onPressed: onSkip,
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey.shade800,
+                        foregroundColor: Colors.red.shade800,
                         backgroundColor: Colors.grey.shade300,
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         shape: RoundedRectangleBorder(
@@ -92,7 +92,7 @@ class photo_note_card extends StatelessWidget {
                         onSave(noteText);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         shape: RoundedRectangleBorder(

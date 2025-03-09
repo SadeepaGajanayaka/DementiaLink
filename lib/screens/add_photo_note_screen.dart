@@ -89,7 +89,7 @@ class _AddPhotoNoteScreenState extends State<AddPhotoNoteScreen> {
                       _savePhotoToAlbum(context, null);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade700,
+                      backgroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
