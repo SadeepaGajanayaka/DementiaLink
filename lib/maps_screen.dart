@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -392,10 +393,10 @@ class _MapsScreenState extends State<MapsScreen> {
                         ),
                       ),
 
-                      // Compass/Navigation button (vertically centered right side)
+                      // Compass/Navigation button (right middle position as in screenshot)
                       Positioned(
                         right: 16,
-                        top: MediaQuery.of(context).size.height * 0.25, // Position at 50% of map height
+                        top: MediaQuery.of(context).size.height * 0.4, // Adjusted position
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -409,16 +410,19 @@ class _MapsScreenState extends State<MapsScreen> {
                             ],
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.navigation),
+                            icon: const Icon(
+                              Icons.navigation,
+                              size: 24,
+                            ),
                             onPressed: _getCurrentLocation,
                           ),
                         ),
                       ),
 
-                      // Target location button (below compass, vertically centered)
+                      // Target location button (below compass, as in screenshot)
                       Positioned(
                         right: 16,
-                        top: MediaQuery.of(context).size.height * 0.35, // Position below compass
+                        top: MediaQuery.of(context).size.height * 0.45, // Reduced space between buttons
                         child: Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFF77588D),
@@ -435,6 +439,7 @@ class _MapsScreenState extends State<MapsScreen> {
                             icon: const Icon(
                               Icons.my_location,
                               color: Colors.white,
+                              size: 24,
                             ),
                             onPressed: _getCurrentLocation,
                           ),
