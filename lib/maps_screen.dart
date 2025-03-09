@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'map_style.dart';
 import 'connect.dart';
+import 'safe_zone.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -299,6 +300,14 @@ class _MapsScreenState extends State<MapsScreen> {
                                           setState(() {
                                             _safeZoneSelected = true;
                                           });
+
+                                          // Navigate to SafeZoneScreen
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => const SafeZoneScreen(),
+                                            ),
+                                          );
                                         },
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(vertical: 12),
