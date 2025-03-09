@@ -112,8 +112,9 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
               ),
               child: SafeArea(
+                bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Column(
                     children: [
                       // Back button and title
@@ -201,9 +202,6 @@ class _MapsScreenState extends State<MapsScreen> {
               ),
             ),
 
-            // Small spacer to push map up closer to search bar
-            const SizedBox(height: 2),
-
             // Expanded map view with rounded corners and UI elements as overlays
             Expanded(
               child: Container(
@@ -229,6 +227,7 @@ class _MapsScreenState extends State<MapsScreen> {
                         zoomControlsEnabled: false,
                         mapToolbarEnabled: false,
                         compassEnabled: false,
+                        padding: const EdgeInsets.only(top: 10),
                         onMapCreated: (controller) {
                           _mapController = controller;
                           if (_currentLocation != null) {
@@ -242,8 +241,10 @@ class _MapsScreenState extends State<MapsScreen> {
                       ),
 
                       // UI elements on top of map - CONNECTED COMPONENT
+                      // Moved down by increasing top padding to 28.0 (from 12.0)
+                      // Changed border radius to 15px
                       Padding(
-                        padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
+                        padding: const EdgeInsets.only(top: 28.0, left: 8.0, right: 8.0),
                         child: Container(
                           decoration: BoxDecoration(
                             boxShadow: [
@@ -261,8 +262,8 @@ class _MapsScreenState extends State<MapsScreen> {
                                 decoration: const BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(30),
-                                    topRight: Radius.circular(30),
+                                    topLeft: Radius.circular(15),
+                                    topRight: Radius.circular(15),
                                   ),
                                 ),
                                 child: Row(
@@ -274,8 +275,8 @@ class _MapsScreenState extends State<MapsScreen> {
                                         decoration: const BoxDecoration(
                                           color: Colors.white,
                                           borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(30),
-                                            topRight: Radius.circular(30),
+                                            topLeft: Radius.circular(15),
+                                            topRight: Radius.circular(15),
                                           ),
                                           gradient: LinearGradient(
                                             begin: Alignment.centerLeft,
@@ -301,7 +302,7 @@ class _MapsScreenState extends State<MapsScreen> {
                                         decoration: const BoxDecoration(
                                           color: Colors.transparent,
                                           borderRadius: BorderRadius.only(
-                                            topRight: Radius.circular(30),
+                                            topRight: Radius.circular(15),
                                           ),
                                         ),
                                         child: const Center(
@@ -324,8 +325,8 @@ class _MapsScreenState extends State<MapsScreen> {
                                 decoration: const BoxDecoration(
                                   color: Color(0xFF3C2E58),
                                   borderRadius: BorderRadius.only(
-                                    bottomLeft: Radius.circular(30),
-                                    bottomRight: Radius.circular(30),
+                                    bottomLeft: Radius.circular(15),
+                                    bottomRight: Radius.circular(15),
                                   ),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
