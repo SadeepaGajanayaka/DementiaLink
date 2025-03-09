@@ -23,10 +23,10 @@ class _MapsScreenState extends State<MapsScreen> {
   // Tab selection state
   bool _safeZoneSelected = true;
 
-  // Initial camera position (New York)
+  // Initial camera position (Sri Lanka)
   final CameraPosition _initialCameraPosition = const CameraPosition(
-    target: LatLng(40.7128, -74.0060),
-    zoom: 11,
+    target: LatLng(7.8731, 80.7718), // Center of Sri Lanka
+    zoom: 8, // Adjusted zoom level for Sri Lanka
   );
 
   // Firebase reference
@@ -223,7 +223,7 @@ class _MapsScreenState extends State<MapsScreen> {
                   ),
                   child: Stack(
                     children: [
-                      // Map background
+                      // Map background with custom styling to match screenshot
                       GoogleMap(
                         initialCameraPosition: _initialCameraPosition,
                         myLocationEnabled: true,
@@ -232,8 +232,77 @@ class _MapsScreenState extends State<MapsScreen> {
                         mapToolbarEnabled: false,
                         compassEnabled: false,
                         padding: const EdgeInsets.only(top: 10),
+                        mapType: MapType.normal,
                         onMapCreated: (controller) {
                           _mapController = controller;
+                          // Apply custom styling to match screenshot exactly
+                          controller.setMapStyle('''
+                          [
+                            {
+                              "featureType": "water",
+                              "elementType": "geometry",
+                              "stylers": [
+                                {
+                                  "color": "#b8e0f9"
+                                }
+                              ]
+                            },
+                            {
+                              "featureType": "landscape",
+                              "elementType": "geometry",
+                              "stylers": [
+                                {
+                                  "color": "#f2f2f0"
+                                }
+                              ]
+                            },
+                            {
+                              "featureType": "road",
+                              "elementType": "geometry",
+                              "stylers": [
+                                {
+                                  "color": "#ffffff"
+                                }
+                              ]
+                            },
+                            {
+                              "featureType": "road.highway",
+                              "elementType": "geometry",
+                              "stylers": [
+                                {
+                                  "color": "#ff9c41"
+                                }
+                              ]
+                            },
+                            {
+                              "featureType": "road.arterial",
+                              "elementType": "geometry",
+                              "stylers": [
+                                {
+                                  "color": "#fdcba6"
+                                }
+                              ]
+                            },
+                            {
+                              "featureType": "poi.park",
+                              "elementType": "geometry",
+                              "stylers": [
+                                {
+                                  "color": "#c3e2ab"
+                                }
+                              ]
+                            },
+                            {
+                              "featureType": "administrative",
+                              "elementType": "labels.text.fill",
+                              "stylers": [
+                                {
+                                  "color": "#3c3c3c"
+                                }
+                              ]
+                            }
+                          ]
+                          ''');
                           if (_currentLocation != null) {
                             _mapController!.animateCamera(
                               CameraUpdate.newLatLng(
@@ -379,7 +448,7 @@ class _MapsScreenState extends State<MapsScreen> {
                                           value: _liveLocationEnabled,
                                           onChanged: _toggleLiveLocation,
                                           activeColor: Colors.white,
-                                          activeTrackColor: const Color(0xFF6246A3),
+                                          activeTrackColor: const Color(0xFF65558F),
                                           inactiveTrackColor: Colors.grey[700],
                                           inactiveThumbColor: Colors.white,
                                         ),
@@ -396,7 +465,7 @@ class _MapsScreenState extends State<MapsScreen> {
                       // Compass/Navigation button (right middle position as in screenshot)
                       Positioned(
                         right: 16,
-                        top: MediaQuery.of(context).size.height * 0.4, // Adjusted position
+                        top: MediaQuery.of(context).size.height * 0.4, // Keep this position
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -422,7 +491,7 @@ class _MapsScreenState extends State<MapsScreen> {
                       // Target location button (below compass, as in screenshot)
                       Positioned(
                         right: 16,
-                        top: MediaQuery.of(context).size.height * 0.45, // Reduced space between buttons
+                        top: MediaQuery.of(context).size.height * 0.465, // Small space, not pasted together
                         child: Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFF77588D),
