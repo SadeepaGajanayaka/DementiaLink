@@ -23,10 +23,10 @@ class _MapsScreenState extends State<MapsScreen> {
   // Tab selection state
   bool _safeZoneSelected = true;
 
-  // Initial camera position (New York)
+  // Initial camera position (Sri Lanka - Centered on Colombo)
   final CameraPosition _initialCameraPosition = const CameraPosition(
-    target: LatLng(40.7128, -74.0060),
-    zoom: 11,
+    target: LatLng(6.9271, 79.8612),
+    zoom: 10,
   );
 
   // Firebase reference
@@ -344,7 +344,7 @@ class _MapsScreenState extends State<MapsScreen> {
                                     ),
                                   ),
 
-                                  // Live location toggle - connected to tabs above
+                                  // Live location toggle - connected to tabs above with increased height
                                   Container(
                                     decoration: const BoxDecoration(
                                       color: Color(0xFF503663),
@@ -353,36 +353,51 @@ class _MapsScreenState extends State<MapsScreen> {
                                         bottomRight: Radius.circular(15),
                                       ),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Increased vertical padding
+                                    child: Column(
                                       children: [
                                         Row(
-                                          children: const [
-                                            Icon(
-                                              Icons.location_on,
-                                              color: Colors.white,
-                                              size: 20,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: const [
+                                                Icon(
+                                                  Icons.location_on,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  'Live Location',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Live Location',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 16,
-                                              ),
+                                            Switch(
+                                              value: _liveLocationEnabled,
+                                              onChanged: _toggleLiveLocation,
+                                              activeColor: Colors.white,
+                                              activeTrackColor: const Color(0xFF6246A3),
+                                              inactiveTrackColor: Colors.grey[700],
+                                              inactiveThumbColor: Colors.white,
                                             ),
                                           ],
                                         ),
-                                        Switch(
-                                          value: _liveLocationEnabled,
-                                          onChanged: _toggleLiveLocation,
-                                          activeColor: Colors.white,
-                                          activeTrackColor: const Color(0xFF6246A3),
-                                          inactiveTrackColor: Colors.grey[700],
-                                          inactiveThumbColor: Colors.white,
+
+                                        // Added extra space and additional information
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'Track location in real-time',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                          ),
                                         ),
+                                        const SizedBox(height: 4),
                                       ],
                                     ),
                                   ),
