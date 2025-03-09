@@ -19,6 +19,9 @@ class _MapsScreenState extends State<MapsScreen> {
   LocationData? _currentLocation;
   bool _liveLocationEnabled = false;
 
+  // Tab selection state
+  bool _safeZoneSelected = true;
+
   // Initial camera position (New York)
   final CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(40.7128, -74.0060),
@@ -214,8 +217,8 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(33),
-                    topRight: Radius.circular(33),
+                    topLeft: Radius.circular(25),
+                    topRight: Radius.circular(25),
                   ),
                   child: Stack(
                     children: [
@@ -240,129 +243,151 @@ class _MapsScreenState extends State<MapsScreen> {
                         },
                       ),
 
-                      // UI elements on top of map - CONNECTED COMPONENT
-                      // Moved down by increasing top padding to 28.0 (from 12.0)
-                      // Changed border radius to 15px
-                      Padding(
-                        padding: const EdgeInsets.only(top: 28.0, left: 8.0, right: 8.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              // Safe Zone / Red Alert tabs
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(15),
-                                    topRight: Radius.circular(15),
+                      // UI elements on top of map - MOVED TO TOP
+                      Positioned(
+                        top: 30, // Moved a tiny bit lower
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: FractionallySizedBox(
+                            widthFactor: 0.85, // Increased width from 75% to 85% of screen width
+                            child: Container(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Safe Zone Alert - Selected
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(15),
-                                            topRight: Radius.circular(15),
-                                          ),
-                                          gradient: LinearGradient(
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                            colors: [Colors.white, Colors.white70],
-                                          ),
-                                        ),
-                                        child: const Center(
-                                          child: Text(
-                                            'Safe Zone Alert',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black87,
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Safe Zone / Red Alert tabs with selection behavior
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(15),
+                                        topRight: Radius.circular(15),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Safe Zone Alert
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _safeZoneSelected = true;
+                                              });
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              decoration: BoxDecoration(
+                                                color: _safeZoneSelected
+                                                    ? const Color(0xFFD9D9D9)
+                                                    : Colors.white,
+                                                borderRadius: const BorderRadius.only(
+                                                  topLeft: Radius.circular(15),
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  'Safe Zone Alert',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: _safeZoneSelected
+                                                        ? Colors.black87
+                                                        : Colors.black54,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                    // Red Alert - Unselected
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.transparent,
-                                          borderRadius: BorderRadius.only(
-                                            topRight: Radius.circular(15),
-                                          ),
-                                        ),
-                                        child: const Center(
-                                          child: Text(
-                                            'Red Alert',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black54,
+                                        // Red Alert
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                _safeZoneSelected = false;
+                                              });
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              decoration: BoxDecoration(
+                                                color: !_safeZoneSelected
+                                                    ? const Color(0xFFD9D9D9)
+                                                    : Colors.white,
+                                                borderRadius: const BorderRadius.only(
+                                                  topRight: Radius.circular(15),
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  'Red Alert',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: !_safeZoneSelected
+                                                        ? Colors.black87
+                                                        : Colors.black54,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Live location toggle - connected to tabs above
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF3C2E58),
-                                  borderRadius: BorderRadius.only(
-                                    bottomLeft: Radius.circular(15),
-                                    bottomRight: Radius.circular(15),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: const [
-                                        Icon(
-                                          Icons.location_on,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Live Location',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 16,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    Switch(
-                                      value: _liveLocationEnabled,
-                                      onChanged: _toggleLiveLocation,
-                                      activeColor: Colors.white,
-                                      activeTrackColor: const Color(0xFF6246A3),
-                                      inactiveTrackColor: Colors.grey[700],
-                                      inactiveThumbColor: Colors.white,
+                                  ),
+
+                                  // Live location toggle - connected to tabs above
+                                  Container(
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF503663),
+                                      borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(15),
+                                        bottomRight: Radius.circular(15),
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: const [
+                                            Icon(
+                                              Icons.location_on,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Live Location',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Switch(
+                                          value: _liveLocationEnabled,
+                                          onChanged: _toggleLiveLocation,
+                                          activeColor: Colors.white,
+                                          activeTrackColor: const Color(0xFF6246A3),
+                                          inactiveTrackColor: Colors.grey[700],
+                                          inactiveThumbColor: Colors.white,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
