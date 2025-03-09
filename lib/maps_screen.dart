@@ -227,22 +227,27 @@ class _MapsScreenState extends State<MapsScreen> {
             // Expanded map view with rounded corners and UI elements as overlays
             Expanded(
               child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF77588D), Color(0xFF503663)],
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Map background
-                      GoogleMap(
+                // Remove decoration from this container to eliminate the line
+                child: Stack(
+                  children: [
+                    // Purple gradient background that extends behind the map
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF77588D), Color(0xFF503663)],
+                        ),
+                      ),
+                    ),
+
+                    // Map with rounded corners
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(25),
+                        topRight: Radius.circular(25),
+                      ),
+                      child: GoogleMap(
                         initialCameraPosition: _initialCameraPosition,
                         myLocationEnabled: true,
                         myLocationButtonEnabled: false,
@@ -261,254 +266,254 @@ class _MapsScreenState extends State<MapsScreen> {
                           }
                         },
                       ),
+                    ),
 
-                      // UI elements on top of map - MOVED TO TOP
-                      Positioned(
-                        top: 30, // Moved a tiny bit lower
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: FractionallySizedBox(
-                            widthFactor: 0.85, // Increased width from 75% to 85% of screen width
-                            child: Container(
-                              decoration: BoxDecoration(
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Safe Zone / Red Alert tabs with selection behavior
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(15),
-                                        topRight: Radius.circular(15),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        // Safe Zone Alert
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _safeZoneSelected = true;
-                                              });
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 12),
-                                              decoration: BoxDecoration(
-                                                color: _safeZoneSelected
-                                                    ? const Color(0xFFD9D9D9)
-                                                    : Colors.white,
-                                                borderRadius: const BorderRadius.only(
-                                                  topLeft: Radius.circular(15),
-                                                ),
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  'Safe Zone Alert',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: _safeZoneSelected
-                                                        ? Colors.black87
-                                                        : Colors.black54,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        // Red Alert
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _safeZoneSelected = false;
-                                              });
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 12),
-                                              decoration: BoxDecoration(
-                                                color: !_safeZoneSelected
-                                                    ? const Color(0xFFD9D9D9)
-                                                    : Colors.white,
-                                                borderRadius: const BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                ),
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  'Red Alert',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: !_safeZoneSelected
-                                                        ? Colors.black87
-                                                        : Colors.black54,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Live location toggle - connected to tabs above with increased height
-                                  Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF503663),
-                                      borderRadius: BorderRadius.only(
-                                        bottomLeft: Radius.circular(15),
-                                        bottomRight: Radius.circular(15),
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Moderately increased vertical padding
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: const [
-                                            Icon(
-                                              Icons.location_on,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Live Location',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Switch(
-                                          value: _liveLocationEnabled,
-                                          onChanged: _toggleLiveLocation,
-                                          activeColor: Colors.white,
-                                          activeTrackColor: const Color(0xFF6246A3),
-                                          inactiveTrackColor: Colors.grey[700],
-                                          inactiveThumbColor: Colors.white,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-// Compass/Navigation button (right middle position as in screenshot)
-                      Positioned(
-                        right: 16,
-                        top: MediaQuery.of(context).size.height * 0.4, // Keep this position
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.navigation,
-                              size: 40, // Increased from 24
-                            ),
-                            iconSize: 50, // Added to make button bigger
-                            onPressed: _centerOnCurrentLocation,
-                          ),
-                        ),
-                      ),
-
-// Target location button (below compass, as in screenshot)
-                      Positioned(
-                        right: 16,
-                        top: MediaQuery.of(context).size.height * 0.485, // Adjusted position to accommodate larger size
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF77588D),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.my_location,
-                              color: Colors.white,
-                              size: 40, // Increased from 24
-                            ),
-                            iconSize: 50, // Added to make button bigger
-                            onPressed: _getCurrentLocation,
-                          ),
-                        ),
-                      ),
-
-                      // Connect button (bottom right corner)
-                      Positioned(
-                        bottom: 20,
-                        right: 16,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF77588D),
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                // Handle connect action
-                              },
-                              borderRadius: BorderRadius.circular(30),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 12,
+                    // UI elements on top of map - MOVED TO TOP
+                    Positioned(
+                      top: 30, // Moved a tiny bit lower
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: FractionallySizedBox(
+                          widthFactor: 0.85, // Increased width from 75% to 85% of screen width
+                          child: Container(
+                            decoration: BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: Text(
-                                  'Connect',
-                                  style: TextStyle(
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Safe Zone / Red Alert tabs with selection behavior
+                                Container(
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(15),
+                                      topRight: Radius.circular(15),
+                                    ),
                                   ),
+                                  child: Row(
+                                    children: [
+                                      // Safe Zone Alert
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _safeZoneSelected = true;
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: _safeZoneSelected
+                                                  ? const Color(0xFFD9D9D9)
+                                                  : Colors.white,
+                                              borderRadius: const BorderRadius.only(
+                                                topLeft: Radius.circular(15),
+                                              ),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                'Safe Zone Alert',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: _safeZoneSelected
+                                                      ? Colors.black87
+                                                      : Colors.black54,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Red Alert
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _safeZoneSelected = false;
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: !_safeZoneSelected
+                                                  ? const Color(0xFFD9D9D9)
+                                                  : Colors.white,
+                                              borderRadius: const BorderRadius.only(
+                                                topRight: Radius.circular(15),
+                                              ),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                'Red Alert',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: !_safeZoneSelected
+                                                      ? Colors.black87
+                                                      : Colors.black54,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Live location toggle - connected to tabs above with increased height
+                                Container(
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF503663),
+                                    borderRadius: BorderRadius.only(
+                                      bottomLeft: Radius.circular(15),
+                                      bottomRight: Radius.circular(15),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Moderately increased vertical padding
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          Icon(
+                                            Icons.location_on,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Live Location',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Switch(
+                                        value: _liveLocationEnabled,
+                                        onChanged: _toggleLiveLocation,
+                                        activeColor: Colors.white,
+                                        activeTrackColor: const Color(0xFF6246A3),
+                                        inactiveTrackColor: Colors.grey[700],
+                                        inactiveThumbColor: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Compass/Navigation button (right middle position as in screenshot)
+                    Positioned(
+                      right: 16,
+                      top: MediaQuery.of(context).size.height * 0.4, // Keep this position
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.navigation,
+                            size: 30, // Increased from 24
+                          ),
+                          iconSize: 50, // Added to make button bigger
+                          onPressed: _centerOnCurrentLocation,
+                        ),
+                      ),
+                    ),
+
+                    // Target location button (below compass, as in screenshot)
+                    Positioned(
+                      right: 16,
+                      top: MediaQuery.of(context).size.height * 0.485, // Small space, not pasted together
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF77588D),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.my_location,
+                            color: Colors.white,
+                            size: 30, // Increased from 24
+                          ),
+                          iconSize: 50, // Added to make button bigger
+                          onPressed: _getCurrentLocation,
+                        ),
+                      ),
+                    ),
+
+                    // Connect button (bottom right corner)
+                    Positioned(
+                      bottom: 20,
+                      right: 16,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF77588D),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              // Handle connect action
+                            },
+                            borderRadius: BorderRadius.circular(30),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 12,
+                              ),
+                              child: Text(
+                                'Connect',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
