@@ -23,10 +23,10 @@ class _MapsScreenState extends State<MapsScreen> {
   // Tab selection state
   bool _safeZoneSelected = true;
 
-  // Initial camera position (Sri Lanka - Centered on Colombo)
+  // Initial camera position (Sri Lanka - Centered on the island)
   final CameraPosition _initialCameraPosition = const CameraPosition(
-    target: LatLng(6.9271, 79.8612),
-    zoom: 10,
+    target: LatLng(7.8731, 80.7718), // Center of Sri Lanka
+    zoom: 8, // Zoom out to see more of the island
   );
 
   // Firebase reference
@@ -36,10 +36,22 @@ class _MapsScreenState extends State<MapsScreen> {
   void initState() {
     super.initState();
     _locationRef = FirebaseDatabase.instance.ref().child('locations');
-    _getCurrentLocation();
+    // We'll position to Sri Lanka first, then try to get current location
+    Future.delayed(Duration(milliseconds: 500), () {
+      _moveToSriLanka();
+    });
   }
 
-  // Get user's current location
+  // Function to ensure map is positioned to Sri Lanka
+  void _moveToSriLanka() {
+    if (_mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(_initialCameraPosition),
+      );
+    }
+  }
+
+  // Get user's current location but don't move camera by default
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
@@ -62,9 +74,15 @@ class _MapsScreenState extends State<MapsScreen> {
       }
     }
 
-    // Get current location
+    // Get current location without moving camera
     _currentLocation = await _location.getLocation();
 
+    // Don't automatically move camera to current location
+    // This ensures Sri Lanka stays in view
+  }
+
+  // Method to center on user's location when explicitly requested
+  void _centerOnCurrentLocation() {
     if (_mapController != null && _currentLocation != null) {
       _mapController!.animateCamera(
         CameraUpdate.newLatLng(
@@ -353,51 +371,36 @@ class _MapsScreenState extends State<MapsScreen> {
                                         bottomRight: Radius.circular(15),
                                       ),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16), // Increased vertical padding
-                                    child: Column(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Moderately increased vertical padding
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              children: const [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text(
-                                                  'Live Location',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ],
+                                          children: const [
+                                            Icon(
+                                              Icons.location_on,
+                                              color: Colors.white,
+                                              size: 20,
                                             ),
-                                            Switch(
-                                              value: _liveLocationEnabled,
-                                              onChanged: _toggleLiveLocation,
-                                              activeColor: Colors.white,
-                                              activeTrackColor: const Color(0xFF6246A3),
-                                              inactiveTrackColor: Colors.grey[700],
-                                              inactiveThumbColor: Colors.white,
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Live Location',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 16,
+                                              ),
                                             ),
                                           ],
                                         ),
-
-                                        // Added extra space and additional information
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          'Track location in real-time',
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12,
-                                          ),
+                                        Switch(
+                                          value: _liveLocationEnabled,
+                                          onChanged: _toggleLiveLocation,
+                                          activeColor: Colors.white,
+                                          activeTrackColor: const Color(0xFF6246A3),
+                                          inactiveTrackColor: Colors.grey[700],
+                                          inactiveThumbColor: Colors.white,
                                         ),
-                                        const SizedBox(height: 4),
                                       ],
                                     ),
                                   ),
@@ -429,7 +432,7 @@ class _MapsScreenState extends State<MapsScreen> {
                               Icons.navigation,
                               size: 24,
                             ),
-                            onPressed: _getCurrentLocation,
+                            onPressed: _centerOnCurrentLocation,
                           ),
                         ),
                       ),
