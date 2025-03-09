@@ -392,10 +392,10 @@ class _MapsScreenState extends State<MapsScreen> {
                         ),
                       ),
 
-                      // Navigation button (bottom right)
+                      // Compass/Navigation button (vertically centered right side)
                       Positioned(
                         right: 16,
-                        bottom: 90,
+                        top: MediaQuery.of(context).size.height * 0.25, // Position at 50% of map height
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -415,10 +415,10 @@ class _MapsScreenState extends State<MapsScreen> {
                         ),
                       ),
 
-                      // Target button (bottom right)
+                      // Target location button (below compass, vertically centered)
                       Positioned(
                         right: 16,
-                        bottom: 20,
+                        top: MediaQuery.of(context).size.height * 0.35, // Position below compass
                         child: Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFF77588D),
@@ -441,43 +441,40 @@ class _MapsScreenState extends State<MapsScreen> {
                         ),
                       ),
 
-                      // Connect button (bottom center)
+                      // Connect button (bottom right corner)
                       Positioned(
                         bottom: 20,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF77588D),
+                        right: 16,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF77588D),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                // Handle connect action
+                              },
                               borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 12,
                                 ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  // Handle connect action
-                                },
-                                borderRadius: BorderRadius.circular(30),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 12,
-                                  ),
-                                  child: Text(
-                                    'Connect',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                child: Text(
+                                  'Connect',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
