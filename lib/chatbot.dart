@@ -932,4 +932,116 @@ class MessageTile extends StatelessWidget {
       return '${timestamp.day}/${timestamp.month}/${timestamp.year} ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
     }
   }
+}class LoginScreen extends ConsumerWidget {
+  const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentLanguage = ref.watch(languageProvider);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF503663),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Language toggle button
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: () {
+                    ref.read(languageProvider.notifier).toggleLanguage();
+                  },
+                  child: Text(
+                    currentLanguage == AppLanguage.english ? 'සිංහල' : 'English',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: Image.asset(
+                        'assets/icons/brain.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const TranslatedText(
+                      textKey: 'app_title',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const TranslatedText(
+                      textKey: 'welcome_description',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 48),
+
+                    ElevatedButton(
+                      onPressed: () async {
+                        await ref.read(authProvider).signInWithGoogle();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.grey[700],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/icons/googlelogo.png',
+                            height: 24,
+                            width: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          const TranslatedText(
+                            textKey: 'sign_in_with_google',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
