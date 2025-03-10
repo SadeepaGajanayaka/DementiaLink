@@ -1203,4 +1203,314 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       debugPrint('Voice initialization error: $e');
     }
   }
-  
+  Future<void> _startListening() async {
+    var micStatus = await Permission.microphone.status;
+    if (!micStatus.isGranted) {
+      // Show dialog explaining why mic is needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Microphone permission is required for voice input'),
+          action: SnackBarAction(
+            label: 'Grant',
+            onPressed: () async {
+              await Permission.microphone.request();
+            },
+          ),
+        ),
+      );
+      return;
+    }
+    if (!isListening) {
+      if (isSpeaking) {
+        await flutterTts.stop();
+        setState(() {
+          isSpeaking = false;
+        });
+      }
+
+      final currentLanguage = ref.read(languageProvider);
+      _currentLocale = currentLanguage == AppLanguage.english ? "en_US" : "si_LK";
+
+      setState(() {
+        isListening = true;
+        isVoiceMode = true;
+        recognizedText = '';
+      });
+
+      try {
+        if (_speechRecognitionAvailable) {
+          // Just call listen without parameters
+          await _speech.listen();
+        } else {
+          setState(() => isListening = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Speech recognition not available'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Speech listen error: $e');
+        setState(() => isListening = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Voice recognition error: ${e.toString()}'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _stopListening() async {
+    if (isListening) {
+      _speech.stop();
+      setState(() {
+        isListening = false;
+        if (recognizedText.trim().isNotEmpty) {
+          _messageController.text = recognizedText;
+          _sendVoiceMessage();
+        }
+      });
+    }
+  }
+  void _handleNewMessage(Message message) {
+    debugPrint("_handleNewMessage called with message ID: ${message.id}");
+    if (!message.isMine && message.id != lastProcessedMessageId) {
+      debugPrint("Processing new message for speech: ${message.message}");
+      lastProcessedMessageId = message.id;
+
+// Trigger speech with a delay to ensure UI is updated first
+      if (isVoiceMode) {
+        debugPrint("Voice mode active, will speak response");
+        Future.delayed(Duration(milliseconds: 500), () {
+          _speakResponse(message.message);
+        });
+      } else {
+        debugPrint("Voice mode not active, skipping speech");
+      }
+    } else {
+      debugPrint("Skipping message for speech (already processed or is mine)");
+    }
+  }
+
+  Future<void> _speakResponse(String text) async {
+    debugPrint("Speaking response: $text");
+
+    if (!isVoiceMode) {
+      debugPrint("Not in voice mode, skipping speech");
+      return;
+    }
+
+    try {
+// Stop any ongoing speech
+      if (isSpeaking) {
+        await flutterTts.stop();
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+
+// Set speaking state
+      setState(() => isSpeaking = true);
+
+// Clean up text for speaking (remove markdown or any special formatting)
+      text = text.replaceAll(RegExp(r'\*\*'), '')
+          .replaceAll('•', '');
+
+// Simple sentence splitting for better speech pacing
+      List<String> sentences = text.split(RegExp(r'(?<=[.!?])\s+'));
+
+// For debugging: print what's about to be spoken
+      debugPrint("Will speak ${sentences.length} sentences");
+
+// Speak a simple test message first to ensure TTS is working
+      await flutterTts.speak("I'll answer your question now.");
+      await Future.delayed(const Duration(seconds: 2));
+
+// Try speaking the full text in one go instead of sentence by sentence
+      int result = await flutterTts.speak(text);
+      debugPrint("TTS speak result: $result");
+
+// Wait for speaking to complete
+      await flutterTts.awaitSpeakCompletion(true);
+
+    } catch (e) {
+      debugPrint('Speech error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isSpeaking = false);
+      }
+    }
+  }
+  Future<void> _sendVoiceMessage() async {
+    final message = _messageController.text.trim();
+    if (message.isNotEmpty) {
+      _messageController.clear();
+      final currentLanguage = ref.read(languageProvider);
+
+      setState(() {
+        isVoiceMode = true;
+        recognizedText = '';
+      });
+
+      try {
+        await ref.read(chatProvider).sendTextMessage(
+          apiKey: apiKey,
+          textPrompt: message,
+          currentLanguage: currentLanguage,
+        );
+      } catch (e) {
+        debugPrint('Error sending voice message: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: TranslatedText(
+                textKey: 'send_message_error',
+              ),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _sendTextMessage() async {
+    if (_messageController.text.trim().isNotEmpty) {
+      final message = _messageController.text;
+      final currentLanguage = ref.read(languageProvider);
+      _messageController.clear();
+
+      if (isListening) {
+        await _stopListening();
+      }
+      if (isSpeaking) {
+        await flutterTts.stop();
+      }
+
+      setState(() {
+        isVoiceMode = false;
+        isSpeaking = false;
+        lastProcessedMessageId = null;
+      });
+
+      try {
+        await ref.read(chatProvider).sendTextMessage(
+          apiKey: apiKey,
+          textPrompt: message,
+          currentLanguage: currentLanguage,
+        );
+      } catch (e) {
+        debugPrint('Error sending text message: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: TranslatedText(
+                textKey: 'send_message_error',
+              ),
+            ),
+          );
+        }
+      }
+    }
+  }
+  void _handleLanguageChange() async {
+    ref.read(languageProvider.notifier).toggleLanguage();
+    await _initializeVoiceAssistant();
+  }
+
+  Future<void> _showClearChatDialog(BuildContext context) async {
+    final currentLanguage = ref.read(languageProvider);
+
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: TranslatedText(textKey: 'clear_chat'),
+          content: TranslatedText(textKey: 'clear_confirmation'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: TranslatedText(textKey: 'cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  await ref.read(chatProvider).clearAllMessages();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: TranslatedText(textKey: 'clear_success'),
+                        backgroundColor: const Color(0xFF4A2B52),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: TranslatedText(textKey: 'clear_error'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: TranslatedText(textKey: 'clear'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  Widget _buildInputBar() {
+    final currentLanguage = ref.watch(languageProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(25.0),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: isListening ? _stopListening : _startListening,
+            icon: Icon(
+              isListening ? Icons.mic_off : Icons.mic,
+              color: isListening ? Colors.red : const Color(0xFF4A2B52),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: AppTranslations.getText(context, currentLanguage, 'input_hint'),
+                hintStyle: const TextStyle(color: Colors.grey),
+              ),
+              onSubmitted: (_) => _sendTextMessage(),
+              enabled: !isListening,
+            ),
+          ),
+          IconButton(
+            onPressed: _sendTextMessage,
+            icon: const Icon(
+              Icons.send,
+              color: Color(0xFF4A2B52),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
