@@ -16,3 +16,32 @@ import 'package:flutter_speech/flutter_speech.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:permission_handler/permission_handler.dart';
+
+// Define the AppLanguage enum
+enum AppLanguage { english, sinhala }
+
+// Define the Message class
+@immutable
+class Message {
+  final String id;
+  final String message;
+  final DateTime createdAt;
+  final bool isMine;
+
+  const Message({
+    required this.id,
+    required this.message,
+    required this.createdAt,
+    required this.isMine,
+  });
+
+  String get formattedMessage => message.formatBoldText();
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'id': id,
+      'message': message,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'isMine': isMine,
+    };
+  }
