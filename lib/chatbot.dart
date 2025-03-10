@@ -228,3 +228,34 @@ class ChatRepository {
     // Join lines back together and trim any extra whitespace
     return processedLines.where((line) => line.isNotEmpty).join('\n').trim();
   }
+  Future<void> _sendMessageToFirestore({
+    required String messageText,
+    required bool isMine,
+  }) async {
+    final userId = _auth.currentUser!.uid;
+    final messageId = const Uuid().v4();
+
+    final message = Message(
+      id: messageId,
+      message: messageText,
+      createdAt: DateTime.now(),
+      isMine: isMine,
+    );
+
+    await _firestore
+        .collection('conversations')
+        .doc(userId)
+        .collection('messages')
+        .doc(messageId)
+        .set(message.toMap());
+  }
+
+  Future<void> _validateAndSendMessage({
+    required GenerativeModel model,
+    required String promptText,
+    required AppLanguage currentLanguage,
+  }) async {
+    await _sendMessageToFirestore(
+      messageText: promptText,
+      isMine: true,
+    );
