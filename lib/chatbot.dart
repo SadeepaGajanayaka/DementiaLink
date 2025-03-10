@@ -1514,3 +1514,176 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+  @override
+  Widget build(BuildContext context) {
+    final currentLanguage = ref.watch(languageProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF4A2B52),
+        title: const TranslatedText(
+          textKey: 'app_title',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: Text(
+              currentLanguage == AppLanguage.english ? 'සිං' : 'EN',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: _handleLanguageChange,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep, color: Colors.white),
+            onPressed: () => _showClearChatDialog(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: () {
+              ref.read(authProvider).signout();
+            },
+          ),
+        ],
+      ),
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: MessagesList(
+                      userId: FirebaseAuth.instance.currentUser!.uid,
+                      onNewMessage: _handleNewMessage,
+                      isVoiceMode: isVoiceMode,
+                    ),
+                  ),
+                  _buildInputBar(),
+                ],
+              ),
+            ),
+            if (isListening)
+              VoiceStatusOverlay(
+                message: AppTranslations.getText(context, currentLanguage, 'listening'),
+                backgroundColor: Colors.blue.withOpacity(0.9),
+                icon: Icons.mic,
+                recognizedText: recognizedText,
+                onCancel: _stopListening,
+              ),
+            if (isSpeaking)
+              VoiceStatusOverlay(
+                message: AppTranslations.getText(context, currentLanguage, 'speaking'),
+                backgroundColor: const Color(0xFF4A2B52),
+                icon: Icons.volume_up,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class VoiceStatusOverlay extends StatelessWidget {
+  final String message;
+  final Color backgroundColor;
+  final IconData icon;
+  final String? recognizedText;
+  final VoidCallback? onCancel;
+
+  const VoiceStatusOverlay({
+    super.key,
+    required this.message,
+    required this.backgroundColor,
+    required this.icon,
+    this.recognizedText,
+    this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 60,
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Text(
+                        message,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (onCancel != null)
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: onCancel,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                ],
+              ),
+              if (recognizedText?.isNotEmpty ?? false) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    recognizedText!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
