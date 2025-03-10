@@ -95,108 +95,117 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
             },
           ),
 
-          // Search bar at the top
+          // Search bar at the top - matches screenshot exactly
           Positioned(
-            top: 40,
+            top: 10,
             left: 10,
             right: 10,
-            child: Row(
-              children: [
-                // Back button
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Search field
-                Expanded(
-                  child: Container(
-                    height: 50,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  // Back button
+                  Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withOpacity(0.2),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 15),
-                        Icon(
-                          Icons.location_on,
-                          color: Colors.amber[700],
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search Here........',
-                              border: InputBorder.none,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Search field
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.location_on,
+                            color: Colors.amber[700],
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search Here........',
+                                border: InputBorder.none,
+                                hintStyle: TextStyle(color: Colors.black54),
+                                contentPadding: EdgeInsets.symmetric(vertical: 13),
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.mic,
+                            color: Colors.black54,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Brain icon on right - deep purple color from screenshot
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF503663),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
                         ),
-                        const SizedBox(width: 10),
-                        const Icon(
-                          Icons.mic,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 15),
                       ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Menu button on the right
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF503663),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.psychology,
+                        color: Colors.white,
+                        size: 22,
                       ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.psychology,
-                      color: Colors.white,
+                      onPressed: () {
+                        // Brain icon functionality
+                      },
                     ),
-                    onPressed: () {
-                      // Menu functionality
-                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // Compass in bottom right
+          // Compass button - match screenshot position
           Positioned(
-            bottom: 130,
+            bottom: 100,
             right: 16,
             child: Container(
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
@@ -212,47 +221,107 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                 icon: const Icon(
                   Icons.navigation,
                   size: 24,
+                  color: Colors.black87,
                 ),
                 onPressed: () {
-                  // Compass functionality
+                  // Navigation functionality
+                  if (_currentLocation != null) {
+                    _mapController?.animateCamera(
+                      CameraUpdate.newLatLng(
+                        LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+                      ),
+                    );
+                  }
                 },
               ),
             ),
           ),
 
-          // Bottom navigation bar
+          // Target/My location button - match screenshot position
+          Positioned(
+            bottom: 160,
+            right: 16,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF503663), // Purple color as in screenshot
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.my_location,
+                  size: 24,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  _getCurrentLocation();
+                  if (_currentLocation != null) {
+                    _mapController?.animateCamera(
+                      CameraUpdate.newLatLng(
+                        LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+
+          // Bottom navigation bar - EXACTLY match the screenshot
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              height: 80,
               color: const Color(0xFF503663),
+              padding: const EdgeInsets.only(bottom: 0), // No padding to avoid overflow
+              height: 80,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Home button
+                  // Home button - exactly as in screenshot with vertical rectangle
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF77588D),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFF503663),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.white,
+                        child: Center(
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.location_on,
+                                color: Colors.purple[700],
+                                size: 22,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       const Text(
                         'Home',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -260,26 +329,39 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
 
                   // Hospital button
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF77588D),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFF503663),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.local_hospital,
-                          color: Color(0xFF90EE90), // Light green
+                        child: Center(
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.location_on,
+                                color: Colors.green[600],
+                                size: 22,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       const Text(
                         'Hospital',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -287,27 +369,40 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
 
                   // Friend's Place button
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF77588D),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFF503663),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.person_pin_circle,
-                          color: Colors.lightBlueAccent,
+                        child: Center(
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.location_on,
+                                color: Colors.blue[400],
+                                size: 22,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       const Text(
                         "Friend's\nPlace",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 10,
                         ),
                       ),
                     ],
@@ -315,26 +410,39 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
 
                   // Add button
                   Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                          color: const Color(0xFF503663),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Colors.black,
+                        child: Center(
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.add,
+                                color: Colors.black87,
+                                size: 22,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       const Text(
                         'Add',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                     ],
