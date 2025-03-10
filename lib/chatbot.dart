@@ -259,3 +259,45 @@ class ChatRepository {
       messageText: promptText,
       isMine: true,
     );
+    if (!DementiaValidator.isDementiaRelated(promptText)) {
+      final validationMessage = AppTranslations.getTextNonUI(
+        currentLanguage,
+        'not_dementia_related',
+      );
+
+      await _sendMessageToFirestore(
+        messageText: validationMessage,
+        isMine: false,
+      );
+      return;
+    }
+
+    try {
+      final promptTemplate = currentLanguage == AppLanguage.english
+          ? '''You are a dementia care expert chatbot. Respond only in English, providing clear and professional answers.
+
+Question: $promptText
+
+Rules:
+1. ALWAYS respond in English only
+2. Be clear and professional
+3. Use medical terms with explanations
+4. Be thorough but concise
+5. Never include any text in other languages
+
+Note: My responses provide general information and support.
+Always consult healthcare professionals for medical advice.'''
+          : '''ඔබ ඩිමෙන්ෂියා සත්කාර විශේෂඥ චැට්බෝට් කෙනෙකි.
+
+ප්‍රශ්නය: $promptText
+
+නීති:
+1. සෑම විටම සිංහලෙන් පමණක් පිළිතුරු දෙන්න
+2. පැහැදිලි හා වෘත්තීය විය යුතුය
+3. වෛද්‍ය යෙදුම් පැහැදිලි කිරීම් සමඟ භාවිතා කරන්න
+4. සවිස්තරාත්මක නමුත් කෙටි විය යුතුය
+5. කිසිවිටෙකත් වෙනත් භාෂාවල පෙළ ඇතුළත් නොකරන්න
+6. සිංහල භාෂාවෙන් පමණක් පිළිතුරු සපයන්න
+
+සටහන: මගේ පිළිතුරු සාමාන්‍ය තොරතුරු සහ සහාය සපයයි.
+සෑම විටම වෛද්‍ය උපදෙස් සඳහා සෞඛ්‍ය වෘත්තිකයන් හමුවන්න.''';
