@@ -196,3 +196,35 @@ class AuthRepository {
 final authProvider = Provider(
       (ref) => AuthRepository(),
 );
+
+@immutable
+class ChatRepository {
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+
+  String _cleanupAIResponse(String text) {
+    // Split text into lines
+    List<String> lines = text.split('\n');
+
+    // Process each line
+    List<String> processedLines = lines.map((line) {
+      // Remove standalone asterisks and hyphens
+      var cleaned = line.replaceAll(RegExp(r'\s+[*-]\s+'), ' ');
+
+      // Check if line starts with bullet point
+      if (RegExp(r'^\s*[*-]').hasMatch(cleaned)) {
+        // Remove the bullet point and any leading/trailing whitespace
+        cleaned = cleaned.replaceAll(RegExp(r'^\s*[*-]\s*'), '');
+        // Add our own bullet point
+        cleaned = '• ' + cleaned;
+      }
+
+      // Remove multiple consecutive spaces
+      cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+      return cleaned;
+    }).toList();
+
+    // Join lines back together and trim any extra whitespace
+    return processedLines.where((line) => line.isNotEmpty).join('\n').trim();
+  }
