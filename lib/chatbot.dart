@@ -45,3 +45,31 @@ class Message {
       'isMine': isMine,
     };
   }
+  factory Message.fromMap(Map<String, dynamic> map) {
+    return Message(
+      id: map['id'] as String,
+      message: map['message'] as String,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      isMine: map['isMine'] as bool,
+    );
+  }
+
+  Message copyWith({
+    String? id,
+    String? message,
+    DateTime? createdAt,
+    bool? isMine,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      message: message ?? this.message,
+      createdAt: createdAt ?? this.createdAt,
+      isMine: isMine ?? this.isMine,
+    );
+  }
+}
+
+// Define Extensions
+extension TimestampExtension on DateTime {
+  Timestamp get toTimestamp => Timestamp.fromDate(this);
+}
