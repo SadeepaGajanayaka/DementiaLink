@@ -165,3 +165,34 @@ class LanguageNotifier extends StateNotifier<AppLanguage> {
     state = state == AppLanguage.english ? AppLanguage.sinhala : AppLanguage.english;
   }
 }
+final languageProvider = StateNotifierProvider<LanguageNotifier, AppLanguage>(
+      (ref) => LanguageNotifier(),
+);
+
+@immutable
+class AuthRepository {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  Future<UserCredential?> signInWithGoogle() async {
+    final googleUser = await _googleSignIn.signIn();
+
+    if (googleUser == null) return null;
+
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    return await _firebaseAuth.signInWithCredential(credential);
+  }
+
+  Future<void> signout() async {
+    await _googleSignIn.signOut();
+    await _firebaseAuth.signOut();
+  }
+}
+
+final authProvider = Provider(
+      (ref) => AuthRepository(),
+);
