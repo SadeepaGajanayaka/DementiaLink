@@ -680,3 +680,45 @@ class TranslatedText extends ConsumerWidget {
 //       )
 //   );
 // }
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  final apiKey = dotenv.env['API_KEY'] ?? '';
+  print("API Key loaded successfully: ${apiKey.isNotEmpty}");
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(
+      ProviderScope(
+        child: const MyApp(),
+      )
+  );
+}
+
+class MyApp extends StatelessWidget{
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.userChanges(),
+        builder: (context, snapshot){
+          if(snapshot.connectionState == ConnectionState.waiting){
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          if(snapshot.data == null){
+            return const LoginScreen();
+          }
+          return const HomeScreen();
+        },
+      ),
+    );
+  }
+}
