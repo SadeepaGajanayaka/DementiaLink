@@ -103,3 +103,32 @@ extension StringExtension on String {
     return '${this[0].toUpperCase()}${this.substring(1)}';
   }
 }
+
+extension DateTimeExtension on Timestamp {
+  DateTime get toDateTime => this.toDate();
+
+  String get formatted {
+    final date = this.toDate();
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+extension GetImageMimeType on XFile {
+  String getMimeTypeFromExtension() {
+    final extension = path.split('.').last;
+    switch(extension) {
+      case 'jpg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'heic':
+        return 'image/heic';
+      case 'heif':
+        return 'image/heif';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+}
