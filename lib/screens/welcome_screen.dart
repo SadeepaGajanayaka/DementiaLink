@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'assist_me.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'assist_loved.dart';
@@ -117,14 +118,34 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 32),
-                  // App Logo centered
+                  // App Logo and Sign Out row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      const SizedBox(width: 40), // For centering
                       Image.asset(
                         'lib/assets/brain_logo.png',
                         width: 60,
                         height: 60,
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                        onPressed: () async {
+                          await _authService.signOut();
+                          if (context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          }
+                        },
+                        tooltip: 'Sign Out',
                       ),
                     ],
                   ),
@@ -227,7 +248,40 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 40),
-                        // Edit Profile Button (replacing Assist a Loved One)
+                        // Assist Me Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AssistMe(
+                                    userName: widget.userName,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF77588D),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Assist Me',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Assist a Loved One Button
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -251,43 +305,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               elevation: 0,
                             ),
                             child: const Text(
-                              'Edit Profile',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Sign Out Button (formerly BACK)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await _authService.signOut();
-                              if (context.mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginScreen(),
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color.fromARGB(236, 240, 235, 235),
-                              foregroundColor: const Color(0xFF77588D),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 3,
-                              shadowColor: Colors.black26,
-                            ),
-                            child: const Text(
-                              'Sign Out',
+                              'Assist a Loved One',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
