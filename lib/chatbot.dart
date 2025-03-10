@@ -301,3 +301,77 @@ Always consult healthcare professionals for medical advice.'''
 
 සටහන: මගේ පිළිතුරු සාමාන්‍ය තොරතුරු සහ සහාය සපයයි.
 සෑම විටම වෛද්‍ය උපදෙස් සඳහා සෞඛ්‍ය වෘත්තිකයන් හමුවන්න.''';
+      final response = await model.generateContent([
+        Content.text(promptTemplate)
+      ]);
+
+      final responseText = response.text;
+
+      if (responseText != null && responseText.isNotEmpty) {
+        final cleanedResponse = _cleanupAIResponse(responseText);
+        await _sendMessageToFirestore(
+          messageText: cleanedResponse,
+          isMine: false,
+        );
+      } else {
+        throw Exception('Empty response from AI');
+      }
+    } catch (e) {
+      final errorMessage = AppTranslations.getTextNonUI(
+        currentLanguage,
+        'general_error',
+      );
+
+      await _sendMessageToFirestore(
+        messageText: errorMessage,
+        isMine: false,
+      );
+      throw Exception(e.toString());
+    }
+  }
+
+// Future<void> sendTextMessage({
+//   required String textPrompt,
+//   required String apiKey,
+//   required AppLanguage currentLanguage,
+// }) async {
+//   final model = GenerativeModel(model: 'gemini-pro', apiKey: apiKey);
+//   await _validateAndSendMessage(
+//     model: model,
+//     promptText: textPrompt,
+//     currentLanguage: currentLanguage,
+//   );
+// }
+  Future<void> sendTextMessage({
+    required String textPrompt,
+    required String apiKey,
+    required AppLanguage currentLanguage,
+  }) async {
+    try {
+      // Debug log to check API key
+      print("Using API Key: ${apiKey.substring(0, 5)}...");
+
+      // Try with the updated model name format
+      final model = GenerativeModel(
+        // Try one of these model name variations:
+        // model: 'gemini-pro',
+        // model: 'models/gemini-pro',
+        // model: 'gemini-1.0-pro',
+        model: 'gemini-1.5-pro',  // Try this newer model
+        apiKey: apiKey,
+        generationConfig: GenerationConfig(
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        ),
+      );
+
+      await _validateAndSendMessage(
+        model: model,
+        promptText: textPrompt,
+        currentLanguage: currentLanguage,
+      );
+    } catch (e) {
+      print("Detailed error in sendTextMessage: $e");
+      rethrow;
+    }
+  }
