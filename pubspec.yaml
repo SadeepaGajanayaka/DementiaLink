@@ -14,10 +14,28 @@ dependencies:
   firebase_auth: ^4.17.9
   cupertino_icons: ^1.0.8
 
+  flutter_dotenv: ^5.1.0
+  google_generative_ai: ^0.3.0
+  image_picker: ^1.0.7
+  cloud_firestore: ^4.15.9
+  firebase_storage: ^11.6.10
+  google_sign_in: ^6.2.1
+  flutter_riverpod: ^2.5.1
+  uuid: ^4.3.3
+  flutter_tts: ^3.8.5
+#  speech_to_text: 5.6.1  # Try this specific older version
+  flutter_speech: ^2.0.0
+  permission_handler: ^11.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
 
 flutter:
+  assets:
+  - assets/icons/googlelogo.png
+  - assets/icons/brain.png
+  - .env
   uses-material-design: true
+
