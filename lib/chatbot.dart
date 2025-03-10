@@ -375,3 +375,110 @@ Always consult healthcare professionals for medical advice.'''
       rethrow;
     }
   }
+  Future<void> clearAllMessages() async {
+    final userId = _auth.currentUser!.uid;
+    final messagesRef = _firestore
+        .collection('conversations')
+        .doc(userId)
+        .collection('messages');
+
+    final snapshots = await messagesRef.get();
+    final batch = _firestore.batch();
+
+    for (var doc in snapshots.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+  }
+}
+
+final chatProvider = Provider(
+      (ref) => ChatRepository(),
+);
+
+class DementiaValidator {
+  static final List<String> _dementiaKeywords = [
+  'ඩිමෙන්ෂියාව',
+  'අල්සයිමර්',
+  'මතක',
+  'මතකය',
+  'ස්මරණ',
+  'මොළය',
+  'රෝගය',
+  'රෝගි',
+  'ප්‍රතිකාර',
+  'බෙහෙත්',
+  'සුවය',
+  'සත්කාර',
+  'රැකවරණය',
+  'වැඩිහිටි',
+  'වයස්ගත',
+  'මානසික',
+  'චර්යා',
+  'හැසිරීම්',
+  'වෛද්‍ය',
+  'රෝහල',
+  'බෙහෙත්',
+  'පවුල',
+  'රැකබලා',
+  'උපකාර',
+  'සහය',
+    'dementia',
+    'alzheimer',
+    'memory loss',
+    'cognitive decline',
+    'brain health',
+    'caregiver',
+    'caregiving',
+    'aging',
+    'elderly care',
+    'mental health',
+    'confusion',
+    'forgetfulness',
+    'neurological',
+    'brain disease',
+    'memory care',
+    'cognitive impairment',
+    'behavioral changes',
+    'symptoms',
+    'treatment',
+    'diagnosis',
+    'care',
+    'support',
+    'medicine',
+    'therapy',
+    'brain',
+    'memory',
+    'cognitive',
+    'elder',
+    'senior',
+    'geriatric',
+    'neurology',
+    'brain function',
+    'mental decline',
+    'memory problems',
+    'behavior changes',
+    'mood changes',
+    'daily living',
+    'care facility',
+    'nursing home',
+    'medical history',
+    'prevention',
+    'risk factors',
+    'stages',
+    'progression',
+    'early signs',
+    'warning signs',
+    'family history',
+    'medication',
+    'management',
+    'research',
+    'clinical trials',
+    'brain scan',
+    'mri',
+    'ct scan',
+    'pet scan',
+    'diagnosis',
+    'assessment',
+  ];
