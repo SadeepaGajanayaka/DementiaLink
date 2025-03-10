@@ -73,3 +73,33 @@ class Message {
 extension TimestampExtension on DateTime {
   Timestamp get toTimestamp => Timestamp.fromDate(this);
 }
+
+extension TextFormatting on String {
+  String formatBoldText() {
+    // Regular expression to match text between double asterisks
+    final boldRegex = RegExp(r'\*\*(.*?)\*\*');
+
+    // Replace all matches with their SpanText widget equivalent
+    return replaceAllMapped(boldRegex, (match) {
+      final textBetweenAsterisks = match.group(1);
+      if (textBetweenAsterisks != null && textBetweenAsterisks.isNotEmpty) {
+        return textBetweenAsterisks;
+      }
+      return match.group(0) ?? '';
+    });
+  }
+}
+
+extension StringExtension on String {
+  // Utility methods for strings
+  bool get isValidEmail {
+    return RegExp(
+      r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+',
+    ).hasMatch(this);
+  }
+
+  String get capitalize {
+    if (this.isEmpty) return this;
+    return '${this[0].toUpperCase()}${this.substring(1)}';
+  }
+}
