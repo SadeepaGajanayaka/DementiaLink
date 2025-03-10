@@ -71,22 +71,162 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Map
-          GoogleMap(
-            initialCameraPosition: _initialCameraPosition,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-            compassEnabled: false,
-            onMapCreated: (controller) {
-              _mapController = controller;
+        // Map
+        GoogleMap(
+        initialCameraPosition: _initialCameraPosition,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
+        zoomControlsEnabled: false,
+        mapToolbarEnabled: false,
+        compassEnabled: false,
+        onMapCreated: (controller) {
+          _mapController = controller;
 
-              // Apply the custom map style
-              _mapController!.setMapStyle(MapStyle.mapStyle);
+          // Apply the custom map style
+          _mapController!.setMapStyle(MapStyle.mapStyle);
 
+          if (_currentLocation != null) {
+            _mapController!.animateCamera(
+              CameraUpdate.newLatLng(
+                LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
+              ),
+            );
+          }
+        },
+      ),
+
+      // Search bar at the top - matches screenshot exactly
+      Positioned(
+        top: 10,
+        left: 10,
+        right: 10,
+        child: SafeArea(
+          child: Row(
+            children: [
+              // Back button
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Search field
+              Expanded(
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.amber[700],
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search Here........',
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(color: Colors.black54),
+                            contentPadding: EdgeInsets.symmetric(vertical: 13),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.mic,
+                        color: Colors.black54,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Brain icon on right - deep purple color from screenshot
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF503663),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.psychology,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: () {
+                    // Brain icon functionality
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // Compass button - match screenshot position
+      Positioned(
+        bottom: 100,
+        right: 16,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.navigation,
+              size: 24,
+              color: Colors.black87,
+            ),
+            onPressed: () {
+              // Navigation functionality
               if (_currentLocation != null) {
-                _mapController!.animateCamera(
+                _mapController?.animateCamera(
                   CameraUpdate.newLatLng(
                     LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
                   ),
@@ -94,206 +234,70 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
               }
             },
           ),
+        ),
+      ),
 
-          // Search bar at the top - matches screenshot exactly
-          Positioned(
-            top: 10,
-            left: 10,
-            right: 10,
-            child: SafeArea(
-              child: Row(
-                children: [
-                  // Back button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Search field
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.location_on,
-                            color: Colors.amber[700],
-                            size: 22,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search Here........',
-                                border: InputBorder.none,
-                                hintStyle: TextStyle(color: Colors.black54),
-                                contentPadding: EdgeInsets.symmetric(vertical: 13),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.mic,
-                            color: Colors.black54,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Brain icon on right - deep purple color from screenshot
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF503663),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.psychology,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                      onPressed: () {
-                        // Brain icon functionality
-                      },
-                    ),
-                  ),
-                ],
+      // Target/My location button - match screenshot position
+      Positioned(
+        bottom: 160,
+        right: 16,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFF503663), // Purple color as in screenshot
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
               ),
-            ),
+            ],
           ),
-
-          // Compass button - match screenshot position
-          Positioned(
-            bottom: 100,
-            right: 16,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.navigation,
-                  size: 24,
-                  color: Colors.black87,
-                ),
-                onPressed: () {
-                  // Navigation functionality
-                  if (_currentLocation != null) {
-                    _mapController?.animateCamera(
-                      CameraUpdate.newLatLng(
-                        LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-                      ),
-                    );
-                  }
-                },
-              ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.my_location,
+              size: 24,
+              color: Colors.white,
             ),
-          ),
-
-          // Target/My location button - match screenshot position
-          Positioned(
-            bottom: 160,
-            right: 16,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFF503663), // Purple color as in screenshot
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
+            onPressed: () {
+              _getCurrentLocation();
+              if (_currentLocation != null) {
+                _mapController?.animateCamera(
+                  CameraUpdate.newLatLng(
+                    LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
                   ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.my_location,
-                  size: 24,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  _getCurrentLocation();
-                  if (_currentLocation != null) {
-                    _mapController?.animateCamera(
-                      CameraUpdate.newLatLng(
-                        LatLng(_currentLocation!.latitude!, _currentLocation!.longitude!),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
+                );
+              }
+            },
           ),
+        ),
+      ),
 
-          // Bottom navigation bar - EXACTLY match the screenshot
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: const Color(0xFF503663),
-              padding: const EdgeInsets.only(bottom: 0), // No padding to avoid overflow
-              height: 80,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // Home button - exactly as in screenshot with vertical rectangle
-                  Column(
+      // Bottom navigation bar - EXACTLY match the screenshot
+      Positioned(
+        bottom: 0,
+        left: 0,
+        right: 0,
+        child: SizedBox(
+          height: 80,
+          child: Container(
+            color: const Color(0xFF503663),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Home button - exactly as in screenshot with vertical rectangle
+                SizedBox(
+                  width: 70,
+                  height: 80,
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         width: 60,
-                        height: 60,
+                        height: 55,
                         decoration: BoxDecoration(
                           color: const Color(0xFF503663),
                           borderRadius: BorderRadius.circular(12),
@@ -316,7 +320,7 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       const Text(
                         'Home',
                         style: TextStyle(
@@ -326,14 +330,19 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                       ),
                     ],
                   ),
+                ),
 
-                  // Hospital button
-                  Column(
+                // Hospital button
+                SizedBox(
+                  width: 70,
+                  height: 80,
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         width: 60,
-                        height: 60,
+                        height: 55,
                         decoration: BoxDecoration(
                           color: const Color(0xFF503663),
                           borderRadius: BorderRadius.circular(12),
@@ -356,7 +365,7 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       const Text(
                         'Hospital',
                         style: TextStyle(
@@ -366,14 +375,19 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                       ),
                     ],
                   ),
+                ),
 
-                  // Friend's Place button
-                  Column(
+                // Friend's Place button
+                SizedBox(
+                  width: 70,
+                  height: 80,
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         width: 60,
-                        height: 60,
+                        height: 55,
                         decoration: BoxDecoration(
                           color: const Color(0xFF503663),
                           borderRadius: BorderRadius.circular(12),
@@ -396,9 +410,17 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 0),
                       const Text(
-                        "Friend's\nPlace",
+                        "Friend's",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                      ),
+                      const Text(
+                        "Place",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
@@ -407,14 +429,19 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                       ),
                     ],
                   ),
+                ),
 
-                  // Add button
-                  Column(
+                // Add button
+                SizedBox(
+                  width: 70,
+                  height: 80,
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         width: 60,
-                        height: 60,
+                        height: 55,
                         decoration: BoxDecoration(
                           color: const Color(0xFF503663),
                           borderRadius: BorderRadius.circular(12),
@@ -437,7 +464,7 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       const Text(
                         'Add',
                         style: TextStyle(
@@ -447,10 +474,11 @@ class _SafeZoneScreenState extends State<SafeZoneScreen> {
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
         ],
       ),
     );
