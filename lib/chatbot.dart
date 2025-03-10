@@ -1045,3 +1045,162 @@ class MessageTile extends StatelessWidget {
     );
   }
 }
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  late final TextEditingController _messageController;
+  final apiKey = dotenv.env['API_KEY'] ?? '';
+  final FlutterTts flutterTts = FlutterTts();
+  late SpeechRecognition _speech;
+  bool isListening = false;
+  bool isSpeaking = false;
+  String? lastProcessedMessageId;
+  bool isVoiceMode = false;
+  String recognizedText = '';
+  String _currentLocale = '';
+  bool _speechRecognitionAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _messageController = TextEditingController();
+    _initializeVoiceAssistant();
+    _initSpeechRecognizer();
+
+    print("API Key loaded: ${apiKey.isEmpty ? 'EMPTY KEY' : 'Key exists with length: ${apiKey.length}'}");
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    flutterTts.stop();
+    if (isListening) {
+      _speech.cancel();
+    }
+    super.dispose();
+  }
+  Future<void> _initSpeechRecognizer() async {
+    _speech = SpeechRecognition();
+
+    _currentLocale = ref.read(languageProvider) == AppLanguage.english ? "en_US" : "si_LK";
+    debugPrint("Initializing speech recognition with locale: $_currentLocale");
+
+    // Request microphone permissions
+    var status = await Permission.microphone.status;
+    if (!status.isGranted) {
+      await Permission.microphone.request();
+    }
+
+    _speech.setAvailabilityHandler(
+          (bool result) {
+        debugPrint("Speech recognition availability: $result");
+        setState(() => _speechRecognitionAvailable = result);
+      },
+    );
+
+    _speech.setRecognitionStartedHandler(
+          () {
+        debugPrint("Speech recognition started");
+        setState(() => isListening = true);
+      },
+    );
+
+    _speech.setRecognitionResultHandler(
+          (String text) {
+        debugPrint("Speech recognition interim result: $text");
+        setState(() {
+          recognizedText = text;
+          _messageController.text = text;
+        });
+      },
+    );
+
+    _speech.setRecognitionCompleteHandler(
+          (String text) {
+        debugPrint("Speech recognition complete: $text");
+        setState(() {
+          isListening = false;
+          if (text.trim().isNotEmpty) {
+            recognizedText = text;
+            _messageController.text = text;
+            _sendVoiceMessage();
+          }
+        });
+      },
+    );
+
+    // Try activating speech recognition
+    try {
+      bool result = await _speech.activate(_currentLocale);
+      debugPrint("Speech recognition activation result: $result");
+      setState(() => _speechRecognitionAvailable = result);
+    } catch (e) {
+      debugPrint("Error activating speech recognition: $e");
+      setState(() => _speechRecognitionAvailable = false);
+    }
+  }
+  Future<void> _initializeVoiceAssistant() async {
+    try {
+      final currentLanguage = ref.read(languageProvider);
+      final languageCode = currentLanguage == AppLanguage.english ? "en-US" : "si-LK";
+
+      var availableLanguages = await flutterTts.getLanguages;
+      debugPrint("Available TTS languages: $availableLanguages");
+
+      bool? isLanguageAvailable = await flutterTts.isLanguageAvailable(languageCode);
+      debugPrint("Is language available: $isLanguageAvailable");
+
+      // Use a fallback language if the requested one isn't available
+      if (isLanguageAvailable != true) {
+        debugPrint("Language not available, falling back to en-US");
+        await flutterTts.setLanguage("en-US");
+      } else {
+        await flutterTts.setLanguage(languageCode);
+      }
+
+      // Get engines for debugging
+      var engines = await flutterTts.getEngines;
+      debugPrint("Available TTS engines: $engines");
+
+      await flutterTts.setPitch(1.0);
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setVolume(1.0);
+
+      flutterTts.setStartHandler(() {
+        debugPrint("TTS STARTED");
+        if (mounted) {
+          setState(() => isSpeaking = true);
+        }
+      });
+
+      flutterTts.setCompletionHandler(() {
+        debugPrint("TTS COMPLETED");
+        if (mounted) {
+          setState(() => isSpeaking = false);
+        }
+      });
+
+      flutterTts.setErrorHandler((msg) {
+        debugPrint("TTS ERROR: $msg");
+        if (mounted) {
+          setState(() => isSpeaking = false);
+        }
+      });
+
+      flutterTts.setProgressHandler((text, start, end, word) {
+        debugPrint("TTS PROGRESS: $text, $start, $end, $word");
+      });
+
+      // Test TTS
+      await flutterTts.speak("TTS initialization complete");
+      debugPrint("TTS test completed");
+    } catch (e) {
+      debugPrint('Voice initialization error: $e');
+    }
+  }
+  
