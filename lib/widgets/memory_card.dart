@@ -281,34 +281,3 @@ class _MemoryCardState extends State<MemoryCard> {
     }
   }
 
-  Widget _buildEmptyMemory(double height) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.purple.shade300,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.photo_album,
-              color: Colors.white,
-              size: 48,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Add photos to create memories',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

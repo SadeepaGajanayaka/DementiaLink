@@ -60,7 +60,13 @@ class VideoThumbnailUtil {
     );
   }
 
-
+  // Helper method to get or create a video controller
+  static Future<VideoPlayerController> _getVideoController(String videoPath) async {
+    // Check if controller is already in cache
+    if (_controllerCache.containsKey(videoPath) &&
+        _controllerCache[videoPath]!.value.isInitialized) {
+      return _controllerCache[videoPath]!;
+    }
 
     // Verify file exists
     final file = File(videoPath);
