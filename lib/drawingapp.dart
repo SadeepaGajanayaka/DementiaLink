@@ -784,3 +784,28 @@ GestureDetector(
                   ),
                 ),
               ),
+              Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 5,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        height: 50,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
