@@ -619,3 +619,17 @@ class _DrawingPageState extends State<DrawingPage> {
   Offset panOffset = Offset.zero;
 
   final Color themeColor = const Color(0xFF503663);
+  final List<Color> colors = [
+    Colors.black,
+    Colors.green,
+    Colors.blue,
+    Colors.pink,
+    Colors.yellow,
+    Colors.red,
+    Colors.orange,
+    Colors.cyan,
+    Colors.purple,
+    Colors.grey,
+    Colors.green.shade800,
+    Colors.brown,
+  ];
