@@ -157,7 +157,29 @@ class _AddMediaScreenState extends State<AddMediaScreen> {
     );
   }
 
+  Widget _buildVideoPreview() {
+    if (_videoController == null || !_videoController!.value.isInitialized) {
+      return Center(child: CircularProgressIndicator());
+    }
 
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: _videoController!.value.aspectRatio,
+          child: VideoPlayer(_videoController!),
+        ),
+        IconButton(
+          icon: Icon(
+            _isPlaying ? Icons.pause_circle_outline : Icons.play_circle_outline,
+            color: Colors.white,
+            size: 64,
+          ),
+          onPressed: _toggleVideoPlayback,
+        ),
+      ],
+    );
+  }
 
   Future<void> _saveMediaToAlbum(BuildContext context, String? note) async {
     final storageProvider = Provider.of<StorageProvider>(context, listen: false);

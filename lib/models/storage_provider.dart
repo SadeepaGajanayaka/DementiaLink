@@ -91,16 +91,7 @@ class StorageProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _createDefaultAlbums() async {
-    final count = Sqflite.firstIntValue(
-        await _database!.rawQuery('SELECT COUNT(*) FROM albums'));
 
-    if (count == 0) {
-      // Create default Family and Friends albums
-      await addAlbum('Family', 'system');
-      await addAlbum('Friends', 'system');
-    }
-  }
 
   Future<void> _loadAlbums() async {
     final albumsData = await _database!.query('albums');
