@@ -436,8 +436,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _socialLoginButton('lib/assets/google_logo.png', _handleGoogleSignIn),
-                          _socialLoginButton('lib/assets/facebook_logo.png', _handleFacebookSignIn),
-                          _socialLoginButton('lib/assets/apple_logo.png', _handleAppleSignIn),
+                          
                         ],
                       ),
                       const SizedBox(height: 24),
