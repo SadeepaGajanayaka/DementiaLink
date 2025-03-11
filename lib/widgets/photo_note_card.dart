@@ -28,46 +28,7 @@ class photo_note_card extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Image container
-          ClipRRect(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: Image.file(
-              imageFile,
-              height: 240,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // Note input area
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Note text field
-                TextField(
-                  controller: noteController,
-                  decoration: InputDecoration(
-                    hintText: 'Add some note....',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.grey.shade600),
-                  ),
-                  maxLines: 2,
-                ),
-
-                SizedBox(height: 16),
+        mainAxi
 
                 // Action buttons
                 Row(
