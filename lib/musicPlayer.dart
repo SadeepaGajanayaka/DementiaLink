@@ -380,7 +380,7 @@ class PlayerScreenState extends State<PlayerScreen> {
             trackHeight: 4,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-            activeTrackColor: Colors.green,
+            activeTrackColor: Colors.purple,
             inactiveTrackColor: Colors.white.withOpacity(0.2),
             thumbColor: Colors.white,
             overlayColor: Colors.white.withOpacity(0.2),
@@ -428,7 +428,7 @@ class PlayerScreenState extends State<PlayerScreen> {
             height: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.green,
+              color: Colors.purple,
               boxShadow: [
                 BoxShadow(
                   color: Colors.green.withOpacity(0.3),
