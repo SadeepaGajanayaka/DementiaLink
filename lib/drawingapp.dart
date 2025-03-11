@@ -690,3 +690,33 @@ GestureDetector(
                   );
                 });
               },
+              onPanUpdate: (details) {
+                if (isPanning) {
+                  setState(() {
+                    panOffset += details.delta;
+                  });
+                  return;
+                }
+
+                final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+                final adjustedPosition = localPosition - Offset(0, showAppBar ? AppBar().preferredSize.height : 0);
+
+                setState(() {
+                  currentPoints.add(
+                    DrawingPoint(
+                      adjustedPosition - panOffset,
+                      _getPaintSettings(),
+                    ),
+                  );
+                });
+              },
+              onPanEnd: (details) {
+                if (!isPanning) {
+                  setState(() {
+                    currentPoints.add(null);
+                    undoList.add(List.from(currentPoints));
+                    redoList.clear();
+                  });
+                }
+              },
