@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class Song {
   final String title;
   final String artist;
@@ -66,6 +67,7 @@ final List<Song> songs = [
     audioPath: 'assets/audio/track5.mp3',
   ),
 ];
+
 class PlaylistScreen extends StatelessWidget {
   const PlaylistScreen({Key? key}) : super(key: key);
 
@@ -91,6 +93,7 @@ class PlaylistScreen extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -130,6 +133,7 @@ class PlaylistScreen extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildSongTile(BuildContext context, Song song, int index) {
     return ListTile(
       leading: ClipRRect(
@@ -165,6 +169,7 @@ class PlaylistScreen extends StatelessWidget {
     );
   }
 }
+
 class PlayerScreen extends StatefulWidget {
   final int initialSongIndex;
 
@@ -405,6 +410,48 @@ class PlayerScreenState extends State<PlayerScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildControls() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.skip_previous, color: Colors.white, size: 36),
+            onPressed: _playPrevious,
+          ),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.green,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: Colors.white,
+                size: 36,
+              ),
+              onPressed: _playPause,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.skip_next, color: Colors.white, size: 36),
+            onPressed: _playNext,
+          ),
+        ],
+      ),
     );
   }
 }
