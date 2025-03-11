@@ -1056,3 +1056,38 @@ class DrawingPoint {
 
   DrawingPoint(this.offset, this.paint);
 }
+class DrawingPainter extends CustomPainter {
+  final List<DrawingPoint?> points;
+  final Offset panOffset;
+
+
+  DrawingPainter({
+    required this.points,
+    required this.panOffset,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.translate(panOffset.dx, panOffset.dy);
+
+    for (int i = 0; i < points.length - 1; i++) {
+      if (points[i] != null && points[i + 1] != null) {
+        canvas.drawLine(
+          points[i]!.offset,
+          points[i + 1]!.offset,
+          points[i]!.paint,
+        );
+      } else if (points[i] != null && points[i + 1] == null) {
+        canvas.drawCircle(
+          points[i]!.offset,
+          points[i]!.paint.strokeWidth / 2,
+          points[i]!.paint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant DrawingPainter oldDelegate) =>
+      true || oldDelegate.panOffset != panOffset;
+}
