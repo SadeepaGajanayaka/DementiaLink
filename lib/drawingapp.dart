@@ -910,3 +910,37 @@ GestureDetector(
                                     ),
                                   ],
                                 ),
+                                IconButton(
+                                  icon: Icon(Icons.edit_off,
+                                      color: isErasing ? themeColor : Colors.grey),
+                                  onPressed: () {
+                                    setState(() {
+                                      isErasing = true;
+                                      isPanning = false;
+                                      showEraserSizeControl = true;
+                                      showStrokeSizeControl = false;
+                                    });
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.pan_tool,
+                                      color: isPanning ? themeColor : Colors.grey),
+                                  onPressed: () {
+                                    setState(() {
+                                      isPanning = !isPanning;
+                                      isErasing = false;
+                                      showEraserSizeControl = false;
+                                      showStrokeSizeControl = false;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
