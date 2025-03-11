@@ -655,4 +655,14 @@ class _DrawingPageState extends State<DrawingPage> {
           ),
         ],
       ) : null,
-      
+
+      body: GestureDetector(
+        onTapDown: (_) {
+          setState(() {
+            showAppBar = !showAppBar;
+            showStrokeSizeControl = false;
+            showEraserSizeControl = false;
+          });
+        },
+        child: Stack(
+          children: [
