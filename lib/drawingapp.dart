@@ -720,3 +720,11 @@ GestureDetector(
                   });
                 }
               },
+              child: CustomPaint(
+                painter: DrawingPainter(
+                  points: currentPoints,
+                  panOffset: panOffset,
+                ),
+                size: Size.infinite,
+              ),
+            ),
