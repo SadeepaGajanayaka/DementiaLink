@@ -856,3 +856,57 @@ GestureDetector(
                                 },
                               ),
                             ),
+                            Row(
+                              children: [
+                                PopupMenuButton<DrawingTool>(
+                                  icon: Icon(_getToolIcon(), color: themeColor),
+                                  onSelected: (DrawingTool tool) {
+                                    setState(() {
+                                      currentTool = tool;
+                                      isErasing = false;
+                                      showEraserSizeControl = false;
+                                    });
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: DrawingTool.pencil,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit),
+                                          SizedBox(width: 8),
+                                          Text('Pencil'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: DrawingTool.brush,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.brush),
+                                          SizedBox(width: 8),
+                                          Text('Brush'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: DrawingTool.marker,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.brush_outlined),
+                                          SizedBox(width: 8),
+                                          Text('Marker'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: DrawingTool.spray,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.water_drop),
+                                          SizedBox(width: 8),
+                                          Text('Spray'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
