@@ -756,3 +756,31 @@ GestureDetector(
                   ),
                 ),
               ),
+              if (showEraserSizeControl)
+              Positioned(
+                bottom: 100,
+                left: 20,
+                right: 20,
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Eraser Size',
+                            style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)
+                        ),
+                        Slider(
+                          value: eraserWidth,
+                          min: 1,
+                          max: 50,
+                          activeColor: themeColor,
+                          onChanged: (value) {
+                            setState(() => eraserWidth = value);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
