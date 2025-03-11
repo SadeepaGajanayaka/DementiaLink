@@ -594,4 +594,12 @@ class DrawingPainter extends CustomPainter {
   bool shouldRepaint(covariant DrawingPainter oldDelegate) =>
       true || oldDelegate.panOffset != panOffset;
 }
-```
+
+enum DrawingTool { pencil, brush, marker, spray }
+
+class DrawingPage extends StatefulWidget {
+  const DrawingPage({super.key});
+
+  @override
+  _DrawingPageState createState() => _DrawingPageState();
+}
