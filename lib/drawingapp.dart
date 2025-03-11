@@ -1022,3 +1022,31 @@ GestureDetector(
 
     return paint;
   }
+  void undo() {
+    if (undoList.isNotEmpty) {
+      setState(() {
+        redoList.add(List.from(currentPoints));
+        currentPoints.clear();
+        currentPoints.addAll(undoList.removeLast());
+      });
+    }
+  }
+
+  void redo() {
+    if (redoList.isNotEmpty) {
+      setState(() {
+        undoList.add(List.from(currentPoints));
+        currentPoints.clear();
+        currentPoints.addAll(redoList.removeLast());
+      });
+    }
+  }
+
+  void clearCanvas() {
+    setState(() {
+      undoList.add(List.from(currentPoints));
+      currentPoints.clear();
+      redoList.clear();
+    });
+  }
+}
