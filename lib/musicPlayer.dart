@@ -58,7 +58,14 @@ final List<Song> songs = [
     artist: 'Dementia_Link',
     imagePath: 'assets/images/i4.png',
     audioPath: 'assets/audio/track4.mp3',
-
+  ),
+  Song(
+    title: 'Dementia special Track',
+    artist: 'Meditational StateHealing Music',
+    imagePath: 'assets/images/i5.jpg',
+    audioPath: 'assets/audio/track5.mp3',
+  ),
+];
 class PlaylistScreen extends StatelessWidget {
   const PlaylistScreen({Key? key}) : super(key: key);
 
@@ -304,35 +311,7 @@ class PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
-  Widget _buildAlbumArt() {
-    return Container(
-      margin: const EdgeInsets.only(
-        top: 65, // Increased top margin to move image down
-        left: 24,
-        right: 24,
-        bottom: 24,
-      ),
-      width: double.infinity,
-      height: 300,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.asset(
-          songs[_currentIndex].imagePath,
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildSongInfo() {
     return Padding(
