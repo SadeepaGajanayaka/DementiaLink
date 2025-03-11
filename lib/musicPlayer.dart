@@ -311,7 +311,35 @@ class PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
-
+  Widget _buildAlbumArt() {
+    return Container(
+      margin: const EdgeInsets.only(
+        top: 65, // Increased top margin to move image down
+        left: 24,
+        right: 24,
+        bottom: 24,
+      ),
+      width: double.infinity,
+      height: 300,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.asset(
+          songs[_currentIndex].imagePath,
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
 
   Widget _buildSongInfo() {
     return Padding(
@@ -379,3 +407,4 @@ class PlayerScreenState extends State<PlayerScreen> {
       ],
     );
   }
+}
