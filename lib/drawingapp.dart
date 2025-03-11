@@ -944,3 +944,39 @@ GestureDetector(
                 ],
               ),
             ),
+            Positioned(
+              right: 20,
+              top: kToolbarHeight + 20,
+              child: Column(
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'undo',
+                    backgroundColor: themeColor,
+                    mini: true,
+                    onPressed: undo,
+                    child: const Icon(Icons.undo, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton(
+                    heroTag: 'redo',
+                    backgroundColor: themeColor,
+                    mini: true,
+                    onPressed: redo,
+                    child: const Icon(Icons.redo, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton(
+                    heroTag: 'clear',
+                    backgroundColor: themeColor,
+                    mini: true,
+                    onPressed: clearCanvas,
+                    child: const Icon(Icons.clear, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
