@@ -809,3 +809,50 @@ GestureDetector(
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            SizedBox(
+                              height: 50,
+                              width: MediaQuery.of(context).size.width * 0.6,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: colors.length,
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                itemBuilder: (context, index) {
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedColor = colors[index];
+                                        isErasing = false;
+                                        showEraserSizeControl = false;
+                                        showStrokeSizeControl = false;
+                                      });
+                                    },
+                                    onLongPress: () {
+                                      setState(() {
+                                        selectedColor = colors[index];
+                                        isErasing = false;
+                                        showEraserSizeControl = false;
+                                        showStrokeSizeControl = true;
+                                      });
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                        vertical: 5,
+                                      ),
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: colors[index],
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: selectedColor == colors[index] && !isErasing
+                                              ? themeColor
+                                              : Colors.transparent,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
