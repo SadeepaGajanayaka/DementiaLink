@@ -633,3 +633,26 @@ class _DrawingPageState extends State<DrawingPage> {
     Colors.green.shade800,
     Colors.brown,
   ];
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: showAppBar ? AppBar(
+        backgroundColor: themeColor,
+        title: const Text('DementiaLink- Drawing', style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.white),
+            onPressed: () {/* Implement save functionality */},
+          ),
+          IconButton(
+            icon: const Icon(Icons.folder_open, color: Colors.white),
+            onPressed: () {/* Implement load functionality */},
+          ),
+        ],
+      ) : null,
+      
