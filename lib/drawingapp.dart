@@ -666,3 +666,27 @@ class _DrawingPageState extends State<DrawingPage> {
         },
         child: Stack(
           children: [
+
+GestureDetector(
+              onPanStart: (details) {
+                if (isPanning) {
+                  return;
+                }
+
+                setState(() {
+                  showAppBar = false;
+                  showStrokeSizeControl = false;
+                  showEraserSizeControl = false;
+
+                  final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                  final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+                  final adjustedPosition = localPosition - Offset(0, showAppBar ? AppBar().preferredSize.height : 0);
+
+                  currentPoints.add(
+                    DrawingPoint(
+                      adjustedPosition - panOffset,
+                      _getPaintSettings(),
+                    ),
+                  );
+                });
+              },
