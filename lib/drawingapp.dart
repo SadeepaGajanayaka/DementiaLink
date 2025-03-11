@@ -980,3 +980,45 @@ GestureDetector(
       ),
     );
   }
+  IconData _getToolIcon() {
+    switch (currentTool) {
+      case DrawingTool.pencil:
+        return Icons.edit;
+      case DrawingTool.brush:
+        return Icons.brush;
+      case DrawingTool.marker:
+        return Icons.brush_outlined;
+      case DrawingTool.spray:
+        return Icons.water_drop;
+    }
+  }
+
+  Paint _getPaintSettings() {
+    final paint = Paint()
+      ..color = isErasing ? Colors.white : selectedColor
+      ..strokeWidth = isErasing ? eraserWidth : strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    if (!isErasing) {
+      switch (currentTool) {
+        case DrawingTool.pencil:
+          paint.strokeWidth = strokeWidth * 0.5;
+          break;
+        case DrawingTool.brush:
+          paint.strokeWidth = strokeWidth;
+          break;
+        case DrawingTool.marker:
+          paint.strokeWidth = strokeWidth * 1.5;
+          paint.strokeCap = StrokeCap.square;
+          break;
+        case DrawingTool.spray:
+          paint.strokeWidth = strokeWidth * 0.8;
+          paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+          break;
+      }
+    }
+
+    return paint;
+  }
