@@ -58,14 +58,7 @@ final List<Song> songs = [
     artist: 'Dementia_Link',
     imagePath: 'assets/images/i4.png',
     audioPath: 'assets/audio/track4.mp3',
-  ),
-  Song(
-    title: 'Dementia special Track',
-    artist: 'Meditational StateHealing Music',
-    imagePath: 'assets/images/i5.jpg',
-    audioPath: 'assets/audio/track5.mp3',
-  ),
-];
+
 class PlaylistScreen extends StatelessWidget {
   const PlaylistScreen({Key? key}) : super(key: key);
 
