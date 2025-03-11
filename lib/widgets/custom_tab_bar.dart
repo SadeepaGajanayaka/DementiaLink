@@ -17,11 +17,11 @@ class CustomTabBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildTabItem(0, Icons.grid_view, 'Gallery'),
-          _buildTabItem(1, Icons.collections, 'Albums'),
-          _buildTabItem(2, Icons.favorite_border, 'Favourites'),
-          _buildTabItem(3, Icons.image, 'All Photos'),
-          _buildTabItem(4, Icons.delete_forever, 'Deleted'),
+          _buildTabItem(0, Icons.photo_library, 'Gallery'),
+          _buildTabItem(1, Icons.folder, 'Albums'),
+          _buildTabItem(2, Icons.star_border, 'Favourites'),
+          _buildTabItem(3, Icons.photo, 'All Photos'),
+          _buildTabItem(4, Icons.delete_outline, 'Deleted'),
         ],
       ),
     );
