@@ -603,3 +603,19 @@ class DrawingPage extends StatefulWidget {
   @override
   _DrawingPageState createState() => _DrawingPageState();
 }
+class _DrawingPageState extends State<DrawingPage> {
+  Color selectedColor = Colors.black;
+  double strokeWidth = 5;
+  double eraserWidth = 20;
+  List<List<DrawingPoint?>> undoList = [];
+  List<List<DrawingPoint?>> redoList = [];
+  List<DrawingPoint?> currentPoints = [];
+  bool isErasing = false;
+  bool isPanning = false;
+  bool showEraserSizeControl = false;
+  bool showStrokeSizeControl = false;
+  bool showAppBar = true;
+  DrawingTool currentTool = DrawingTool.pencil;
+  Offset panOffset = Offset.zero;
+
+  final Color themeColor = const Color(0xFF503663);
