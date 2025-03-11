@@ -51,13 +51,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Get all photos to search by date
     final allPhotos = await storageProvider.getAllPhotos();
-   // final datePhotos = allPhotos.where((photo) => _dateMatchesSearch(photo.createdAt, query)).toList();
+    final datePhotos = allPhotos.where((photo) => _dateMatchesSearch(photo.createdAt, query)).toList();
 
     // Combine photo results and remove duplicates
     final Set<String> photoIds = {};
     final List<Photo> uniquePhotos = [];
 
-    for (var photo in [...notePhotos]) {
+    for (var photo in [...notePhotos, ...datePhotos]) {
       if (!photoIds.contains(photo.id)) {
         photoIds.add(photo.id);
         uniquePhotos.add(photo);
@@ -72,8 +72,31 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // Helper method to check if a date matches the search query
+  bool _dateMatchesSearch(DateTime date, String query) {
+    if (query.isEmpty) return false;
 
+    try {
+      // Format the date in various ways to check against the search
+      final DateFormat fullFormat = DateFormat('yyyy-MM-dd');
+      final DateFormat monthYearFormat = DateFormat('MMM yyyy');
+      final DateFormat monthFormat = DateFormat('MMMM');
+      final DateFormat yearFormat = DateFormat('yyyy');
 
+      final String fullDate = fullFormat.format(date);
+      final String monthYear = monthYearFormat.format(date);
+      final String month = monthFormat.format(date);
+      final String year = yearFormat.format(date);
+
+      query = query.toLowerCase();
+
+      return fullDate.toLowerCase().contains(query) ||
+          monthYear.toLowerCase().contains(query) ||
+          month.toLowerCase().contains(query) ||
+          year.contains(query);
+    } catch (e) {
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
