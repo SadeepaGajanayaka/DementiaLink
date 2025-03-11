@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'hi mage raththaran yaluwe'),
+      home: const MyHomePage(title: 'This is main dart file'),
     );
   }
 }
@@ -112,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'You have pushed the button this many times:',
+              'you touched plus button this many times',
             ),
             Text(
               '$_counter',

@@ -13,6 +13,7 @@ dependencies:
   firebase_core: ^2.27.1
   firebase_auth: ^4.17.9
   cupertino_icons: ^1.0.8
+  just_audio: ^0.9.34
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +22,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/i1.png
+    - assets/images/i2.png
+    - assets/images/i3.png
+    - assets/images/i4.png
+    - assets/images/i5.jpg
+    - assets/images/brain_icon.png
+    - assets/audio/track1.mp3
+    - assets/audio/track2.mp3
+    - assets/audio/track3.mp3
+    - assets/audio/track4.mp3
+    - assets/audio/track5.mp3
