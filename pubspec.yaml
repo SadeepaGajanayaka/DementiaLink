@@ -71,4 +71,8 @@ flutter:
     - lib/assets/audio/track3.mp3
     - lib/assets/audio/track4.mp3
     - lib/assets/audio/track5.mp3
+    - lib/assets/google-maps.png
+    - lib/assets/location_pin.png
+    - lib/assets/back_arrow.png
+    - lib/assets/image.jpeg
 

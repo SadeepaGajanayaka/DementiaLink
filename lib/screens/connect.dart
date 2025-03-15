@@ -47,7 +47,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           // Use double.infinity to ensure we go beyond safe areas
           height: double.infinity,
           // This is the semi-transparent background
-          color: const Color(0xFF503663).withOpacity(0.75),
+          color: const Color(0xFF503663).withOpacity(0.95),
           child: Center(
             child: Container(
               width: double.infinity,
@@ -91,7 +91,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         child: SizedBox(
                           height: 150,
                           child: Image.asset(
-                            'assets/image.jpeg',
+                            'lib/assets/image.jpeg',
                             // If you don't have this asset, replace with:
                             // Icon(Icons.person_outline, size: 150, color: Color(0xFF77588D))
                           ),
@@ -100,7 +100,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                       const SizedBox(height: 10),
                       const Center(
                         child: Text(
-                          'Request Patient ID',
+                          'Enter Patient Email',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -174,7 +174,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'Send',
+                                'Connect',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,

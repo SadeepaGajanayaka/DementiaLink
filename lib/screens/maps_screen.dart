@@ -5,7 +5,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'map_style.dart';
 import 'connect.dart';
-import 'safe_zone.dart';
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -22,9 +21,6 @@ class _MapsScreenState extends State<MapsScreen> {
   final Location _location = Location();
   LocationData? _currentLocation;
   bool _liveLocationEnabled = false;
-
-  // Tab selection state
-  bool _safeZoneSelected = true;
 
   // Initial camera position (Sri Lanka - Centered on the island)
   final CameraPosition _initialCameraPosition = const CameraPosition(
@@ -127,7 +123,7 @@ class _MapsScreenState extends State<MapsScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF77588D), Color(0xFF503663)],
+            colors: [Color(0xFF503663), Color(0xFF77588D)],
           ),
         ),
         child: Column(
@@ -142,14 +138,20 @@ class _MapsScreenState extends State<MapsScreen> {
                     // Back button and title
                     Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            // Back functionality
+                        // Custom back arrow image
+                        GestureDetector(
+                          onTap: () {
+                            // Back functionality - Navigate to dashboard
+                            Navigator.pop(context);
                           },
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                            child: Image.asset(
+                              'lib/assets/back_arrow.png',
+                              width: 28,
+                              height: 28,
+                            ),
+                          ),
                         ),
                         const Expanded(
                           child: Center(
@@ -157,30 +159,25 @@ class _MapsScreenState extends State<MapsScreen> {
                               'Location Tracking',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 24,
+                                fontSize: 28,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
-                        // Brain icon
-                        Container(
-                          margin: const EdgeInsets.only(right: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: const Icon(
-                            Icons.psychology,
-                            color: Colors.white,
-                            size: 20,
+                        // Brain icon - using the specified asset with larger size
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16.0),
+                          child: Image.asset(
+                            'lib/assets/images/brain_icon.png',
+                            width: 50,
+                            height: 50,
                           ),
                         ),
                       ],
                     ),
 
-                    // Search bar
+                    // Search bar with Google Maps icon
                     Container(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -192,11 +189,13 @@ class _MapsScreenState extends State<MapsScreen> {
                       ),
                       child: Row(
                         children: [
+                          // Google Maps icon
                           Container(
                             padding: const EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.amber[700],
+                            child: Image.asset(
+                              'lib/assets/google-maps.png',
+                              width: 26,
+                              height: 26,
                             ),
                           ),
                           const Expanded(
@@ -208,12 +207,64 @@ class _MapsScreenState extends State<MapsScreen> {
                               ),
                             ),
                           ),
+                          // Microphone icon in black
                           Container(
                             padding: const EdgeInsets.all(8),
                             child: const Icon(
                               Icons.mic,
-                              color: Colors.black54,
+                              color: Colors.black, // Changed to black
+                              size: 30,
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Live location toggle with 20px border radius on all corners
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF77588D),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              // Location pin icon next to "Live Location" text
+                              Image.asset(
+                                'lib/assets/location_pin.png',
+                                width: 24,
+                                height: 24,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Live Location',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 18, // Increased font size
+                                ),
+                              ),
+                            ],
+                          ),
+                          Switch(
+                            value: _liveLocationEnabled,
+                            onChanged: _toggleLiveLocation,
+                            activeColor: Colors.white,
+                            activeTrackColor: const Color(0xFF6246A3),
+                            inactiveTrackColor: Colors.grey[700],
+                            inactiveThumbColor: Colors.white,
                           ),
                         ],
                       ),
@@ -223,7 +274,7 @@ class _MapsScreenState extends State<MapsScreen> {
               ),
             ),
 
-            // Expanded map view with rounded corners and UI elements as overlays
+            // Expanded map view with rounded corners
             Expanded(
               child: Stack(
                 children: [
@@ -261,165 +312,11 @@ class _MapsScreenState extends State<MapsScreen> {
                     ),
                   ),
 
-                  // UI elements on top of map - MOVED TO TOP
-                  Positioned(
-                    top: 30, // Moved a tiny bit lower
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: FractionallySizedBox(
-                        widthFactor: 0.85, // Increased width from 75% to 85% of screen width
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Safe Zone / Red Alert tabs with selection behavior
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(15),
-                                    topRight: Radius.circular(15),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Safe Zone Alert
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _safeZoneSelected = true;
-                                          });
-
-                                          // Navigate to SafeZoneScreen
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => const SafeZoneScreen(),
-                                            ),
-                                          );
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: _safeZoneSelected
-                                                ? const Color(0xFFD9D9D9)
-                                                : Colors.white,
-                                            borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(15),
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              'Safe Zone Alert',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black, // Changed to black
-                                                fontSize: 16, // Increased font size
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Red Alert
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _safeZoneSelected = false;
-                                          });
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: !_safeZoneSelected
-                                                ? const Color(0xFFD9D9D9)
-                                                : Colors.white,
-                                            borderRadius: const BorderRadius.only(
-                                              topRight: Radius.circular(15),
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              'Red Alert',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black, // Changed to black
-                                                fontSize: 16, // Increased font size
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Live location toggle - connected to tabs above with increased height
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF503663),
-                                  borderRadius: BorderRadius.only(
-                                    bottomLeft: Radius.circular(15),
-                                    bottomRight: Radius.circular(15),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Moderately increased vertical padding
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: const [
-                                        Icon(
-                                          Icons.location_on,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Live Location',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 18, // Increased font size
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Switch(
-                                      value: _liveLocationEnabled,
-                                      onChanged: _toggleLiveLocation,
-                                      activeColor: Colors.white,
-                                      activeTrackColor: const Color(0xFF6246A3),
-                                      inactiveTrackColor: Colors.grey[700],
-                                      inactiveThumbColor: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Compass/Navigation button (right middle position as in screenshot)
+                  // Original position but with reduced spacing between buttons
+                  // First circle (Navigation button)
                   Positioned(
                     right: 16,
-                    top: MediaQuery.of(context).size.height * 0.4, // Keep this position
+                    top: MediaQuery.of(context).size.height * 0.4, // Keep original position
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -435,18 +332,18 @@ class _MapsScreenState extends State<MapsScreen> {
                       child: IconButton(
                         icon: const Icon(
                           Icons.navigation,
-                          size: 30, // Increased from 24
+                          size: 30,
                         ),
-                        iconSize: 50, // Added to make button bigger
+                        iconSize: 50,
                         onPressed: _centerOnCurrentLocation,
                       ),
                     ),
                   ),
 
-                  // Target location button (below compass, as in screenshot)
+                  // Second circle (Target location button) - moved closer to the first one
                   Positioned(
                     right: 16,
-                    top: MediaQuery.of(context).size.height * 0.485, // Small space, not pasted together
+                    top: MediaQuery.of(context).size.height * 0.46, // Reduced distance from 0.485 to 0.46
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF77588D),
@@ -463,9 +360,9 @@ class _MapsScreenState extends State<MapsScreen> {
                         icon: const Icon(
                           Icons.my_location,
                           color: Colors.white,
-                          size: 30, // Increased from 24
+                          size: 30,
                         ),
-                        iconSize: 50, // Added to make button bigger
+                        iconSize: 50,
                         onPressed: _getCurrentLocation,
                       ),
                     ),
