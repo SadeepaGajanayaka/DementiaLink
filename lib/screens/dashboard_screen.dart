@@ -3,6 +3,8 @@ import 'custom_drawer.dart';
 import 'art_therapy_overlay.dart';
 // Import the PlaylistScreen for music therapy
 import 'package:just_audio/just_audio.dart'; // You'll need to add this dependency to your pubspec.yaml
+// Import maps_screen for location tracking
+import 'maps_screen.dart';
 
 // Import the PlaylistScreen
 class Song {
@@ -499,6 +501,16 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
+  // Add a method to navigate to the location tracking screen
+  void navigateToLocationTracking() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MapsScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -577,9 +589,12 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               label: 'Notification &\nReminders',
                             ),
                             const SizedBox(width: 24),
-                            const ShortcutButton(
-                              imagePath: 'lib/assets/icons/location_icon.png',
-                              label: 'Location\nTracking',
+                            GestureDetector(
+                              onTap: navigateToLocationTracking, // Modified to navigate to location tracking
+                              child: const ShortcutButton(
+                                imagePath: 'lib/assets/icons/location_icon.png',
+                                label: 'Location\nTracking',
+                              ),
                             ),
                             const SizedBox(width: 24),
                             GestureDetector(
@@ -686,6 +701,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                         DashboardCard(
                           title: 'Location Tracking',
                           imagePath: 'lib/assets/location.png',
+                          onTap: navigateToLocationTracking, // Modified to navigate to location tracking
                         ),
                         const SizedBox(height: 16),
                         Row(
