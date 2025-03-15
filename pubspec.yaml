@@ -24,6 +24,7 @@ dependencies:
   firebase_storage: ^11.6.5
   google_sign_in: ^6.3.0
   image_picker: ^1.1.2
+  just_audio: ^0.9.34
 
 
 dev_dependencies:
@@ -46,4 +47,28 @@ flutter:
     - lib/assets/msg.png
     - lib/assets/profile_setup.png
     - lib/assets/patient_profile.png
+    - lib/assets/notifications.png
+    - lib/assets/journal.png
+    - lib/assets/location.png
+    - lib/assets/art.png
+    - lib/assets/music.png
+    - lib/assets/111.png
+    - lib/assets/icons/brush.png
+    - lib/assets/icons/palette.png
+    - lib/assets/icons/journal_icon.png
+    - lib/assets/icons/notification_icon.png
+    - lib/assets/icons/location_icon.png
+    - lib/assets/icons/music_icon.png
+    - lib/assets/icons/art_icon.png
+    - lib/assets/images/i1.png
+    - lib/assets/images/i2.png
+    - lib/assets/images/i3.png
+    - lib/assets/images/i4.png
+    - lib/assets/images/i5.jpg
+    - lib/assets/images/brain_icon.png
+    - lib/assets/audio/track1.mp3
+    - lib/assets/audio/track2.mp3
+    - lib/assets/audio/track3.mp3
+    - lib/assets/audio/track4.mp3
+    - lib/assets/audio/track5.mp3
 

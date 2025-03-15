@@ -48,7 +48,7 @@ class ArtTherapyOverlay extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   _buildOptionCard(
-                    icon: 'assets/icons/brush.png', // Keep original icon path
+                    icon: 'lib/assets/icons/brush.png', // Keep original icon path
                     title: 'Drawing App',
                     onTap: () {
                       // Add navigation to drawing app
@@ -56,7 +56,7 @@ class ArtTherapyOverlay extends StatelessWidget {
                   ),
                   const SizedBox(width: 15),
                   _buildOptionCard(
-                    icon: 'assets/icons/palette.png', // Keep original icon path
+                    icon: 'lib/assets/icons/palette.png', // Keep original icon path
                     title: 'Sketch Painting',
                     onTap: () {
                       // Add navigation to sketch painting
