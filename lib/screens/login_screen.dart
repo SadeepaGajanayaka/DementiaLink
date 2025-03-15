@@ -3,7 +3,6 @@ import 'signup_screen.dart';
 import 'forgot_password_dialog.dart';
 import 'verification_screen.dart';
 import 'dashboard_screen.dart';
-import 'dashboard_screen.dart'; // Added import for dashboard
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  String? _emailError;
+  String? _passwordError;
 
   // Auth service
   final AuthService _authService = AuthService();
@@ -28,6 +29,61 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Validate email format with comprehensive checks
+  bool _isValidEmail(String email) {
+    // Basic pattern for email validation
+    final emailPattern = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+
+    if (!emailPattern.hasMatch(email)) {
+      return false;
+    }
+
+    // Additional checks
+    if (email.contains('..')) {
+      return false; // Double dots not allowed
+    }
+
+    final parts = email.split('@');
+    if (parts[0].isEmpty || parts[1].isEmpty) {
+      return false; // Username and domain must not be empty
+    }
+
+    if (parts[1].startsWith('.') || parts[1].endsWith('.')) {
+      return false; // Domain cannot start or end with a dot
+    }
+
+    return true;
+  }
+
+  // Validate login inputs
+  bool _validateInputs() {
+    bool isValid = true;
+
+    // Validate email
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Email is required');
+      isValid = false;
+    } else if (!_isValidEmail(email)) {
+      setState(() => _emailError = 'Please enter a valid email address');
+      isValid = false;
+    } else {
+      setState(() => _emailError = null);
+    }
+
+    // Validate password (basic check for empty)
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordError = 'Password is required');
+      isValid = false;
+    } else {
+      setState(() => _passwordError = null);
+    }
+
+    return isValid;
   }
 
   void _handleForgotPassword() {
@@ -97,21 +153,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // Clear previous errors
+    // Clear previous general error
     setState(() {
       _errorMessage = null;
     });
 
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    // Simple validation
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter both email and password';
-      });
+    // Validate inputs
+    if (!_validateInputs()) {
       return;
     }
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
     // Set loading state
     setState(() {
@@ -183,23 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleFacebookSignIn() async {
-    // Similar placeholder for Facebook login
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Facebook Sign-In will be implemented'),
-      ),
-    );
-  }
-
-  Future<void> _handleAppleSignIn() async {
-    // Similar placeholder for Apple login
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Apple Sign-In will be implemented'),
-      ),
-    );
-  }
+  // Removed Facebook and Apple sign-in methods as they are no longer needed
 
   @override
   Widget build(BuildContext context) {
@@ -326,6 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          errorText: _emailError,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -342,7 +380,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
-                          hintText: 'min. 8 characters',
+                          hintText: 'Enter your password',
                           hintStyle: TextStyle(color: Colors.grey[500]),
                           filled: true,
                           fillColor: Colors.grey[300],
@@ -350,6 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          errorText: _passwordError,
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isPasswordVisible
@@ -422,14 +461,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Social login buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _socialLoginButton('lib/assets/google_logo.png', _handleGoogleSignIn),
-                          _socialLoginButton('lib/assets/facebook_logo.png', _handleFacebookSignIn),
-                          _socialLoginButton('lib/assets/apple_logo.png', _handleAppleSignIn),
-                        ],
+                      // Only Google login button, centered
+                      Center(
+                        child: _socialLoginButton('lib/assets/google_logo.png', _handleGoogleSignIn),
                       ),
                       const SizedBox(height: 24),
                       // Sign up link
