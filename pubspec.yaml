@@ -13,13 +13,17 @@ dependencies:
   firebase_core: ^2.27.1
   google_maps_flutter: ^2.5.0
   location: ^5.0.3
-  cloud_firestore: ^4.9.1
-  firebase_auth: ^4.17.9
+  cloud_firestore: ^4.17.5
+  firebase_auth: ^4.16.0
   cupertino_icons: ^1.0.8
   geolocator: ^10.1.0
   permission_handler: ^10.4.3
   firebase_database: ^10.0.15
   google_fonts: ^6.1.0
+  intl: ^0.20.2
+  firebase_storage: ^11.6.5
+  google_sign_in: ^6.3.0
+  image_picker: ^1.1.2
 
 
 dev_dependencies:
@@ -31,10 +35,15 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/back_arrow.png
-    - assets/location_pin.png
-    - assets/logo.png
-    - assets/mic.png
-    - assets/google-maps.png
-    - assets/image.jpeg
+    - lib/assets/apple_logo.png
+    - lib/assets/brain_logo.png
+    - lib/assets/facebook_logo.png
+    - lib/assets/google_logo.png
+    - lib/assets/intro1.png
+    - lib/assets/intro2.png
+    - lib/assets/intro3.png
+    - lib/assets/intro4.png
+    - lib/assets/msg.png
+    - lib/assets/profile_setup.png
+    - lib/assets/patient_profile.png
 
