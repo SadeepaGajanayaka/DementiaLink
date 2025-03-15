@@ -1,8 +1,9 @@
+import 'package:dementialink/screens/map_style.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
-import '../../../../../Desktop/DementiaLink/lib/map_style.dart';
-import '../../../../../Desktop/DementiaLink/lib/add.dart';
+import 'map_style.dart';
+import 'add.dart';
 
 class SafeZoneScreen extends StatefulWidget {
   const SafeZoneScreen({super.key});
