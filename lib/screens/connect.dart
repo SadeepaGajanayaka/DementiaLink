@@ -9,7 +9,8 @@ class ConnectScreen extends StatefulWidget {
 }
 
 class _ConnectScreenState extends State<ConnectScreen> {
-  final TextEditingController _patientIdController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  String? _emailError;
 
   @override
   void initState() {
@@ -22,8 +23,24 @@ class _ConnectScreenState extends State<ConnectScreen> {
   void dispose() {
     // Restore system UI when dialog is closed
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _patientIdController.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  // Email validation function
+  bool _validateEmail() {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Please enter an email address');
+      return false;
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      setState(() => _emailError = 'Please enter a valid email address');
+      return false;
+    }
+
+    setState(() => _emailError = null);
+    return true;
   }
 
   @override
@@ -114,15 +131,23 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         child: Center(
                           child: TextField(
-                            controller: _patientIdController,
+                            controller: _emailController,
                             textAlign: TextAlign.center,
-                            decoration: const InputDecoration(
-                              hintText: '',
-                              enabledBorder: UnderlineInputBorder(
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              hintText: 'example@email.com',
+                              errorText: _emailError,
+                              enabledBorder: const UnderlineInputBorder(
                                 borderSide: BorderSide(color: Colors.grey),
                               ),
-                              focusedBorder: UnderlineInputBorder(
+                              focusedBorder: const UnderlineInputBorder(
                                 borderSide: BorderSide(color: Color(0xFF77588D)),
+                              ),
+                              errorBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.red),
+                              ),
+                              focusedErrorBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.red),
                               ),
                             ),
                           ),
@@ -147,7 +172,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                 icon: const Icon(Icons.delete, color: Color(0xFF77588D)),
                                 onPressed: () {
                                   // Delete functionality - clear the text field
-                                  _patientIdController.clear();
+                                  _emailController.clear();
+                                  setState(() {
+                                    _emailError = null;
+                                  });
                                 },
                               ),
                             ),
@@ -155,15 +183,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
                             // Send button on the right
                             ElevatedButton(
                               onPressed: () {
-                                // Process patient ID and navigate back
-                                final patientId = _patientIdController.text.trim();
-                                // Restore system UI before popping
-                                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                                if (patientId.isNotEmpty) {
-                                  // Return to maps screen with the ID
-                                  Navigator.pop(context, patientId);
-                                } else {
-                                  Navigator.pop(context);
+                                // Validate email before proceeding
+                                if (_validateEmail()) {
+                                  // Process email and navigate back
+                                  final email = _emailController.text.trim();
+                                  // Restore system UI before popping
+                                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                                  // Return to maps screen with the validated email
+                                  Navigator.pop(context, email);
                                 }
                               },
                               style: ElevatedButton.styleFrom(

@@ -5,6 +5,7 @@ import 'art_therapy_overlay.dart';
 import 'package:just_audio/just_audio.dart'; // You'll need to add this dependency to your pubspec.yaml
 // Import maps_screen for location tracking
 import 'maps_screen.dart';
+import '../services/auth_service.dart';
 
 // Import the PlaylistScreen
 class Song {
@@ -453,6 +454,13 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   late AnimationController _animationController;
   bool _isDrawerOpen = false;
 
+  // Added variables to handle user role check
+  bool _isLoading = true;
+  bool _isCaregiver = false;
+
+  // Auth service for checking user role
+  final AuthService _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
@@ -460,6 +468,39 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
+
+    // Check user role when dashboard initializes
+    _checkUserRole();
+  }
+
+  // Method to check if the current user is a caregiver
+  Future<void> _checkUserRole() async {
+    try {
+      final userId = _authService.currentUser?.uid;
+      print("Checking role for user: $userId");
+
+      if (userId != null) {
+        final userData = await _authService.getUserData(userId);
+        print("User data retrieved: ${userData['role']}");
+
+        setState(() {
+          _isCaregiver = userData['role'] == 'caregiver';
+          _isLoading = false;
+        });
+
+        print("User is caregiver: $_isCaregiver");
+      } else {
+        print("No user ID found");
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking user role: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -491,7 +532,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
-  // Add a method to navigate to the music therapy screen
+  // Method to navigate to the music therapy screen
   void navigateToMusicTherapy() {
     Navigator.push(
       context,
@@ -501,21 +542,32 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
-  // Add a method to navigate to the location tracking screen
+  // Updated method to navigate to location tracking
+  // with role-based access control
   void navigateToLocationTracking() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const MapsScreen(),
-      ),
-    );
+    if (_isCaregiver) {
+      // Only caregivers can access the maps screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const MapsScreen(),
+        ),
+      );
+    }
+    // For patients, clicking does nothing (null onTap handler)
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF503663),
-      body: Stack(
+      body: _isLoading
+          ? const Center(
+        child: CircularProgressIndicator(
+          color: Colors.white,
+        ),
+      )
+          : Stack(
         children: [
           SafeArea(
             child: Padding(
@@ -589,8 +641,9 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               label: 'Notification &\nReminders',
                             ),
                             const SizedBox(width: 24),
+                            // Show location tracking to all, but only functional for caregivers
                             GestureDetector(
-                              onTap: navigateToLocationTracking, // Modified to navigate to location tracking
+                              onTap: _isCaregiver ? navigateToLocationTracking : null,
                               child: const ShortcutButton(
                                 imagePath: 'lib/assets/icons/location_icon.png',
                                 label: 'Location\nTracking',
@@ -598,7 +651,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             ),
                             const SizedBox(width: 24),
                             GestureDetector(
-                              onTap: navigateToMusicTherapy, // Navigate to Music Therapy
+                              onTap: navigateToMusicTherapy,
                               child: const ShortcutButton(
                                 imagePath: 'lib/assets/icons/music_icon.png',
                                 label: 'Music\nTherapy',
@@ -698,10 +751,11 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                           ],
                         ),
                         const SizedBox(height: 16),
+                        // Show location tracking to all, but only functional for caregivers
                         DashboardCard(
                           title: 'Location Tracking',
                           imagePath: 'lib/assets/location.png',
-                          onTap: navigateToLocationTracking, // Modified to navigate to location tracking
+                          onTap: _isCaregiver ? navigateToLocationTracking : null,
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -718,7 +772,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               child: DashboardCard(
                                 title: 'Music Therapy',
                                 imagePath: 'lib/assets/music.png',
-                                onTap: navigateToMusicTherapy, // Navigate to Music Therapy
+                                onTap: navigateToMusicTherapy,
                               ),
                             ),
                           ],

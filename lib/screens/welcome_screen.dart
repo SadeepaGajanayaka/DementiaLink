@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'assist_me.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
@@ -20,8 +21,10 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   final AuthService _authService = AuthService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _picker = ImagePicker();
   File? _profileImage;
+  bool _isProcessing = false;
 
   Future<void> _selectImage(ImageSource source) async {
     try {
@@ -94,6 +97,102 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ),
       ),
     );
+  }
+
+  // New method to handle "Assist Me" option
+  Future<void> _handleAssistMe() async {
+    // Prevent multiple taps
+    if (_isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final userId = _authService.currentUser?.uid;
+      if (userId != null) {
+        // Save user role as 'patient'
+        await _firestore.collection('users').doc(userId).update({
+          'role': 'patient',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        print("User role set to 'patient' for user: $userId");
+      }
+
+      // Navigate to the Assist Me screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AssistMe(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving user role: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  // New method to handle "Assist a Loved One" option
+  Future<void> _handleAssistLoved() async {
+    // Prevent multiple taps
+    if (_isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final userId = _authService.currentUser?.uid;
+      if (userId != null) {
+        // Save user role as 'caregiver'
+        await _firestore.collection('users').doc(userId).update({
+          'role': 'caregiver',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        print("User role set to 'caregiver' for user: $userId");
+      }
+
+      // Navigate to the Assist Loved One screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AssistLoved(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving user role: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -181,18 +280,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color:
-                                      const Color(0xFF77588D).withOpacity(0.2),
+                                  const Color(0xFF77588D).withOpacity(0.2),
                                 ),
                                 clipBehavior: Clip.hardEdge,
                                 child: _profileImage != null
                                     ? Image.file(
-                                        _profileImage!,
-                                        fit: BoxFit.cover,
-                                      )
+                                  _profileImage!,
+                                  fit: BoxFit.cover,
+                                )
                                     : Image.asset(
-                                        'lib/assets/profile_setup.png',
-                                        fit: BoxFit.cover,
-                                      ),
+                                  'lib/assets/profile_setup.png',
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                             // Edit icon positioned at bottom right
@@ -253,16 +352,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AssistMe(
-                                    userName: widget.userName,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _isProcessing ? null : _handleAssistMe,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF77588D),
                               foregroundColor: Colors.white,
@@ -271,7 +361,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
+                            child: _isProcessing
+                                ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                                : const Text(
                               'Assist Me',
                               style: TextStyle(
                                 fontSize: 18,
@@ -286,16 +385,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AssistLoved(
-                                    userName: widget.userName,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _isProcessing ? null : _handleAssistLoved,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF77588D),
                               foregroundColor: Colors.white,
@@ -304,7 +394,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
+                            child: _isProcessing
+                                ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                                : const Text(
                               'Assist a Loved One',
                               style: TextStyle(
                                 fontSize: 18,
