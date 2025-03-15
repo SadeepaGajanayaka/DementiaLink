@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_password_dialog.dart';
 import 'verification_screen.dart';
-import 'welcome_screen.dart';
+import 'dashboard_screen.dart';
+import 'dashboard_screen.dart'; // Added import for dashboard
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
           final emailToReset = submittedEmail.isEmpty ? email : submittedEmail;
           // Close the dialog
           Navigator.of(context).pop();
-          
+
           if (emailToReset.isNotEmpty) {
             try {
               // Show loading
@@ -47,10 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   content: Text('Sending password reset email...'),
                 ),
               );
-              
+
               // Send password reset email
               await _authService.resetPassword(emailToReset);
-              
+
               // Show success message
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -59,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
-                
+
                 // Navigate to verification screen
                 Navigator.push(
                   context,
@@ -100,10 +101,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _errorMessage = null;
     });
-    
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    
+
     // Simple validation
     if (email.isEmpty || password.isEmpty) {
       setState(() {
@@ -111,30 +112,25 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       return;
     }
-    
+
     // Set loading state
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // Perform login with Firebase
       await _authService.loginWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
-      // Get user's name from Firebase Auth
-      final displayName = _authService.currentUser?.displayName ?? 'User';
-      
-      // Navigate to welcome screen on success
+
+      // Navigate to dashboard screen on success
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => WelcomeScreen(
-              userName: displayName,
-            ),
+            builder: (context) => const DashboardScreen(),
           ),
         );
       }
@@ -146,30 +142,25 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
-  
+
   // Social authentication methods
   Future<void> _handleGoogleSignIn() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
       // Call the Google sign-in method from auth service
       // This will show the Google account picker dialog
       await _authService.signInWithGoogle();
-      
-      // Get user's name from Firebase Auth
-      final displayName = _authService.currentUser?.displayName ?? 'User';
-      
-      // Navigate to welcome screen on success
+
+      // Navigate to dashboard screen on success
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => WelcomeScreen(
-              userName: displayName,
-            ),
+            builder: (context) => const DashboardScreen(),
           ),
         );
       }
@@ -180,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _errorMessage = error.toString();
           _isLoading = false;
         });
-        
+
         // Show a more user-friendly error in Snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -191,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-  
+
   Future<void> _handleFacebookSignIn() async {
     // Similar placeholder for Facebook login
     ScaffoldMessenger.of(context).showSnackBar(
@@ -200,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-  
+
   Future<void> _handleAppleSignIn() async {
     // Similar placeholder for Apple login
     ScaffoldMessenger.of(context).showSnackBar(
@@ -298,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Error message
                       if (_errorMessage != null)
                         Container(
@@ -313,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       if (_errorMessage != null) const SizedBox(height: 16),
-                      
+
                       // Email field
                       const Text(
                         'Email',
@@ -401,12 +392,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
-                                'LOGIN',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                          'LOGIN',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 24),
                       const Row(
