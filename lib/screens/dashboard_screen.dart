@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
+import '../models/storage_provider.dart';
+import '../widgets/custom_tab_bar.dart';
 import 'custom_drawer.dart';
+import 'gallery_screen.dart';
+import 'albums_screen.dart';
+import 'favourites_screen.dart';
+import 'all_photos_screen.dart';
+import 'deleted_screen.dart';
 import 'art_therapy_overlay.dart';
-// Import the PlaylistScreen for music therapy
-import 'package:just_audio/just_audio.dart'; // You'll need to add this dependency to your pubspec.yaml
 // Import maps_screen for location tracking
 import 'maps_screen.dart';
 import '../services/auth_service.dart';
+import 'gallery_screen.dart'; // Import the gallery screen directly
+import '../models/storage_provider.dart'; // Use the correct path to your existing StorageProvider
 
 // Import the PlaylistScreen
 class Song {
@@ -443,6 +452,68 @@ class PlayerScreenState extends State<PlayerScreen> {
   }
 }
 
+// Create a Journal screen that contains the GalleryScreen wrapped in the necessary providers
+class JournalScreen extends StatelessWidget {
+  const JournalScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF503663),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Story Memory Journal',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.2),
+                    ),
+                    child: ClipOval(
+                      child: Icon(
+                        Icons.photo_camera,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Gallery Screen
+            Expanded(
+              child: GalleryScreen(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
@@ -542,19 +613,30 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
-  // Updated method to navigate to location tracking
-  // with role-based access control
+  // FIXED: Updated method to navigate to location tracking
+  // without role-based access control
   void navigateToLocationTracking() {
-    if (_isCaregiver) {
-      // Only caregivers can access the maps screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const MapsScreen(),
+    // Navigate to maps screen for all users (no role check)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MapsScreen(),
+      ),
+    );
+  }
+
+  // Modified method to navigate to Story/Memory Journal
+  // Now directly goes to GalleryScreen wrapped in a StorageProvider
+  void navigateToStoryMemoryJournal() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider(
+          create: (_) => StorageProvider(),
+          child: const JournalScreen(), // Use the JournalScreen which contains the GalleryScreen
         ),
-      );
-    }
-    // For patients, clicking does nothing (null onTap handler)
+      ),
+    );
   }
 
   @override
@@ -607,6 +689,12 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               child: Image.asset(
                                 'lib/assets/111.png',
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    color: Color(0xFF503663),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -631,9 +719,13 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            const ShortcutButton(
-                              imagePath: 'lib/assets/icons/journal_icon.png',
-                              label: 'Story/Memory\nJournal',
+                            // Updated Story/Memory Journal with navigation
+                            GestureDetector(
+                              onTap: navigateToStoryMemoryJournal,
+                              child: const ShortcutButton(
+                                imagePath: 'lib/assets/icons/journal_icon.png',
+                                label: 'Story/Memory\nJournal',
+                              ),
                             ),
                             const SizedBox(width: 24),
                             const ShortcutButton(
@@ -641,9 +733,9 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               label: 'Notification &\nReminders',
                             ),
                             const SizedBox(width: 24),
-                            // Show location tracking to all, but only functional for caregivers
+                            // FIXED: Show location tracking and make functional for all users
                             GestureDetector(
-                              onTap: _isCaregiver ? navigateToLocationTracking : null,
+                              onTap: navigateToLocationTracking, // Removed role-based condition
                               child: const ShortcutButton(
                                 imagePath: 'lib/assets/icons/location_icon.png',
                                 label: 'Location\nTracking',
@@ -742,20 +834,22 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               ),
                             ),
                             const SizedBox(width: 16),
+                            // Updated Story/Memory Journal card with navigation
                             Expanded(
                               child: DashboardCard(
                                 title: 'Story/ Memory\nJournal',
                                 imagePath: 'lib/assets/journal.png',
+                                onTap: navigateToStoryMemoryJournal,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // Show location tracking to all, but only functional for caregivers
+                        // FIXED: Show location tracking for all users
                         DashboardCard(
                           title: 'Location Tracking',
                           imagePath: 'lib/assets/location.png',
-                          onTap: _isCaregiver ? navigateToLocationTracking : null,
+                          onTap: navigateToLocationTracking, // Removed role-based condition
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -835,6 +929,28 @@ class ShortcutButton extends StatelessWidget {
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback icon in case image is not found
+                  IconData iconData;
+                  if (imagePath.contains('journal')) {
+                    iconData = Icons.book;
+                  } else if (imagePath.contains('notification')) {
+                    iconData = Icons.notifications;
+                  } else if (imagePath.contains('location')) {
+                    iconData = Icons.location_on;
+                  } else if (imagePath.contains('music')) {
+                    iconData = Icons.music_note;
+                  } else if (imagePath.contains('art')) {
+                    iconData = Icons.palette;
+                  } else {
+                    iconData = Icons.image;
+                  }
+                  return Icon(
+                    iconData,
+                    color: const Color(0xFF503663),
+                    size: 30,
+                  );
+                },
               ),
             ),
           ),
@@ -876,7 +992,11 @@ class DashboardCard extends StatelessWidget {
           image: DecorationImage(
             image: AssetImage(imagePath),
             fit: BoxFit.cover,
+            onError: (exception, stackTrace) {
+              // This won't actually show, but it handles the error
+            },
           ),
+          color: const Color(0xFF77588D), // Fallback color if image fails to load
         ),
         child: Container(
           decoration: BoxDecoration(
