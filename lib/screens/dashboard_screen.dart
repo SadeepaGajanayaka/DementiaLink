@@ -9,12 +9,11 @@ import 'albums_screen.dart';
 import 'favourites_screen.dart';
 import 'all_photos_screen.dart';
 import 'deleted_screen.dart';
-import 'art_therapy_overlay.dart';
 // Import maps_screen for location tracking
 import 'maps_screen.dart';
 import '../services/auth_service.dart';
-import 'gallery_screen.dart'; // Import the gallery screen directly
-import '../models/storage_provider.dart'; // Use the correct path to your existing StorageProvider
+// Import drawing app
+import 'drawing_app.dart';
 
 // Import the PlaylistScreen
 class Song {
@@ -591,14 +590,12 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     });
   }
 
-  void showArtTherapyOverlay() {
-    showDialog(
-      context: context,
-      barrierColor: Colors.transparent,
-      builder: (context) => ArtTherapyOverlay(
-        onClose: () {
-          Navigator.of(context).pop();
-        },
+  // Method to show the drawing app
+  void navigateToDrawingApp() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DrawingPage(),
       ),
     );
   }
@@ -751,7 +748,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             ),
                             const SizedBox(width: 24),
                             GestureDetector(
-                              onTap: showArtTherapyOverlay,
+                              onTap: navigateToDrawingApp,
                               child: const ShortcutButton(
                                 imagePath: 'lib/assets/icons/art_icon.png',
                                 label: 'Art\nTherapy',
@@ -858,7 +855,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               child: DashboardCard(
                                 title: 'Art Therapy',
                                 imagePath: 'lib/assets/art.png',
-                                onTap: showArtTherapyOverlay,
+                                onTap: navigateToDrawingApp,
                               ),
                             ),
                             const SizedBox(width: 16),
