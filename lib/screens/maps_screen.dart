@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'map_style.dart';
 import 'connect.dart';
 import 'safe_zone.dart';
+import 'permission.dart';
 import '../services/location_service.dart';
 import '../services/auth_service.dart';
 
@@ -38,6 +40,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   final LocationService _locationService = LocationService();
   final FirebaseDatabase _database = FirebaseDatabase.instance;
   final AuthService _authService = AuthService();
+  final PermissionHandler _permissionHandler = PermissionHandler();
 
   // Connected patient info
   String? _connectedPatientId;
@@ -48,6 +51,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
 
   // Connected caregiver info (for patient view)
   String? _connectedCaregiverEmail;
+  String? _connectedCaregiverId;
 
   // User role
   String? _userRole;
@@ -57,9 +61,11 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   BitmapDescriptor? _patientMarkerIcon;
   BitmapDescriptor? _caregiverMarkerIcon;
   StreamSubscription? _patientLocationSubscription;
+  StreamSubscription? _connectionRequestSubscription;
   Timer? _locationRefreshTimer;
   int _locationRequestAttempts = 0;
   bool _showPatientOfflineStatus = false;
+  bool _isLocationShared = false;
 
   @override
   void initState() {
@@ -68,11 +74,13 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     _initializeServices();
     _loadCustomMarkers();
     _fetchUserRole();
+    _startListeningForConnectionRequests();
   }
 
   @override
   void dispose() {
     _patientLocationSubscription?.cancel();
+    _connectionRequestSubscription?.cancel();
     _locationRefreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -86,7 +94,102 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       _getCurrentLocation();
       if (_isConnected && _userRole == 'caregiver') {
         _getPatientLocationImmediately();
+        _triggerPatientLocationUpdate(); // Added: Force location update when app resumes
       }
+    }
+  }
+
+  // Start listening for connection requests (for patients)
+  void _startListeningForConnectionRequests() {
+    _connectionRequestSubscription = _permissionHandler
+        .listenForConnectionRequests()
+        .listen((DatabaseEvent event) {
+      if (event.snapshot.value != null) {
+        print("New connection request received: ${event.snapshot.key}");
+
+        // Extract request data
+        final requestData = Map<String, dynamic>.from(event.snapshot.value as Map);
+
+        // Add requestId to data if not present
+        if (!requestData.containsKey('requestId')) {
+          requestData['requestId'] = event.snapshot.key;
+        }
+
+        // Show permission dialog
+        _showPermissionDialog(requestData);
+      }
+    }, onError: (error) {
+      print("Error in connection request stream: $error");
+    });
+  }
+
+  // Show permission dialog for connection request
+  void _showPermissionDialog(Map<String, dynamic> requestData) {
+    // Check if request is already processed
+    if (requestData['status'] != 'pending') {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PermissionDialog(
+        requestData: requestData,
+      ),
+    ).then((accepted) {
+      if (accepted == true) {
+        // Request was accepted, update connection status
+        _checkConnectionStatus();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location sharing enabled'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Start location sharing
+        _locationService.startTracking();
+        setState(() {
+          _isLocationShared = true;
+        });
+      }
+    });
+  }
+
+  // Check current connection status
+  Future<void> _checkConnectionStatus() async {
+    try {
+      final connectionInfo = await _locationService.getConnectedPatient();
+
+      if (connectionInfo['connected']) {
+        setState(() {
+          _isConnected = true;
+
+          if (_userRole == 'caregiver') {
+            _connectedPatientId = connectionInfo['patientId'];
+            _connectedPatientEmail = connectionInfo['patientEmail'];
+            _startTrackingPatient();
+          } else if (_userRole == 'patient') {
+            _connectedCaregiverId = connectionInfo['caregiverId'];
+            _connectedCaregiverEmail = connectionInfo['caregiverEmail'];
+            _isLocationShared = true;
+            _locationService.startTracking(); // Ensure location tracking is active
+          }
+        });
+      } else {
+        setState(() {
+          _isConnected = false;
+          _connectedPatientId = null;
+          _connectedPatientEmail = null;
+          _connectedCaregiverId = null;
+          _connectedCaregiverEmail = null;
+          _isLocationShared = false;
+        });
+      }
+    } catch (e) {
+      print("Error checking connection status: $e");
     }
   }
 
@@ -115,12 +218,20 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           if (connectionInfo['connected']) {
             if (mounted) {
               setState(() {
-                _connectedPatientId = connectionInfo['patientId']; // This will be caregiver's ID for patient
+                _connectedCaregiverId = connectionInfo['caregiverId'];
                 _connectedCaregiverEmail = connectionInfo['caregiverEmail'];
                 _isConnected = true;
+                _isLocationShared = true;
               });
 
               print("Patient connected to caregiver: $_connectedCaregiverEmail");
+
+              // Ensure the caregiver email isn't null for display
+              if (_connectedCaregiverEmail == null) {
+                // Fall back to using caregiverEmail directly from connection data
+                _connectedCaregiverEmail = connectionInfo['caregiverEmail'] ?? 'Unknown Caregiver';
+                print("Setting caregiver email from connection data: $_connectedCaregiverEmail");
+              }
             }
           }
         } else if (_userRole == 'caregiver') {
@@ -336,12 +447,26 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
               ),
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Patient location is not available yet. They may need to open the app.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
+            // Try one more time with the urgent trigger method
+            _triggerPatientLocationUpdate();
+            Future.delayed(const Duration(seconds: 2), () {
+              if (_markers.containsKey(const MarkerId('patientLocation')) && _mapController != null) {
+                final patientMarker = _markers[const MarkerId('patientLocation')]!;
+                _mapController!.animateCamera(
+                  CameraUpdate.newLatLngZoom(
+                    patientMarker.position,
+                    16, // Zoom level
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Patient location is not available yet. They may need to open the app.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            });
           }
         });
       } else {
@@ -403,12 +528,20 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       _locationRequestAttempts = 0;
     });
 
+    // Immediately request latest location from Firebase
+    _triggerPatientLocationUpdate();
+
     // Create a timer to periodically check for patient location if not available
     _locationRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (!_patientLocationAvailable && _isConnected && mounted) {
         print("Periodic location check - attempt: ${_locationRequestAttempts + 1}");
         _locationRequestAttempts++;
         _getPatientLocationImmediately();
+
+        // Every third attempt, also try the urgent trigger method
+        if (_locationRequestAttempts % 3 == 0) {
+          _triggerPatientLocationUpdate();
+        }
 
         // Show offline message after 3 failed attempts (30 seconds)
         if (_locationRequestAttempts > 3 && !_showPatientOfflineStatus) {
@@ -518,7 +651,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     _getPatientLocationImmediately();
   }
 
-  // New method to get patient location immediately with improved error handling
+  // Method to get patient location immediately with improved error handling
   Future<void> _getPatientLocationImmediately() async {
     if (_connectedPatientId == null || !mounted) return;
 
@@ -612,7 +745,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     }
   }
 
-  // Improved connect dialog method with better feedback
+  // Improved connect dialog method with better feedback and permission system
   Future<void> _showConnectDialog() async {
     if (_userRole == null) {
       // First fetch user role if not already done
@@ -651,7 +784,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       });
 
       // Display connection dialog
-      final patientId = await Navigator.of(context).push<String>(
+      final patientEmail = await Navigator.of(context).push<String>(
         PageRouteBuilder(
           opaque: false,
           pageBuilder: (BuildContext context, _, __) {
@@ -666,44 +799,113 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         ),
       );
 
-      // Handle connection result
-      if (patientId != null) {
-        // Connection was successful
-        setState(() {
-          _connectedPatientId = patientId;
-          _isConnected = true;
-        });
-
-        // Get patient email for display
-        final connectionInfo = await _locationService.getConnectedPatient();
-        if (connectionInfo['connected']) {
-          setState(() {
-            _connectedPatientEmail = connectionInfo['patientEmail'];
-          });
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Connected with patient: $_connectedPatientEmail'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Start tracking patient location immediately
-        _startTrackingPatient();
-
-        // Show searching message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Searching for patient\'s location...'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      } else {
-        // User canceled the connection dialog
+      // If no email was returned (user canceled), stop here
+      if (patientEmail == null || patientEmail.isEmpty) {
         setState(() {
           _isConnecting = false;
         });
+        return;
+      }
+
+      // Show searching message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Searching for patient...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      try {
+        // Find the patient's user ID by email
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: patientEmail)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('No user found with email: $patientEmail'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            setState(() {
+              _isConnecting = false;
+            });
+          }
+          return;
+        }
+
+        // Get patient ID
+        String patientId = userSnapshot.docs.first.id;
+
+        // Get caregiver info for request
+        String caregiverName = _authService.currentUser?.displayName ?? 'Caregiver';
+        String caregiverEmail = _authService.currentUser?.email ?? '';
+
+        // Show requesting permission message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Requesting location permission from patient...'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+
+        // Send request for location tracking permission
+        bool requestSent = await _permissionHandler.sendConnectionRequest(
+          patientId: patientId,
+          patientEmail: patientEmail,
+          caregiverName: caregiverName,
+          caregiverEmail: caregiverEmail,
+        );
+
+        if (requestSent && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Permission request sent to $patientEmail. Waiting for response...'),
+              backgroundColor: Colors.blue,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+
+          // Set connection data to display in UI
+          setState(() {
+            _connectedPatientEmail = patientEmail;
+            _isConnecting = false;
+          });
+
+          // Check connection status after a delay (in case patient responds quickly)
+          Future.delayed(const Duration(seconds: 10), () {
+            _checkConnectionStatus();
+          });
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send location permission request'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            _isConnecting = false;
+          });
+        }
+      } catch (e) {
+        print("Error sending permission request: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            _isConnecting = false;
+          });
+        }
       }
     } else if (_userRole == 'patient') {
       // PATIENT FLOW: Show current connection status
@@ -718,10 +920,11 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         if (connectionInfo['connected']) {
           // Patient is connected to a caregiver
           setState(() {
-            _connectedPatientId = connectionInfo['patientId']; // This will be caregiver's ID
-            _connectedCaregiverEmail = connectionInfo['caregiverEmail'];
+            _connectedCaregiverId = connectionInfo['caregiverId'];
+            _connectedCaregiverEmail = connectionInfo['caregiverEmail'] ?? 'Caregiver';
             _isConnected = true;
             _isConnecting = false;
+            _isLocationShared = true;
           });
 
           // Show connected status
@@ -738,11 +941,12 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           // Patient is not connected to anyone
           setState(() {
             _isConnecting = false;
+            _isLocationShared = false;
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('You are not connected with any caregiver. Ask them to connect with your email.'),
+              content: Text('You are not connected with any caregiver. Caregivers can request to track your location.'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -774,7 +978,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     }
   }
 
-  // Add a method to terminate loading state after a delay
+  // Method to terminate loading state after a delay
   void _startLoadingTimeout() {
     // Automatically end loading state after 15 seconds if not already ended
     Future.delayed(const Duration(seconds: 15), () {
@@ -793,6 +997,38 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         );
       }
     });
+  }
+
+  // New method to force patient location update in Firebase
+  Future<void> _triggerPatientLocationUpdate() async {
+    if (_connectedPatientId == null) return;
+
+    try {
+      print("Triggering immediate location update for patient: $_connectedPatientId");
+
+      // Create a special request in the database to signal the patient's device
+      // to update its location immediately
+      DatabaseReference patientLocationRef = _database
+          .ref()
+          .child('locations')
+          .child(_connectedPatientId!);
+
+      // Add priority flag to ensure quick processing
+      await patientLocationRef.update({
+        'urgent_location_request': true,
+        'requested_at': ServerValue.timestamp,
+        'requester': {
+          'id': _authService.currentUser?.uid,
+          'email': _authService.currentUser?.email,
+          'timestamp': ServerValue.timestamp
+        },
+        'priority': 'high'
+      });
+
+      print("Urgent location update request sent for patient");
+    } catch (e) {
+      print("Error requesting urgent location update: $e");
+    }
   }
 
   @override
@@ -934,12 +1170,16 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                         topRight: Radius.circular(25),
                       ),
                       child: GoogleMap(
+                        // Improve responsiveness with these settings
+                        compassEnabled: true,
+                        trafficEnabled: false,
+                        buildingsEnabled: true,
+                        indoorViewEnabled: false,
                         initialCameraPosition: _initialCameraPosition,
                         myLocationEnabled: true,
                         myLocationButtonEnabled: false,
                         zoomControlsEnabled: false,
                         mapToolbarEnabled: false,
-                        compassEnabled: false,
                         padding: const EdgeInsets.only(top: 10),
                         markers: Set<Marker>.of(_markers.values),
                         onMapCreated: (controller) {
@@ -957,14 +1197,14 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                     ),
                   ),
 
-                  // UI elements on top of map - MOVED TO TOP
+                  // UI elements on top of map
                   Positioned(
                     top: 30, // Moved a tiny bit lower
                     left: 0,
                     right: 0,
                     child: Center(
                       child: FractionallySizedBox(
-                        widthFactor: 0.85, // Increased width from 75% to 85% of screen width
+                        widthFactor: 0.85, // Use 85% of screen width
                         child: Container(
                           decoration: BoxDecoration(
                             boxShadow: [
@@ -1020,7 +1260,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                               'Safe Zone Alert',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.black, // Changed to black
+                                                color: Colors.black,
                                                 fontSize: 15, // Reduced font size to avoid overflow
                                               ),
                                             ),
@@ -1051,7 +1291,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                               'Red Alert',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.black, // Changed to black
+                                                color: Colors.black,
                                                 fontSize: 15, // Reduced font size to avoid overflow
                                               ),
                                             ),
@@ -1063,7 +1303,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                 ),
                               ),
 
-                              // Connected patient/caregiver info box - enhanced with role-based display
+                              // Connected user info box - shows either patient or caregiver info based on role
                               if (_isConnected)
                                 Container(
                                   decoration: const BoxDecoration(
@@ -1081,7 +1321,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                       Expanded(
                                         child: _userRole == 'patient'
                                             ? Text(
-                                          'Sharing with: $_connectedCaregiverEmail',
+                                          'Sharing with: ${_connectedCaregiverEmail ?? 'Caregiver'}',
                                           style: const TextStyle(
                                             color: Color(0xFF503663),
                                             fontWeight: FontWeight.w500,
@@ -1093,7 +1333,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                           children: [
                                             Flexible(
                                               child: Text(
-                                                'Tracking: $_connectedPatientEmail',
+                                                'Tracking: ${_connectedPatientEmail ?? 'Patient'}',
                                                 style: const TextStyle(
                                                   color: Color(0xFF503663),
                                                   fontWeight: FontWeight.w500,
@@ -1123,7 +1363,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                           ],
                                         ),
                                       ),
-                                      if (_userRole == 'caregiver')
+                                      if (_userRole == 'caregiver' && _patientLocationAvailable)
                                         IconButton(
                                           icon: const Icon(
                                             Icons.center_focus_strong,
@@ -1136,6 +1376,37 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                           visualDensity: VisualDensity.compact, // Make button more compact
                                           tooltip: 'Focus on patient',
                                         ),
+                                    ],
+                                  ),
+                                ),
+
+                              // Location sharing status for patients
+                              if (_userRole == 'patient')
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: _isLocationShared ? const Color(0xFFE5F1E9) : const Color(0xFFF1E5E5),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _isLocationShared ? Icons.location_on : Icons.location_off,
+                                        color: _isLocationShared ? Colors.green : Colors.red,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _isLocationShared
+                                              ? 'Location sharing is active'
+                                              : 'Location sharing is inactive',
+                                          style: TextStyle(
+                                            color: _isLocationShared ? Colors.green.shade800 : Colors.red.shade800,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1256,8 +1527,8 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                   ),
 
                   // Connect button (bottom right corner)
-                  // Only show for caregivers or patients who aren't connected yet
-                  if (_userRole != 'patient' || !_isConnected)
+                  // Only show for caregivers (patients can't initiate connections)
+                  if (_userRole == 'caregiver')
                     Positioned(
                       bottom: 20,
                       right: 16,
@@ -1305,12 +1576,91 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                   ),
                                   const SizedBox(width: 6), // Reduced spacing
                                   Text(
-                                    _userRole == 'patient'
-                                        ? 'Check Connection'
-                                        : (_isConnected ? 'Connected' : 'Connect'),
+                                    _isConnected ? 'Connected' : 'Connect',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16, // Reduced font size
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Connection status button for patients (shows current sharing status)
+                  if (_userRole == 'patient')
+                    Positioned(
+                      bottom: 20,
+                      right: 16,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _isConnected ? Colors.green : const Color(0xFF77588D),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isConnecting ? null : () {
+                              // For patients, this will just show the current connection status
+                              _checkConnectionStatus();
+
+                              // Show appropriate message
+                              if (_isConnected) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('You are sharing your location with: $_connectedCaregiverEmail'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('No caregiver is currently tracking your location.'),
+                                    backgroundColor: Colors.blue,
+                                  ),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(30),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 10,
+                              ),
+                              child: _isConnecting
+                                  ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                                  : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _isConnected ? Icons.visibility : Icons.visibility_off,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _isConnected ? 'Sharing Location' : 'Not Being Tracked',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
