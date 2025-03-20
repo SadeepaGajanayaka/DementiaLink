@@ -253,13 +253,15 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
     );
   }
 
+  // Replace the _showDeleteConfirmation method in photo_detail_screen.dart
+
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete ${widget.photo.mediaType == MediaType.video ? 'Video' : 'Photo'}'),
+        title: Text('Move to Trash'),
         content: Text(
-          'Are you sure you want to delete this ${widget.photo.mediaType == MediaType.video ? 'video' : 'photo'}? This cannot be undone.',
+          'Are you sure you want to move this ${widget.photo.mediaType == MediaType.video ? 'video' : 'photo'} to trash? You can recover it from the Deleted Items section within 30 days.',
         ),
         actions: [
           TextButton(
@@ -275,13 +277,27 @@ class _PhotoDetailScreenState extends State<PhotoDetailScreen> {
               final storageProvider = Provider.of<StorageProvider>(context, listen: false);
               await storageProvider.deletePhoto(widget.photo.id);
 
+              // Show confirmation
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Item moved to trash'),
+                  action: SnackBarAction(
+                    label: 'UNDO',
+                    onPressed: () {
+                      // Recover the photo immediately if user changes mind
+                      storageProvider.recoverDeletedPhotos([widget.photo.id]);
+                    },
+                  ),
+                ),
+              );
+
               // Return to previous screen
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
             ),
-            child: Text('Delete'),
+            child: Text('Move to Trash'),
           ),
         ],
       ),
