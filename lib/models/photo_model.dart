@@ -8,6 +8,8 @@ class Photo {
   bool isFavorite;
   String? note;
   final MediaType mediaType;
+  bool isDeleted;
+  DateTime? deletedAt;
 
   Photo({
     required this.id,
@@ -17,6 +19,8 @@ class Photo {
     this.isFavorite = false,
     this.note,
     this.mediaType = MediaType.image,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   factory Photo.fromMap(Map<String, dynamic> map) {
@@ -28,9 +32,12 @@ class Photo {
       isFavorite: map['isFavorite'] == 1,
       note: map['note'],
       mediaType: map['mediaType'] == 'video' ? MediaType.video : MediaType.image,
+      isDeleted: map['isDeleted'] == 1,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'])
+          : null,
     );
   }
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -40,6 +47,15 @@ class Photo {
       'isFavorite': isFavorite ? 1 : 0,
       'note': note,
       'mediaType': mediaType == MediaType.video ? 'video' : 'image',
+      'isDeleted': isDeleted ? 1 : 0,
+      'deletedAt': deletedAt?.millisecondsSinceEpoch,
     };
+  }
+  int getDaysUntilPermanentDeletion() {
+    if (!isDeleted || deletedAt == null) return 0;
+
+    final deletionDate = deletedAt!.add(Duration(days: 30));
+    final remaining = deletionDate.difference(DateTime.now()).inDays;
+    return remaining > 0 ? remaining : 0;
   }
 }

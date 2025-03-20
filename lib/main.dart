@@ -11,14 +11,21 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
-}
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => StorageProvider(),
+  // Create StorageProvider early to allow cleanup
+  final storageProvider = StorageProvider();
+
+  // Wait for database initialization
+  while (!storageProvider.isInitialized) {
+    await Future.delayed(Duration(milliseconds: 100));
+  }
+
+  // Cleanup expired deleted photos
+  await storageProvider.cleanupExpiredDeletedPhotos();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: storageProvider,
       child: ThumbnailManager(
         child: MaterialApp(
           title: 'Memory Journal',
@@ -31,6 +38,6 @@ class MyApp extends StatelessWidget {
           home: HomeScreen(),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
