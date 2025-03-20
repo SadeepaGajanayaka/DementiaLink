@@ -14,11 +14,14 @@ class PermissionHandler {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Listen for connection requests
+  // Listen for connection requests with improved error handling
   Stream<DatabaseEvent> listenForConnectionRequests() {
     if (_auth.currentUser == null) {
+      print("Cannot listen for connection requests: No authenticated user");
       return const Stream.empty();
     }
+
+    print("Setting up connection request listener for user: ${_auth.currentUser!.uid}");
 
     // Create reference to the patient's connection requests node
     DatabaseReference requestsRef = _database
@@ -26,20 +29,32 @@ class PermissionHandler {
         .child('connection_requests')
         .child(_auth.currentUser!.uid);
 
-    // Return the stream of events
+    // Just to make sure the reference is valid, create it if it doesn't exist
+    requestsRef.update({
+      'initialized': true,
+      'timestamp': ServerValue.timestamp
+    }).catchError((e) {
+      print("Non-critical error initializing request node: $e");
+    });
+
+    // Return the stream of events for new requests
     return requestsRef.onChildAdded;
   }
 
-  // Send a connection request
+  // Send a connection request with improved error handling and validation
   Future<bool> sendConnectionRequest({
     required String patientId,
     required String patientEmail,
     required String caregiverName,
     required String caregiverEmail,
   }) async {
-    if (_auth.currentUser == null) return false;
+    if (_auth.currentUser == null) {
+      print("Cannot send connection request: No authenticated user");
+      return false;
+    }
 
     try {
+      print("Preparing to send connection request to patient: $patientId");
       String requestId = DateTime.now().millisecondsSinceEpoch.toString();
 
       // Create request data
@@ -56,6 +71,7 @@ class PermissionHandler {
       };
 
       // Save request to Firebase Realtime Database
+      // This is what triggers the notification in the patient's app
       await _database
           .ref()
           .child('connection_requests')
@@ -63,7 +79,9 @@ class PermissionHandler {
           .child(requestId)
           .set(requestData);
 
-      // Also save to Firestore for persistence
+      print("Connection request saved to Realtime Database");
+
+      // Also save to Firestore for persistence and to maintain a history
       await _firestore
           .collection('connection_requests')
           .doc(requestId)
@@ -72,7 +90,21 @@ class PermissionHandler {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      print("Connection request sent to patient: $patientId");
+      print("Connection request saved to Firestore");
+
+      // Also ping the patient's location node to wake up their app if it's in background
+      try {
+        await _database.ref().child('locations').child(patientId).update({
+          'hasConnectionRequest': true,
+          'requestId': requestId,
+          'requestTimestamp': ServerValue.timestamp,
+        });
+        print("Updated patient location node with request flag");
+      } catch (e) {
+        // Non-critical error, connection request will still work
+        print("Non-critical error updating patient location node: $e");
+      }
+
       return true;
     } catch (e) {
       print("Error sending connection request: $e");
@@ -80,11 +112,16 @@ class PermissionHandler {
     }
   }
 
-  // Accept a connection request
+  // Accept a connection request with improved verification
   Future<bool> acceptConnectionRequest(String requestId) async {
-    if (_auth.currentUser == null) return false;
+    if (_auth.currentUser == null) {
+      print("Cannot accept request: No authenticated user");
+      return false;
+    }
 
     try {
+      print("Processing request acceptance for ID: $requestId");
+
       // Get the request data
       DatabaseReference requestRef = _database
           .ref()
@@ -94,7 +131,7 @@ class PermissionHandler {
 
       DataSnapshot snapshot = await requestRef.get();
       if (!snapshot.exists) {
-        print("Request not found");
+        print("Request not found: $requestId");
         return false;
       }
 
@@ -106,12 +143,20 @@ class PermissionHandler {
       String patientId = requestData['patientId'];
       String patientEmail = requestData['patientEmail'];
 
+      // Verify that the current user is the patient in the request
+      if (patientId != _auth.currentUser!.uid) {
+        print("User ID mismatch. Current user: ${_auth.currentUser!.uid}, Expected: $patientId");
+        return false;
+      }
+
       // Update request status
       await requestRef.update({'status': 'accepted'});
       await _firestore
           .collection('connection_requests')
           .doc(requestId)
           .update({'status': 'accepted'});
+
+      print("Request status updated to 'accepted'");
 
       // Create connection records in Firestore
       // For caregiver
@@ -126,6 +171,8 @@ class PermissionHandler {
         'lastUpdated': FieldValue.serverTimestamp(),
       });
 
+      print("Connection record created for caregiver");
+
       // For patient
       await _firestore.collection('connections').doc(patientId).set({
         'connectedTo': caregiverId,
@@ -137,6 +184,8 @@ class PermissionHandler {
         'timestamp': FieldValue.serverTimestamp(),
         'lastUpdated': FieldValue.serverTimestamp(),
       });
+
+      print("Connection record created for patient");
 
       // Send notification to caregiver
       await _database
@@ -151,7 +200,8 @@ class PermissionHandler {
         'timestamp': ServerValue.timestamp,
       });
 
-      print("Connection request accepted");
+      print("Notification sent to caregiver");
+
       return true;
     } catch (e) {
       print("Error accepting connection request: $e");
@@ -164,6 +214,8 @@ class PermissionHandler {
     if (_auth.currentUser == null) return false;
 
     try {
+      print("Processing request rejection for ID: $requestId");
+
       // Get the request data
       DatabaseReference requestRef = _database
           .ref()
@@ -173,7 +225,7 @@ class PermissionHandler {
 
       DataSnapshot snapshot = await requestRef.get();
       if (!snapshot.exists) {
-        print("Request not found");
+        print("Request not found: $requestId");
         return false;
       }
 
@@ -189,6 +241,8 @@ class PermissionHandler {
           .doc(requestId)
           .update({'status': 'rejected'});
 
+      print("Request status updated to 'rejected'");
+
       // Send notification to caregiver
       await _database
           .ref()
@@ -202,7 +256,8 @@ class PermissionHandler {
         'timestamp': ServerValue.timestamp,
       });
 
-      print("Connection request rejected");
+      print("Rejection notification sent to caregiver");
+
       return true;
     } catch (e) {
       print("Error rejecting connection request: $e");
@@ -215,12 +270,25 @@ class PermissionHandler {
     if (_auth.currentUser == null) return false;
 
     try {
+      print("Deleting connection request: $requestId");
+
       await _database
           .ref()
           .child('connection_requests')
           .child(_auth.currentUser!.uid)
           .child(requestId)
           .remove();
+
+      // Also remove from Firestore if it exists
+      try {
+        await _firestore
+            .collection('connection_requests')
+            .doc(requestId)
+            .delete();
+      } catch (e) {
+        // Non-critical error
+        print("Non-critical error removing request from Firestore: $e");
+      }
 
       print("Connection request deleted");
       return true;
@@ -231,6 +299,7 @@ class PermissionHandler {
   }
 }
 
+// PermissionDialog - shown to patients when a caregiver requests to track their location
 class PermissionDialog extends StatefulWidget {
   final Map<String, dynamic> requestData;
 
@@ -261,6 +330,9 @@ class _PermissionDialogState extends State<PermissionDialog> with SingleTickerPr
       curve: Curves.easeOutBack,
     );
     _animationController.forward();
+
+    // Print request data for debugging
+    print("Permission dialog showing with request data: ${widget.requestData}");
   }
 
   @override
@@ -277,11 +349,14 @@ class _PermissionDialogState extends State<PermissionDialog> with SingleTickerPr
     });
 
     try {
+      print("Accepting connection request: ${widget.requestData['requestId']}");
       bool success = await _permissionHandler.acceptConnectionRequest(widget.requestData['requestId']);
 
       if (success && mounted) {
+        print("Successfully accepted connection request");
         Navigator.of(context).pop(true); // Return true for accepted
       } else if (mounted) {
+        print("Failed to accept connection request");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to accept request. Please try again.'),
@@ -316,11 +391,14 @@ class _PermissionDialogState extends State<PermissionDialog> with SingleTickerPr
     });
 
     try {
+      print("Rejecting connection request: ${widget.requestData['requestId']}");
       bool success = await _permissionHandler.rejectConnectionRequest(widget.requestData['requestId']);
 
       if (success && mounted) {
+        print("Successfully rejected connection request");
         Navigator.of(context).pop(false); // Return false for rejected
       } else if (mounted) {
+        print("Failed to reject connection request");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to reject request. Please try again.'),
@@ -560,6 +638,8 @@ class _PermissionDialogState extends State<PermissionDialog> with SingleTickerPr
   }
 }
 
+// PermissionListener - A wrapper widget that listens for connection requests
+// This can be used to wrap parts of the app to automatically show permission dialogs
 class PermissionListener extends StatefulWidget {
   final Widget child;
 
@@ -589,6 +669,14 @@ class _PermissionListenerState extends State<PermissionListener> {
   }
 
   void _startListeningForRequests() {
+    // Only set up the listener if the user is a patient
+    if (FirebaseAuth.instance.currentUser == null) {
+      print("User not authenticated, cannot listen for requests");
+      return;
+    }
+
+    print("Starting to listen for connection requests in PermissionListener");
+
     _requestSubscription = _permissionHandler
         .listenForConnectionRequests()
         .listen((DatabaseEvent event) {
@@ -598,8 +686,16 @@ class _PermissionListenerState extends State<PermissionListener> {
         // Extract request data
         final requestData = Map<String, dynamic>.from(event.snapshot.value as Map);
 
-        // Show permission dialog
-        _showPermissionDialog(requestData);
+        // Add requestId to data if not present
+        if (!requestData.containsKey('requestId')) {
+          requestData['requestId'] = event.snapshot.key;
+        }
+
+        // Show permission dialog only if the request is pending
+        if (requestData['status'] == 'pending') {
+          // Show permission dialog
+          _showPermissionDialog(requestData);
+        }
       }
     }, onError: (error) {
       print("Error in connection request stream: $error");
@@ -607,27 +703,29 @@ class _PermissionListenerState extends State<PermissionListener> {
   }
 
   void _showPermissionDialog(Map<String, dynamic> requestData) {
-    // Check if request is already processed
-    if (requestData['status'] != 'pending') {
-      return;
-    }
+    if (!mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PermissionDialog(
-        requestData: requestData,
-      ),
-    ).then((accepted) {
-      if (accepted == true) {
-        // Request was accepted
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location sharing enabled'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+    print("Showing permission dialog for request: ${requestData['requestId']}");
+
+    // Show dialog on the main thread
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => PermissionDialog(
+          requestData: requestData,
+        ),
+      ).then((accepted) {
+        if (accepted == true) {
+          // Request was accepted
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location sharing enabled'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      });
     });
   }
 

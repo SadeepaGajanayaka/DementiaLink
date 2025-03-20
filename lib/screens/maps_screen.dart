@@ -70,15 +70,16 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    print("MapsScreen initState called");
     WidgetsBinding.instance.addObserver(this);
     _initializeServices();
     _loadCustomMarkers();
     _fetchUserRole();
-    _startListeningForConnectionRequests();
   }
 
   @override
   void dispose() {
+    print("MapsScreen dispose called");
     _patientLocationSubscription?.cancel();
     _connectionRequestSubscription?.cancel();
     _locationRefreshTimer?.cancel();
@@ -101,6 +102,13 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
 
   // Start listening for connection requests (for patients)
   void _startListeningForConnectionRequests() {
+    // Only set up the listener if the user is a patient
+    if (_userRole != 'patient') {
+      print("User is not a patient, skipping connection request listener");
+      return;
+    }
+
+    print("Starting to listen for connection requests");
     _connectionRequestSubscription = _permissionHandler
         .listenForConnectionRequests()
         .listen((DatabaseEvent event) {
@@ -115,8 +123,13 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           requestData['requestId'] = event.snapshot.key;
         }
 
-        // Show permission dialog
-        _showPermissionDialog(requestData);
+        // Show permission dialog only if the request is pending
+        if (requestData['status'] == 'pending') {
+          // Show permission dialog on the main thread
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showPermissionDialog(requestData);
+          });
+        }
       }
     }, onError: (error) {
       print("Error in connection request stream: $error");
@@ -125,10 +138,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
 
   // Show permission dialog for connection request
   void _showPermissionDialog(Map<String, dynamic> requestData) {
-    // Check if request is already processed
-    if (requestData['status'] != 'pending') {
-      return;
-    }
+    print("Showing permission dialog for request: ${requestData['requestId']}");
 
     showDialog(
       context: context,
@@ -162,6 +172,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
   Future<void> _checkConnectionStatus() async {
     try {
       final connectionInfo = await _locationService.getConnectedPatient();
+      print("Connection status check result: $connectionInfo");
 
       if (connectionInfo['connected']) {
         setState(() {
@@ -208,8 +219,11 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
 
         print("User role: $_userRole");
 
-        // If user is a patient, automatically start sharing location
+        // If user is a patient, start listening for connection requests
         if (_userRole == 'patient') {
+          // Start listening for connection requests
+          _startListeningForConnectionRequests();
+
           await _locationService.startTracking();
           print("Patient location tracking started automatically");
 
@@ -921,7 +935,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           // Patient is connected to a caregiver
           setState(() {
             _connectedCaregiverId = connectionInfo['caregiverId'];
-            _connectedCaregiverEmail = connectionInfo['caregiverEmail'] ?? 'Caregiver';
+            _connectedCaregiverEmail = connectionInfo['caregiverEmail'];
             _isConnected = true;
             _isConnecting = false;
             _isLocationShared = true;
