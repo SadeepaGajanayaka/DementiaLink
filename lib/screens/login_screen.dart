@@ -3,6 +3,7 @@ import 'signup_screen.dart';
 import 'forgot_password_dialog.dart';
 import 'verification_screen.dart';
 import 'dashboard_screen.dart';
+import 'welcome_screen.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -152,6 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Updated login method - now goes directly to Dashboard
   Future<void> _handleLogin() async {
     // Clear previous general error
     setState(() {
@@ -178,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
 
-      // Navigate to dashboard screen on success
+      // Navigate directly to dashboard on success
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -196,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Social authentication methods
+  // Updated Google authentication method to check if user is new
   Future<void> _handleGoogleSignIn() async {
     setState(() {
       _isLoading = true;
@@ -205,17 +207,60 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       // Call the Google sign-in method from auth service
-      // This will show the Google account picker dialog
-      await _authService.signInWithGoogle();
+      final userCredential = await _authService.signInWithGoogle();
 
-      // Navigate to dashboard screen on success
+      // Check if the user is new
+      final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+      final displayName = userCredential.user?.displayName ?? 'User';
+      final userId = userCredential.user?.uid;
+
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const DashboardScreen(),
-          ),
-        );
+        if (isNewUser) {
+          // For new users, go to welcome screen to set up role
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WelcomeScreen(
+                userName: displayName,
+              ),
+            ),
+          );
+        } else {
+          // For returning users, check if they already have a role set
+          if (userId != null) {
+            final userData = await _authService.getUserData(userId);
+
+            // If user has no role yet (edge case), send to welcome screen
+            if (userData['role'] == null) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WelcomeScreen(
+                    userName: displayName,
+                  ),
+                ),
+              );
+            } else {
+              // If user already has a role, go directly to dashboard
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DashboardScreen(),
+                ),
+              );
+            }
+          } else {
+            // Edge case - shouldn't happen but just in case
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WelcomeScreen(
+                  userName: displayName,
+                ),
+              ),
+            );
+          }
+        }
       }
     } catch (error) {
       // Handle errors
@@ -235,8 +280,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-
-  // Removed Facebook and Apple sign-in methods as they are no longer needed
 
   @override
   Widget build(BuildContext context) {

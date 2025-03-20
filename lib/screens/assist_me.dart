@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import 'dashboard_screen.dart';
 
 class AssistMe extends StatefulWidget {
   final String userName;
-  
+
   const AssistMe({super.key, required this.userName});
 
   @override
@@ -17,12 +18,12 @@ class _AssistMeState extends State<AssistMe> {
   final AuthService _authService = AuthService();
   final DatabaseService _databaseService = DatabaseService();
   bool _isSubmitting = false;
-  
+
   // Controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _dateController = TextEditingController();
-  
+
   // New controllers for additional fields
   final _contactNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -35,14 +36,14 @@ class _AssistMeState extends State<AssistMe> {
   final _routineController = TextEditingController();
   final _caregiverNameController = TextEditingController();
   final _caregiverContactController = TextEditingController();
-  
+
   // Dropdown selections
   String _selectedGender = 'Male';
   String _selectedRelation = 'Father';
   String _selectedDementiaStage = 'Early';
   String _selectedLanguage = 'English';
   String _selectedAppComfort = 'Somewhat comfortable';
-  
+
   // Yes/No selections
   bool _hasOtherMedicalConditions = false;
   bool _hasMedications = false;
@@ -202,7 +203,7 @@ class _AssistMeState extends State<AssistMe> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // BASIC INFORMATION SECTION
                         _buildSectionHeader('Basic Information'),
 
@@ -265,19 +266,19 @@ class _AssistMeState extends State<AssistMe> {
                             ),
                           ),
                         ),
-                        
+
                         // Contact Number
                         _buildQuestionBox(
                           'Contact Number (optional if caregiver is managing)',
                           _buildTextInput('Phone Number', controller: _contactNumberController),
                         ),
-                        
+
                         // Address
                         _buildQuestionBox(
                           'Address',
                           _buildTextInput('Full Address', controller: _addressController),
                         ),
-                        
+
                         // Emergency Contact
                         _buildQuestionBox(
                           'Emergency Contact',
@@ -289,10 +290,10 @@ class _AssistMeState extends State<AssistMe> {
                             ],
                           ),
                         ),
-                        
+
                         // MEDICAL INFORMATION SECTION
                         _buildSectionHeader('Medical Information'),
-                        
+
                         // Dementia Diagnosis Stage
                         _buildQuestionBox(
                           'Dementia Diagnosis Stage',
@@ -328,13 +329,13 @@ class _AssistMeState extends State<AssistMe> {
                             ),
                           ),
                         ),
-                        
+
                         // Diagnosing Doctor/Hospital
                         _buildQuestionBox(
                           'Diagnosing Doctor/Hospital (optional)',
                           _buildTextInput('Doctor or Hospital Name', controller: _diagnosingDoctorController),
                         ),
-                        
+
                         // Other Medical Conditions
                         _buildQuestionBox(
                           'Any other medical conditions?',
@@ -359,7 +360,7 @@ class _AssistMeState extends State<AssistMe> {
                             ],
                           ),
                         ),
-                        
+
                         // Medications
                         _buildQuestionBox(
                           'Medications currently taking',
@@ -384,7 +385,7 @@ class _AssistMeState extends State<AssistMe> {
                             ],
                           ),
                         ),
-                        
+
                         // Allergies
                         _buildQuestionBox(
                           'Allergies',
@@ -409,7 +410,7 @@ class _AssistMeState extends State<AssistMe> {
                             ],
                           ),
                         ),
-                        
+
                         // Preferred Language
                         _buildQuestionBox(
                           'Preferred Language',
@@ -448,7 +449,7 @@ class _AssistMeState extends State<AssistMe> {
 
                         // COGNITIVE & DAILY ACTIVITY SECTION
                         _buildSectionHeader('Cognitive & Daily Activity Information'),
-                        
+
                         // Difficulty Remembering
                         _buildQuestionBox(
                           'Do you experience difficulty in remembering daily tasks?',
@@ -461,7 +462,7 @@ class _AssistMeState extends State<AssistMe> {
                             },
                           ),
                         ),
-                        
+
                         // Need Assistance
                         _buildQuestionBox(
                           'Do you need assistance with daily activities?',
@@ -474,7 +475,7 @@ class _AssistMeState extends State<AssistMe> {
                             },
                           ),
                         ),
-                        
+
                         // Preferred Routine
                         _buildQuestionBox(
                           'Do you have a preferred routine for daily activities?',
@@ -499,7 +500,7 @@ class _AssistMeState extends State<AssistMe> {
                             ],
                           ),
                         ),
-                        
+
                         // App Comfort
                         _buildQuestionBox(
                           'How comfortable are you with using mobile applications?',
@@ -535,10 +536,10 @@ class _AssistMeState extends State<AssistMe> {
                             ),
                           ),
                         ),
-                        
+
                         // CAREGIVER ASSIGNMENT SECTION
                         _buildSectionHeader('Caregiver Assignment'),
-                        
+
                         // Primary Caregiver
                         _buildQuestionBox(
                           'Do you have a primary caregiver?',
@@ -562,7 +563,7 @@ class _AssistMeState extends State<AssistMe> {
                             ],
                           ),
                         ),
-                        
+
                         // Relation Section
                         _buildQuestionBox(
                           'Relation to care giver',
@@ -616,24 +617,24 @@ class _AssistMeState extends State<AssistMe> {
                                 );
                                 return;
                               }
-                              
+
                               setState(() {
                                 _isSubmitting = true;
                               });
-                              
+
                               try {
                                 final userId = _authService.currentUser?.uid;
                                 if (userId != null) {
                                   // Collect data from form
                                   final formData = _collectFormData();
-                                  
+
                                   // Save to Firebase
                                   final patientId = await _databaseService.savePatientData(
                                     userId: userId,
                                     formType: 'self',  // This is for "Assist Me"
                                     patientData: formData,
                                   );
-                                  
+
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -641,7 +642,14 @@ class _AssistMeState extends State<AssistMe> {
                                         backgroundColor: Colors.green,
                                       ),
                                     );
-                                    Navigator.pop(context);
+
+                                    // Navigate to Dashboard instead of just popping back
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const DashboardScreen(),
+                                      ),
+                                    );
                                   }
                                 } else {
                                   throw Exception('User not authenticated');
@@ -673,20 +681,20 @@ class _AssistMeState extends State<AssistMe> {
                             ),
                             child: _isSubmitting
                                 ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Color(0xFF77588D),
-                                      strokeWidth: 3,
-                                    ),
-                                  )
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF77588D),
+                                strokeWidth: 3,
+                              ),
+                            )
                                 : const Text(
-                                    'SUBMIT',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                              'SUBMIT',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -793,7 +801,7 @@ class _AssistMeState extends State<AssistMe> {
                   }
                 },
                 fillColor: MaterialStateProperty.resolveWith(
-                  (states) => states.contains(MaterialState.selected)
+                      (states) => states.contains(MaterialState.selected)
                       ? Colors.white
                       : Colors.white,
                 ),
@@ -825,7 +833,7 @@ class _AssistMeState extends State<AssistMe> {
                   }
                 },
                 fillColor: MaterialStateProperty.resolveWith(
-                  (states) => states.contains(MaterialState.selected)
+                      (states) => states.contains(MaterialState.selected)
                       ? Colors.white
                       : Colors.white,
                 ),
