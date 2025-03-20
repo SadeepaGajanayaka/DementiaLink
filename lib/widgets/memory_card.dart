@@ -173,27 +173,27 @@ class _MemoryCardState extends State<MemoryCard> {
                 ),
               ),
 
-              // Add button (top-right corner)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      // Handle adding new photos to memories
-                      // This could open your add media options
-                    },
-                  ),
-                ),
-              ),
+              // // Add button (top-right corner)
+              // Positioned(
+              //   top: 8,
+              //   right: 8,
+              //   child: Container(
+              //     decoration: BoxDecoration(
+              //       color: Colors.black.withOpacity(0.5),
+              //       shape: BoxShape.circle,
+              //     ),
+              //     child: IconButton(
+              //       icon: Icon(
+              //         Icons.add,
+              //         color: Colors.white,
+              //       ),
+              //       onPressed: () {
+              //         // Handle adding new photos to memories
+              //         // This could open your add media options
+              //       },
+              //     ),
+              //   ),
+              // ),
 
               // Date or caption (optional)
               if (widget.photos[_currentIndex].note != null &&
