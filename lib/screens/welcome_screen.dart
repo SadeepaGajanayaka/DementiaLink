@@ -99,7 +99,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  // New method to handle "Assist Me" option
+  // New method to handle "Assist Me" option with improved error handling
   Future<void> _handleAssistMe() async {
     // Prevent multiple taps
     if (_isProcessing) return;
@@ -110,15 +110,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     try {
       final userId = _authService.currentUser?.uid;
-      if (userId != null) {
-        // Save user role as 'patient'
-        await _firestore.collection('users').doc(userId).update({
-          'role': 'patient',
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        print("User role set to 'patient' for user: $userId");
+      if (userId == null) {
+        throw Exception('User not authenticated. Please log in again.');
       }
+
+      // First check if user document exists
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+
+      if (!userDoc.exists) {
+        // Create user document if it doesn't exist
+        await _firestore.collection('users').doc(userId).set({
+          'name': widget.userName,
+          'email': _authService.currentUser?.email,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Save user role as 'patient'
+      await _firestore.collection('users').doc(userId).update({
+        'role': 'patient',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print("User role set to 'patient' for user: $userId");
 
       // Navigate to the Assist Me screen
       if (mounted) {
@@ -135,7 +149,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       print('Error saving user role: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: There was a problem setting up your account. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -147,7 +164,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
-  // New method to handle "Assist a Loved One" option
+  // New method to handle "Assist a Loved One" option with improved error handling
   Future<void> _handleAssistLoved() async {
     // Prevent multiple taps
     if (_isProcessing) return;
@@ -158,15 +175,31 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     try {
       final userId = _authService.currentUser?.uid;
-      if (userId != null) {
-        // Save user role as 'caregiver'
-        await _firestore.collection('users').doc(userId).update({
-          'role': 'caregiver',
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        print("User role set to 'caregiver' for user: $userId");
+      if (userId == null) {
+        throw Exception('User not authenticated. Please log in again.');
       }
+
+      // First check if user document exists
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+
+      if (!userDoc.exists) {
+        // Create user document if it doesn't exist
+        await _firestore.collection('users').doc(userId).set({
+          'name': widget.userName,
+          'email': _authService.currentUser?.email,
+          'photoUrl': _authService.currentUser?.photoURL,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        print("Created new user document for: $userId");
+      }
+
+      // Now update the role (this should be allowed by security rules)
+      await _firestore.collection('users').doc(userId).update({
+        'role': 'caregiver',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print("User role set to 'caregiver' for user: $userId");
 
       // Navigate to the Assist Loved One screen
       if (mounted) {
@@ -183,7 +216,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       print('Error saving user role: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: There was a problem setting up your account. ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -226,6 +262,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         'lib/assets/brain_logo.png',
                         width: 60,
                         height: 60,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.psychology,
+                          color: Colors.white,
+                          size: 60,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(
@@ -291,6 +332,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     : Image.asset(
                                   'lib/assets/profile_setup.png',
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.person,
+                                    color: Color(0xFF77588D),
+                                    size: 100,
+                                  ),
                                 ),
                               ),
                             ),

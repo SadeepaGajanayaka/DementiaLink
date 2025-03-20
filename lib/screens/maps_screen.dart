@@ -143,7 +143,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      print("Error fetching user role: $e");
+      print('Error checking user role: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -839,29 +839,30 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 8), // Added spacing
                         const Expanded(
-                          child: Center(
-                            child: Text(
-                              'Location Tracking',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          child: Text(
+                            'Location Tracking',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24, // Reduced font size to prevent overflow
+                              fontWeight: FontWeight.bold,
                             ),
+                            textAlign: TextAlign.center, // Ensure text is centered
                           ),
                         ),
-                        // Brain icon - using the specified asset with larger size
+                        const SizedBox(width: 8), // Added spacing
+                        // Brain icon - using the specified asset with adjusted size
                         Padding(
                           padding: const EdgeInsets.only(right: 16.0),
                           child: Image.asset(
                             'lib/assets/images/brain_icon.png',
-                            width: 50,
-                            height: 50,
+                            width: 40, // Reduced size to prevent overflow
+                            height: 40,
                             errorBuilder: (context, error, stackTrace) => const Icon(
                               Icons.psychology,
                               color: Colors.white,
-                              size: 40,
+                              size: 35,
                             ),
                           ),
                         ),
@@ -1020,7 +1021,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.black, // Changed to black
-                                                fontSize: 16, // Increased font size
+                                                fontSize: 15, // Reduced font size to avoid overflow
                                               ),
                                             ),
                                           ),
@@ -1051,7 +1052,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.black, // Changed to black
-                                                fontSize: 16, // Increased font size
+                                                fontSize: 15, // Reduced font size to avoid overflow
                                               ),
                                             ),
                                           ),
@@ -1074,9 +1075,9 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                       const Icon(
                                         Icons.person_pin_circle,
                                         color: Color(0xFF503663),
-                                        size: 20,
+                                        size: 18, // Reduced size
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 4), // Reduced spacing
                                       Expanded(
                                         child: _userRole == 'patient'
                                             ? Text(
@@ -1084,32 +1085,40 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                           style: const TextStyle(
                                             color: Color(0xFF503663),
                                             fontWeight: FontWeight.w500,
-                                            fontSize: 14,
+                                            fontSize: 13, // Reduced font size
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         )
                                             : Row(
                                           children: [
-                                            Text(
-                                              'Tracking: $_connectedPatientEmail',
-                                              style: const TextStyle(
-                                                color: Color(0xFF503663),
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 14,
+                                            Flexible(
+                                              child: Text(
+                                                'Tracking: $_connectedPatientEmail',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF503663),
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 13, // Reduced font size
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              overflow: TextOverflow.ellipsis,
                                             ),
                                             if (_patientLocationAvailable)
-                                              const Icon(
-                                                Icons.check_circle,
-                                                color: Colors.green,
-                                                size: 16,
+                                              const Padding(
+                                                padding: EdgeInsets.only(left: 4.0),
+                                                child: Icon(
+                                                  Icons.check_circle,
+                                                  color: Colors.green,
+                                                  size: 14, // Reduced size
+                                                ),
                                               )
                                             else if (_showPatientOfflineStatus)
-                                              const Icon(
-                                                Icons.offline_bolt,
-                                                color: Colors.orange,
-                                                size: 16,
+                                              const Padding(
+                                                padding: EdgeInsets.only(left: 4.0),
+                                                child: Icon(
+                                                  Icons.offline_bolt,
+                                                  color: Colors.orange,
+                                                  size: 14, // Reduced size
+                                                ),
                                               ),
                                           ],
                                         ),
@@ -1119,11 +1128,12 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                           icon: const Icon(
                                             Icons.center_focus_strong,
                                             color: Color(0xFF503663),
-                                            size: 20,
+                                            size: 18, // Reduced size
                                           ),
                                           onPressed: _centerOnPatientLocation,
                                           constraints: const BoxConstraints(),
-                                          padding: const EdgeInsets.all(8),
+                                          padding: const EdgeInsets.all(6), // Reduced padding
+                                          visualDensity: VisualDensity.compact, // Make button more compact
                                           tooltip: 'Focus on patient',
                                         ),
                                     ],
@@ -1139,7 +1149,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                     bottomRight: Radius.circular(15),
                                   ),
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Reduced vertical padding
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -1148,13 +1158,13 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                         // Location pin icon next to "Live Location" text
                                         Image.asset(
                                           'lib/assets/location_pin.png',
-                                          width: 24,
-                                          height: 24,
+                                          width: 20, // Reduced size
+                                          height: 20, // Reduced size
                                           color: Colors.white,
                                           errorBuilder: (context, error, stackTrace) => const Icon(
                                             Icons.location_on,
                                             color: Colors.white,
-                                            size: 24,
+                                            size: 20, // Reduced size
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -1163,18 +1173,21 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.w500,
-                                            fontSize: 18, // Increased font size
+                                            fontSize: 16, // Reduced font size
                                           ),
                                         ),
                                       ],
                                     ),
-                                    Switch(
-                                      value: _liveLocationEnabled,
-                                      onChanged: _toggleLiveLocation,
-                                      activeColor: Colors.white,
-                                      activeTrackColor: const Color(0xFF6246A3),
-                                      inactiveTrackColor: Colors.grey[700],
-                                      inactiveThumbColor: Colors.white,
+                                    Transform.scale(
+                                      scale: 0.8, // Scale down the switch
+                                      child: Switch(
+                                        value: _liveLocationEnabled,
+                                        onChanged: _toggleLiveLocation,
+                                        activeColor: Colors.white,
+                                        activeTrackColor: const Color(0xFF6246A3),
+                                        inactiveTrackColor: Colors.grey[700],
+                                        inactiveThumbColor: Colors.white,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1206,9 +1219,9 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                       child: IconButton(
                         icon: const Icon(
                           Icons.navigation,
-                          size: 30,
+                          size: 28, // Reduced size
                         ),
-                        iconSize: 50,
+                        iconSize: 46, // Reduced size
                         onPressed: _centerOnCurrentLocation,
                       ),
                     ),
@@ -1217,7 +1230,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                   // Second circle (Target location button) - moved closer to the first one
                   Positioned(
                     right: 16,
-                    top: MediaQuery.of(context).size.height * 0.46, // Reduced distance from 0.485 to 0.46
+                    top: MediaQuery.of(context).size.height * 0.47, // Adjusted position
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF77588D),
@@ -1234,9 +1247,9 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                         icon: const Icon(
                           Icons.my_location,
                           color: Colors.white,
-                          size: 30,
+                          size: 28, // Reduced size
                         ),
-                        iconSize: 50,
+                        iconSize: 46, // Reduced size
                         onPressed: _getCurrentLocation,
                       ),
                     ),
@@ -1270,13 +1283,13 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                             borderRadius: BorderRadius.circular(30),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 12,
+                                horizontal: 24, // Reduced horizontal padding
+                                vertical: 10, // Reduced vertical padding
                               ),
                               child: _isConnecting
                                   ? const SizedBox(
-                                height: 24,
-                                width: 24,
+                                height: 22, // Reduced size
+                                width: 22, // Reduced size
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2,
@@ -1288,16 +1301,16 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                                   Icon(
                                     _isConnected ? Icons.link : Icons.link_off,
                                     color: Colors.white,
-                                    size: 20,
+                                    size: 18, // Reduced size
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 6), // Reduced spacing
                                   Text(
                                     _userRole == 'patient'
                                         ? 'Check Connection'
                                         : (_isConnected ? 'Connected' : 'Connect'),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 18, // Increased font size
+                                      fontSize: 16, // Reduced font size
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -1313,11 +1326,11 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                   if (_isConnected && _userRole == 'caregiver' && _showPatientOfflineStatus)
                     Positioned(
                       top: MediaQuery.of(context).size.height * 0.2,
-                      left: 0,
-                      right: 0,
+                      left: 16,
+                      right: 16,
                       child: Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reduced padding
                           decoration: BoxDecoration(
                             color: Colors.orange.shade100,
                             borderRadius: BorderRadius.circular(20),
@@ -1336,14 +1349,18 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                               const Icon(
                                 Icons.info_outline,
                                 color: Colors.orange,
-                                size: 20,
+                                size: 16, // Reduced size
                               ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Patient may be offline. Updates will appear when they come online.',
-                                style: TextStyle(
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.bold,
+                              const SizedBox(width: 6), // Reduced spacing
+                              Flexible(
+                                child: Text(
+                                  'Patient may be offline. Updates will appear when they come online.',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade800,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12, // Reduced font size
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             ],
