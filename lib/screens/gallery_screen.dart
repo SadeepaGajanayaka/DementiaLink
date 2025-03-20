@@ -55,41 +55,42 @@ class _GalleryScreenState extends State<GalleryScreen> {
   void _showMoreOptionsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (BuildContext bottomSheetContext) => Container(
-        color: Colors.grey.shade200,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.edit),
-              title: Text('Edit Albums'),
-              trailing: Icon(Icons.edit),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement edit albums functionality
-              },
+      builder: (BuildContext bottomSheetContext) =>
+          Container(
+            color: Colors.grey.shade200,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('Edit Albums'),
+                  trailing: Icon(Icons.edit),
+                  onTap: () {
+                    Navigator.of(bottomSheetContext).pop();
+                    // Implement edit albums functionality
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.add),
+                  title: Text('Add Albums'),
+                  trailing: Icon(Icons.add),
+                  onTap: () {
+                    Navigator.of(bottomSheetContext).pop();
+                    _showAddAlbumDialog(context);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.delete),
+                  title: Text('Delete Albums'),
+                  trailing: Icon(Icons.delete),
+                  onTap: () {
+                    Navigator.of(bottomSheetContext).pop();
+                    // Implement delete albums functionality
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: Icon(Icons.add),
-              title: Text('Add Albums'),
-              trailing: Icon(Icons.add),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                _showAddAlbumDialog(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete),
-              title: Text('Delete Albums'),
-              trailing: Icon(Icons.delete),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement delete albums functionality
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -98,33 +99,36 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Create New Album'),
-        content: TextField(
-          controller: titleController,
-          decoration: InputDecoration(
-            hintText: 'Album title',
+      builder: (context) =>
+          AlertDialog(
+            title: Text('Create New Album'),
+            content: TextField(
+              controller: titleController,
+              decoration: InputDecoration(
+                hintText: 'Album title',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (titleController.text
+                      .trim()
+                      .isNotEmpty) {
+                    Provider.of<StorageProvider>(context, listen: false)
+                        .addAlbum(titleController.text.trim(), 'custom');
+                    Navigator.pop(context);
+                  }
+                },
+                child: Text('Create'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (titleController.text.trim().isNotEmpty) {
-                Provider.of<StorageProvider>(context, listen: false)
-                    .addAlbum(titleController.text.trim(), 'custom');
-                Navigator.pop(context);
-              }
-            },
-            child: Text('Create'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -248,7 +252,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   itemBuilder: (context, index) {
                     // If search is active, filter albums by title
                     if (_isSearchVisible && _searchController.text.isNotEmpty) {
-                      if (!allAlbums[index].title.toLowerCase().contains(_searchController.text.toLowerCase())) {
+                      if (!allAlbums[index].title.toLowerCase().contains(
+                          _searchController.text.toLowerCase())) {
                         return Container(); // Return empty container if doesn't match search
                       }
                     }
@@ -272,13 +277,14 @@ class _GalleryScreenState extends State<GalleryScreen> {
             MemoryCard(
               photos: _isSearchVisible && _searchController.text.isNotEmpty
                   ? allPhotos.where((photo) =>
-              (photo.note?.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false) ||
+              (photo.note?.toLowerCase().contains(
+                  _searchController.text.toLowerCase()) ?? false) ||
                   _dateMatchesSearch(photo.createdAt, _searchController.text)
               ).toList()
                   : allPhotos,
             ),
             SizedBox(height: 24),
-            _buildCustomizeButton(context),
+            //_buildCustomizeButton(context),
           ],
         ),
       ),
@@ -340,7 +346,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      '${album.photos.length} ${album.photos.length == 1 ? 'item' : 'items'}',
+                      '${album.photos.length} ${album.photos.length == 1
+                          ? 'item'
+                          : 'items'}',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 12,
@@ -412,92 +420,93 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
-  Widget _buildCustomizeButton(BuildContext context) {
-    return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          _showCustomizeOptions(context);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.photo_library,
-              color: Colors.deepPurple,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Customize & Reorder',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+// Widget _buildCustomizeButton(BuildContext context) {
+//   return Center(
+//     child: ElevatedButton(
+//       onPressed: () {
+//         _showCustomizeOptions(context);
+//       },
+//       style: ElevatedButton.styleFrom(
+//         backgroundColor: Colors.white,
+//         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+//         shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(30),
+//         ),
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           Icon(
+//             Icons.photo_library,
+//             color: Colors.deepPurple,
+//           ),
+//           SizedBox(width: 8),
+//           Text(
+//             'Customize & Reorder',
+//             style: TextStyle(
+//               color: Colors.black,
+//               fontSize: 16,
+//               fontWeight: FontWeight.bold,
+//             ),
+//           ),
+//         ],
+//       ),
+//     ),
+//   );
+// }
 
-  void _showCustomizeOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bottomSheetContext) => Container(
-        color: Colors.grey.shade200,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.add_photo_alternate),
-              title: Text('Add photos and videos'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement add photos functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.edit),
-              title: Text('Edit Title and Photos'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement edit functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.add_box),
-              title: Text('Add Albums'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                _showAddAlbumDialog(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete),
-              title: Text('Delete Albums'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement delete albums functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.push_pin),
-              title: Text('Pin'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement pin functionality
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+// void _showCustomizeOptions(BuildContext context) {
+//   showModalBottomSheet(
+//     context: context,
+//     builder: (BuildContext bottomSheetContext) => Container(
+//       color: Colors.grey.shade200,
+//       child: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           ListTile(
+//             leading: Icon(Icons.add_photo_alternate),
+//             title: Text('Add photos and videos'),
+//             onTap: () {
+//               Navigator.of(bottomSheetContext).pop();
+//               // Implement add photos functionality
+//             },
+//           ),
+//           ListTile(
+//             leading: Icon(Icons.edit),
+//             title: Text('Edit Title and Photos'),
+//             onTap: () {
+//               Navigator.of(bottomSheetContext).pop();
+//               // Implement edit functionality
+//             },
+//           ),
+//           ListTile(
+//             leading: Icon(Icons.add_box),
+//             title: Text('Add Albums'),
+//             onTap: () {
+//               Navigator.of(bottomSheetContext).pop();
+//               _showAddAlbumDialog(context);
+//             },
+//           ),
+//           ListTile(
+//             leading: Icon(Icons.delete),
+//             title: Text('Delete Albums'),
+//             onTap: () {
+//               Navigator.of(bottomSheetContext).pop();
+//               // Implement delete albums functionality
+//             },
+//           ),
+//           ListTile(
+//             leading: Icon(Icons.push_pin),
+//             title: Text('Pin'),
+//             onTap: () {
+//               Navigator.of(bottomSheetContext).pop();
+//               // Implement pin functionality
+//             },
+//           ),
+//         ],
+//       ),
+//     ),
+//   );
+// }
+
 }
