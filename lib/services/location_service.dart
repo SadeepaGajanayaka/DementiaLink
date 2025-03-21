@@ -99,12 +99,7 @@ class LocationService {
       // Set up the database reference
       DatabaseReference userLocationRef = _database.ref().child('locations').child(_auth.currentUser!.uid);
 
-      // IMPORTANT FIX: Clear any existing location data to ensure we start fresh
-      await userLocationRef.remove();
-      print("Cleared existing location data for a fresh start");
-
-      // Create the locations node if it doesn't exist
-      // Include more user details for easier identification
+      // Create the locations node with comprehensive data
       await userLocationRef.set({
         'initialized': true,
         'timestamp': ServerValue.timestamp,
@@ -114,6 +109,7 @@ class LocationService {
         'deviceInfo': {
           'online': true,
           'lastActive': ServerValue.timestamp,
+          'appVersion': '1.0.0',
         }
       });
 
@@ -267,9 +263,171 @@ class LocationService {
         });
       }
 
+      // Also check if there are any urgent tracking requests to clear
+      if (snapshot.exists) {
+        Map<dynamic, dynamic> data = snapshot.value as Map;
+        if (data.containsKey('urgent_location_request') ||
+            data.containsKey('trackRequest')) {
+          // Clear these flags to indicate we've responded
+          await userLocationRef.update({
+            'urgent_location_request': false,
+            'trackRequest': false,
+            'lastLocationUpdateAt': ServerValue.timestamp,
+            'respondedToRequest': true
+          });
+          print("Cleared urgent request flags after location update");
+        }
+      }
+
       print("Location updated successfully in Firebase");
     } catch (e) {
       print("Error updating location in Firebase: $e");
+    }
+  }
+
+  // Enhanced method to ensure patient location is properly tracked
+  Future<void> ensurePatientLocationIsTracked() async {
+    if (_auth.currentUser == null) return;
+    String userId = _auth.currentUser!.uid;
+
+    try {
+      // Check if this user is a patient with connected caregiver
+      DocumentSnapshot connectionDoc = await _firestore
+          .collection('connections')
+          .doc(userId)
+          .get();
+
+      if (!connectionDoc.exists) {
+        print("No connection found for user $userId - not sending location updates");
+        return;
+      }
+
+      Map<String, dynamic> connectionData = connectionDoc.data() as Map<String, dynamic>;
+
+      // Check if this is a patient (connected to a caregiver)
+      if (!connectionData.containsKey('caregiverId')) {
+        print("User is not a patient - not sending location updates");
+        return;
+      }
+
+      print("User is a patient connected to caregiver ${connectionData['caregiverId']} - ensuring location tracking");
+
+      // Start or restart location tracking to ensure it's active
+      bool trackingStarted = await startTracking();
+      if (!trackingStarted) {
+        print("Warning: Could not start location tracking");
+      }
+
+      // Verify location node exists with proper data
+      DatabaseReference locationRef = _database.ref().child('locations').child(userId);
+      DataSnapshot locationSnapshot = await locationRef.get();
+
+      if (!locationSnapshot.exists) {
+        print("Location node missing - creating it");
+        await locationRef.set({
+          'initialized': true,
+          'timestamp': ServerValue.timestamp,
+          'userEmail': _auth.currentUser!.email,
+          'userName': _auth.currentUser!.displayName ?? 'Patient',
+          'userUid': userId,
+          'deviceInfo': {
+            'online': true,
+            'lastActive': ServerValue.timestamp,
+          }
+        });
+      }
+
+      // Check if there are any urgent requests pending
+      if (locationSnapshot.exists) {
+        Map<dynamic, dynamic> data = locationSnapshot.value as Map;
+        if (data.containsKey('urgent_location_request') ||
+            data.containsKey('trackRequest')) {
+          print("Urgent location request found - sending immediate update");
+
+          // Get current location and update immediately
+          LocationData currentLocation = await _location.getLocation();
+          await _updateLocationInFirebase(currentLocation);
+        }
+      }
+    } catch (e) {
+      print("Error in ensurePatientLocationIsTracked: $e");
+    }
+  }
+
+  // Trigger an urgent location update from a patient
+  Future<void> triggerUrgentLocationUpdate(String patientId) async {
+    if (patientId.isEmpty) {
+      print("Cannot trigger update: Empty patient ID");
+      return;
+    }
+
+    try {
+      print("URGENT: Triggering immediate location update for patient: $patientId");
+
+      // Create the reference path
+      DatabaseReference patientLocationRef = _database.ref().child('locations').child(patientId);
+
+      // First verify if the node exists
+      DataSnapshot snapshot = await patientLocationRef.get();
+      if (!snapshot.exists) {
+        print("Creating initial location node for patient");
+        // Create initial node with request flags
+        await patientLocationRef.set({
+          'initialized': true,
+          'urgent_location_request': true,
+          'requested_at': ServerValue.timestamp,
+          'requester': {
+            'id': _auth.currentUser?.uid,
+            'email': _auth.currentUser?.email,
+            'timestamp': ServerValue.timestamp
+          },
+          'priority': 'critical',
+          'track_request_count': 1
+        });
+      } else {
+        // Update existing node with multiple flags to ensure delivery
+        await patientLocationRef.update({
+          'urgent_location_request': true,
+          'requested_at': ServerValue.timestamp,
+          'requester': {
+            'id': _auth.currentUser?.uid,
+            'email': _auth.currentUser?.email,
+            'timestamp': ServerValue.timestamp
+          },
+          'priority': 'critical',
+          'trackRequest': true,
+          'trackedAt': ServerValue.timestamp,
+          // Increment request counter to make sure we're changing a value
+          'track_request_count': ServerValue.increment(1)
+        });
+      }
+
+      print("Urgent location request sent for patient");
+
+      // Try a secondary approach - update a different path to trigger change listeners
+      try {
+        await _database.ref().child('urgent_requests').child(patientId).set({
+          'timestamp': ServerValue.timestamp,
+          'requesterId': _auth.currentUser?.uid,
+          'requesterEmail': _auth.currentUser?.email
+        });
+        print("Secondary urgent request path updated");
+      } catch (e) {
+        print("Error updating secondary path: $e");
+        // Continue anyway since this is just a backup
+      }
+    } catch (e) {
+      print("Error requesting urgent location update: $e");
+      // Retry once with a simplified approach
+      try {
+        await _database.ref().child('locations').child(patientId).update({
+          'trackRequest': true,
+          'timestamp': ServerValue.timestamp
+        });
+        print("Simplified fallback request sent");
+      } catch (secondError) {
+        print("Even fallback request failed: $secondError");
+      }
     }
   }
 
@@ -447,6 +605,7 @@ class LocationService {
         'caregiverName': caregiverName,
         'timestamp': FieldValue.serverTimestamp(),
         'lastUpdated': FieldValue.serverTimestamp(),
+        'connectionActive': true,
       });
 
       print("Created caregiver connection record");
@@ -461,6 +620,7 @@ class LocationService {
         'patientEmail': patientEmail,
         'timestamp': FieldValue.serverTimestamp(),
         'lastUpdated': FieldValue.serverTimestamp(),
+        'connectionActive': true,
       });
 
       print("Created patient connection record");
@@ -505,6 +665,9 @@ class LocationService {
           if (attempt < 2) await Future.delayed(Duration(seconds: 1)); // Brief delay before retry
         }
       }
+
+      // ENHANCED: Also send an urgent location request to the patient
+      await triggerUrgentLocationUpdate(patientId);
 
       return {
         'success': true,
@@ -579,6 +742,9 @@ class LocationService {
           }
         });
       }
+
+      // Send an urgent location update request
+      await triggerUrgentLocationUpdate(patientId);
 
       // Wait a moment for patient to respond with location
       await Future.delayed(Duration(seconds: 2)); // IMPROVED: longer wait
@@ -707,7 +873,7 @@ class LocationService {
     }
   }
 
-  // Disconnect from patient (for caregiver)
+// Disconnect from patient (for caregiver)
   Future<bool> disconnectFromPatient() async {
     if (_auth.currentUser == null) return false;
 

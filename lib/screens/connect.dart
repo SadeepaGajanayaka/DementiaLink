@@ -79,7 +79,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     return true;
   }
 
-  // IMPROVED: Connect with patient with better feedback
+  // IMPROVED: Connect with patient with better feedback and reliable tracking
   Future<void> _connectWithPatient() async {
     if (!_validateInput()) return;
 
@@ -101,11 +101,19 @@ class _ConnectScreenState extends State<ConnectScreen> {
         ),
       );
 
+      // Improved connection logic
       final result = await _locationService.connectWithPatient(identifier);
 
       if (mounted) {
         if (result['success']) {
-          // Success - Return to maps screen with the patient ID
+          // Success - Set local connection state and trigger location updates
+          setState(() {
+            _hasExistingConnection = true;
+            _existingPatientEmail = result['patientEmail'];
+            _isConnecting = false;
+          });
+
+          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Successfully connected with ${result['patientEmail']}'),
@@ -113,11 +121,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
             ),
           );
 
-          // IMPROVED: Update local UI state
-          setState(() {
-            _hasExistingConnection = true;
-            _existingPatientEmail = result['patientEmail'];
-            _isConnecting = false;
+          // CRITICAL FIX: Ensure we immediately trigger patient location update
+          await _locationService.triggerUrgentLocationUpdate(result['patientId']);
+
+          // Make another attempt after a short delay
+          Future.delayed(Duration(seconds: 1), () {
+            _locationService.triggerUrgentLocationUpdate(result['patientId']);
           });
 
           // Restore system UI before popping
@@ -130,7 +139,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
             _isConnecting = false;
           });
 
-          // Show error in SnackBar for better visibility
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Connection error: ${result['message']}'),
