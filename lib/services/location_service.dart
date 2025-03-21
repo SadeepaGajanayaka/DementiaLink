@@ -480,7 +480,7 @@ class LocationService {
         'revokedAt': FieldValue.serverTimestamp(),
       });
 
-      // Update caregiver's tracked patients list
+      // Update tracked patient status in caregiver's list
       await _firestore
           .collection('users')
           .doc(caregiverId)
@@ -498,46 +498,9 @@ class LocationService {
     }
   }
 
-  // Clean up on service termination
+  // Dispose method to clean up resources
   void dispose() {
     _locationSubscription?.cancel();
     _connectionStatusController.close();
-  }
-
-  // Check if user is authorized
-  Future<bool> ensureUserAuthenticated() async {
-    User? user = _auth.currentUser;
-
-    if (user != null) {
-      return true;
-    }
-
-    try {
-      UserCredential result = await _signInAnonymously();
-      return result.user != null;
-    } catch (e) {
-      LogService.log('Authentication error: $e', level: LogLevel.error);
-      return false;
-    }
-  }
-
-  // Internal anonymous sign-in method
-  Future<UserCredential> _signInAnonymously() async {
-    try {
-      UserCredential userCredential = await _auth.signInAnonymously();
-
-      // Create a document for the anonymous user
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'name': 'Anonymous User',
-        'createdAt': FieldValue.serverTimestamp(),
-        'lastLogin': FieldValue.serverTimestamp(),
-        'authProvider': 'anonymous',
-      });
-
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      LogService.log('Anonymous sign-in error: ${e.code}', level: LogLevel.error);
-      rethrow;
-    }
   }
 }
