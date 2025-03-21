@@ -14,64 +14,6 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  bool _isSearchVisible = false;
-  final TextEditingController _searchController = TextEditingController();
-  List<Photo> _filteredPhotos = [];
-  bool _isFilteringActive = false;
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  // Helper method to check if a date matches the search query
-  bool _dateMatchesSearch(DateTime date, String query) {
-    if (query.isEmpty) return false;
-
-    try {
-      // Format the date in various ways to check against the search
-      final DateFormat fullFormat = DateFormat('yyyy-MM-dd');
-      final DateFormat monthYearFormat = DateFormat('MMM yyyy');
-      final DateFormat monthFormat = DateFormat('MMMM');
-      final DateFormat yearFormat = DateFormat('yyyy');
-
-      final String fullDate = fullFormat.format(date);
-      final String monthYear = monthYearFormat.format(date);
-      final String month = monthFormat.format(date);
-      final String year = yearFormat.format(date);
-
-      query = query.toLowerCase();
-
-      return fullDate.toLowerCase().contains(query) ||
-          monthYear.toLowerCase().contains(query) ||
-          month.toLowerCase().contains(query) ||
-          year.contains(query);
-    } catch (e) {
-      return false;
-    }
-  }
-
-  void _filterPhotos(List<Photo> allPhotos, String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _filteredPhotos = [];
-        _isFilteringActive = false;
-      });
-      return;
-    }
-
-    final List<Photo> filtered = allPhotos.where((photo) =>
-    (photo.note?.toLowerCase().contains(query.toLowerCase()) ?? false) ||
-        _dateMatchesSearch(photo.createdAt, query)
-    ).toList();
-
-    setState(() {
-      _filteredPhotos = filtered;
-      _isFilteringActive = true;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final storageProvider = Provider.of<StorageProvider>(context);
@@ -86,7 +28,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     return Column(
       children: [
-        // Header with search
+        // Header with options menu only
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -100,73 +42,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Row(
-                children: [
-                  // Search icon
-                  IconButton(
-                    icon: Icon(
-                      Icons.search,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isSearchVisible = !_isSearchVisible;
-                        if (!_isSearchVisible) {
-                          _searchController.clear();
-                          _isFilteringActive = false;
-                        }
-                      });
-                    },
-                  ),
-                  // More options menu
-                  // IconButton(
-                  //   icon: Icon(
-                  //     Icons.more_vert,
-                  //     color: Colors.white,
-                  //   ),
-                  //   onPressed: () {
-                  //     _showMoreOptionsMenu(context);
-                  //   },
-                  // ),
-                ],
-              ),
-            ],
+              // Only keep the more options menu
+            //   IconButton(
+            //     icon: Icon(
+            //       Icons.more_vert,
+            //       color: Colors.white,
+            //     ),
+            //     // onPressed: () {
+            //     //   _showMoreOptionsMenu(context);
+            //     // },
+            //   ),
+             ],
           ),
         ),
-
-        if (_isSearchVisible)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search albums, dates, notes...',
-                hintStyle: TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Colors.white24,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                prefixIcon: Icon(Icons.search, color: Colors.white70),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.clear, color: Colors.white70),
-                  onPressed: () {
-                    // Clear the search text and close the search bar
-                    _searchController.clear();
-                    setState(() {
-                      _isSearchVisible = false;
-                    });
-                  },
-                ),
-              ),
-              style: TextStyle(color: Colors.white),
-              onChanged: (value) {
-                // This will rebuild the UI with filtered results
-                setState(() {});
-              },
-            ),
-          ),
 
         // Main content
         Expanded(
@@ -182,15 +70,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               }
 
               final favoritePhotos = snapshot.data ?? [];
-              final displayPhotos = _isFilteringActive ? _filteredPhotos : favoritePhotos;
 
-              if (displayPhotos.isEmpty) {
-                return _buildEmptyState(_isFilteringActive);
+              if (favoritePhotos.isEmpty) {
+                return _buildEmptyState();
               }
 
               return Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: _buildPhotoGrid(context, displayPhotos),
+                child: _buildPhotoGrid(context, favoritePhotos),
               );
             },
           ),
@@ -199,19 +86,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildEmptyState(bool isFiltering) {
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            isFiltering ? Icons.search_off : Icons.favorite_border,
+            Icons.favorite_border,
             color: Colors.white.withOpacity(0.5),
             size: 64,
           ),
           SizedBox(height: 16),
           Text(
-            isFiltering ? 'No favorites match your search' : 'No favorite photos yet',
+            'No favorite photos yet',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -219,9 +106,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
           SizedBox(height: 8),
           Text(
-            isFiltering
-                ? 'Try a different search term'
-                : 'Tap the heart icon on any photo to add it to favorites',
+            'Tap the heart icon on any photo to add it to favorites',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withOpacity(0.7),
@@ -371,7 +256,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   //     ),
   //   );
   // }
-
+  //
   // void _showRemoveAllConfirmation(BuildContext context) {
   //   showDialog(
   //     context: context,
@@ -452,5 +337,5 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   //       ],
   //     ),
   //   );
-  //}
+ // }
 }
