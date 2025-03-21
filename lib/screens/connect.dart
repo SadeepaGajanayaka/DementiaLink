@@ -10,9 +10,10 @@ class ConnectScreen extends StatefulWidget {
 }
 
 class _ConnectScreenState extends State<ConnectScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  String? _emailError;
+  final TextEditingController _identifierController = TextEditingController();
+  String? _errorMessage;
   bool _isConnecting = false;
+  bool _isInputEmail = true;
   final LocationService _locationService = LocationService();
 
   @override
@@ -27,7 +28,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
   void dispose() {
     // Restore system UI when dialog is closed
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _emailController.dispose();
+    _identifierController.dispose();
     super.dispose();
   }
 
@@ -38,7 +39,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (connectionInfo['connected']) {
         // Pre-fill the email field if there's an existing connection
         setState(() {
-          _emailController.text = connectionInfo['patientEmail'] ?? '';
+          _identifierController.text = connectionInfo['patientEmail'] ?? '';
         });
       }
     } catch (e) {
@@ -46,41 +47,51 @@ class _ConnectScreenState extends State<ConnectScreen> {
     }
   }
 
-  // Email validation function
-  bool _validateEmail() {
-    final email = _emailController.text.trim();
+  // Validate input
+  bool _validateInput() {
+    final identifier = _identifierController.text.trim();
 
-    if (email.isEmpty) {
-      setState(() => _emailError = 'Please enter an email address');
-      return false;
-    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      setState(() => _emailError = 'Please enter a valid email address');
+    if (identifier.isEmpty) {
+      setState(() => _errorMessage = 'Please enter an email address or ID');
       return false;
     }
 
-    setState(() => _emailError = null);
+    // Check if input is an email
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    _isInputEmail = emailRegex.hasMatch(identifier);
+
+    // If it's supposed to be an email but doesn't look valid
+    if (_isInputEmail && !emailRegex.hasMatch(identifier)) {
+      setState(() => _errorMessage = 'Please enter a valid email address');
+      return false;
+    }
+
+    setState(() => _errorMessage = null);
     return true;
   }
 
   // Connect with patient
   Future<void> _connectWithPatient() async {
-    if (!_validateEmail()) return;
+    if (!_validateInput()) return;
 
     setState(() {
       _isConnecting = true;
-      _emailError = null;  // Clear any previous errors
+      _errorMessage = null;  // Clear any previous errors
     });
 
+    final identifier = _identifierController.text.trim();
+
     try {
-      print("Attempting to connect with patient: ${_emailController.text.trim()}");
-      final result = await _locationService.connectWithPatient(_emailController.text.trim());
+      print("Attempting to connect with patient: $identifier");
+
+      final result = await _locationService.connectWithPatient(identifier);
 
       if (mounted) {
         if (result['success']) {
           // Success - Return to maps screen with the patient ID
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Successfully connected with ${_emailController.text.trim()}'),
+              content: Text('Successfully connected with ${result['patientEmail']}'),
               backgroundColor: Colors.green,
             ),
           );
@@ -91,7 +102,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
         } else {
           // Error
           setState(() {
-            _emailError = result['message'];
+            _errorMessage = result['message'];
           });
 
           // Show error in SnackBar for better visibility
@@ -107,7 +118,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       print("Error in connect with patient: $e");
       if (mounted) {
         setState(() {
-          _emailError = 'Error connecting: $e';
+          _errorMessage = 'Error connecting: $e';
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -146,12 +157,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
           );
 
           setState(() {
-            _emailController.clear();
-            _emailError = null;
+            _identifierController.clear();
+            _errorMessage = null;
           });
         } else {
           setState(() {
-            _emailError = 'Error disconnecting from patient';
+            _errorMessage = 'Error disconnecting from patient';
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -166,7 +177,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       print("Error disconnecting from patient: $e");
       if (mounted) {
         setState(() {
-          _emailError = 'Error: $e';
+          _errorMessage = 'Error: $e';
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -274,10 +285,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
-                          'Enter the patient\'s email to track their location',
+                          'Enter the patient\'s email address or ID to track their location',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -291,13 +302,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
                         width: MediaQuery.of(context).size.width * 0.7,
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         child: TextField(
-                          controller: _emailController,
+                          controller: _identifierController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: 'patient@example.com',
-                            errorText: _emailError,
+                            hintText: 'Email or Patient ID',
+                            errorText: _errorMessage,
                             prefixIcon: const Icon(
-                              Icons.email,
+                              Icons.person,
                               color: Color(0xFF77588D),
                             ),
                             enabledBorder: OutlineInputBorder(

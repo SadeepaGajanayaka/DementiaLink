@@ -113,6 +113,8 @@ class LocationService {
         }
       });
 
+      print("Created initial location entry in Firebase");
+
       // Get initial location and update immediately
       try {
         LocationData initialLocation = await _location.getLocation();
@@ -244,9 +246,9 @@ class LocationService {
     }
   }
 
-  // Connect with a patient by email
-  Future<Map<String, dynamic>> connectWithPatient(String patientEmail) async {
-    print("Attempting to connect with patient: $patientEmail");
+// Connect with a patient by email or UID
+  Future<Map<String, dynamic>> connectWithPatient(String patientIdentifier) async {
+    print("Attempting to connect with patient: $patientIdentifier");
 
     try {
       if (_auth.currentUser == null) {
@@ -256,52 +258,131 @@ class LocationService {
         };
       }
 
-      // Validate that the email isn't the caregiver's own email
-      if (_auth.currentUser!.email?.toLowerCase() == patientEmail.toLowerCase()) {
+      // Validate that the identifier isn't the caregiver's own email or UID
+      if (_auth.currentUser!.email?.toLowerCase() == patientIdentifier.toLowerCase() ||
+          _auth.currentUser!.uid == patientIdentifier) {
         return {
           'success': false,
-          'message': 'You cannot connect with yourself. Please enter a different email.',
+          'message': 'You cannot connect with yourself. Please enter a different email or ID.',
         };
       }
 
-      // Find the patient's user ID by email
-      QuerySnapshot userSnapshot = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: patientEmail)
-          .limit(1)
-          .get();
+      // Initialize patientId and patientEmail as nullable variables
+      String? patientId;
+      String? patientEmail;
+      bool isDirectUidLookup = false;
 
-      if (userSnapshot.docs.isEmpty) {
-        print("No user found with email: $patientEmail");
+      // Check if the input is an email or possibly a UID
+      bool isEmail = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(patientIdentifier);
+
+      // If it's not an email format, first try to find user directly by ID
+      if (!isEmail) {
+        try {
+          // Try direct document lookup by ID
+          DocumentSnapshot directUserCheck = await _firestore
+              .collection('users')
+              .doc(patientIdentifier)
+              .get();
+
+          if (directUserCheck.exists) {
+            patientId = patientIdentifier;
+            final userData = directUserCheck.data() as Map<String, dynamic>?;
+            patientEmail = userData?['email'] as String?;
+            isDirectUidLookup = true;
+
+            print("Found patient directly by ID: $patientId with email: $patientEmail");
+
+            // Check if user is actually a patient
+            final patientRole = userData?['role'] as String?;
+            if (patientRole != null && patientRole != 'patient') {
+              return {
+                'success': false,
+                'message': 'The specified ID belongs to a caregiver, not a patient.',
+              };
+            }
+          } else {
+            print("No user found with direct ID lookup: $patientIdentifier");
+          }
+        } catch (e) {
+          print("Error in direct UID lookup: $e");
+          // Continue to alternative lookup methods
+        }
+      }
+
+      // If not found by direct UID or is email format, try email lookup
+      if (!isDirectUidLookup) {
+        QuerySnapshot userSnapshot;
+
+        if (isEmail) {
+          // Find by email
+          userSnapshot = await _firestore
+              .collection('users')
+              .where('email', isEqualTo: patientIdentifier)
+              .limit(1)
+              .get();
+        } else {
+          // Try to find by UID stored in a field
+          userSnapshot = await _firestore
+              .collection('users')
+              .where('uid', isEqualTo: patientIdentifier)
+              .limit(1)
+              .get();
+
+          // If not found, try one more lookup method that might help
+          if (userSnapshot.docs.isEmpty) {
+            // This can catch some edge cases
+            userSnapshot = await _firestore
+                .collection('users')
+                .where('userUid', isEqualTo: patientIdentifier)
+                .limit(1)
+                .get();
+          }
+        }
+
+        if (userSnapshot.docs.isEmpty) {
+          print("No user found with identifier: $patientIdentifier");
+          return {
+            'success': false,
+            'message': 'No user found with this email address or ID',
+          };
+        }
+
+        patientId = userSnapshot.docs.first.id;
+        final patientData = userSnapshot.docs.first.data() as Map<String, dynamic>;
+        patientEmail = patientData['email'] as String?;
+
+        print("Found patient via query with ID: $patientId");
+
+        // Get patient's role to verify they are actually a patient
+        final patientRole = patientData['role'] as String?;
+        if (patientRole != null && patientRole != 'patient') {
+          return {
+            'success': false,
+            'message': 'The specified email belongs to a caregiver, not a patient.',
+          };
+        }
+      }
+
+      // Make sure patientId is assigned at this point
+      if (patientId == null) {
         return {
           'success': false,
-          'message': 'No user found with this email address',
+          'message': 'Could not determine patient ID from the provided information.',
         };
       }
 
-      String patientId = userSnapshot.docs.first.id;
-      print("Found patient with ID: $patientId");
-
-      // Get patient's role to verify they are actually a patient
-      final patientData = userSnapshot.docs.first.data() as Map<String, dynamic>;
-      final patientRole = patientData['role'] as String?;
-
-      if (patientRole != null && patientRole != 'patient') {
-        return {
-          'success': false,
-          'message': 'The specified email belongs to a caregiver, not a patient.',
-        };
-      }
+      // If patientEmail is still null, set a default for display purposes
+      patientEmail ??= 'Unknown Email';
 
       // Check if caregiver is already connected to someone
       DocumentSnapshot existingCaregiverConn = await _firestore.collection('connections').doc(_auth.currentUser!.uid).get();
       if (existingCaregiverConn.exists) {
         // Get existing patient data
         Map<String, dynamic> connData = existingCaregiverConn.data() as Map<String, dynamic>;
-        String connPatientEmail = connData['patientEmail'] ?? '';
+        String connPatientId = connData['patientId'] ?? '';
 
         // If already connected to this patient, just return success
-        if (connPatientEmail.toLowerCase() == patientEmail.toLowerCase()) {
+        if (connPatientId == patientId) {
           return {
             'success': true,
             'message': 'Already connected with this patient',
@@ -518,7 +599,7 @@ class LocationService {
 
         return {
           'connected': true,
-          'patientId': connectionData['caregiverId'], // For patient, this is the caregiver ID
+          'caregiverId': connectionData['caregiverId'],
           'caregiverEmail': connectionData['caregiverEmail'],
           'caregiverName': connectionData['caregiverName'],
           'timestamp': connectionData['timestamp'],

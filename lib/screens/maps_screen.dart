@@ -75,6 +75,12 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     _initializeServices();
     _loadCustomMarkers();
     _fetchUserRole();
+
+    // Add this to ensure connection status refreshes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkConnectionStatus();
+      _verifyAndDisplayConnection(); // Added explicit connection verification
+    });
   }
 
   @override
@@ -97,6 +103,40 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         _getPatientLocationImmediately();
         _triggerPatientLocationUpdate(); // Added: Force location update when app resumes
       }
+      _debugMarkersStatus(); // Added for debugging markers
+    }
+  }
+
+  // New method to verify and display connection status clearly
+  void _verifyAndDisplayConnection() async {
+    try {
+      final connectionInfo = await _locationService.getConnectedPatient();
+      print("Connection verify result: $connectionInfo");
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(connectionInfo['connected']
+                ? 'Connected to: ${_userRole == 'patient' ? connectionInfo['caregiverEmail'] : connectionInfo['patientEmail']}'
+                : 'Not connected to anyone'),
+            backgroundColor: connectionInfo['connected'] ? Colors.green : Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Connection verification error: $e");
+    }
+  }
+
+  // New method to debug markers status
+  void _debugMarkersStatus() {
+    print("Current markers (${_markers.length}):");
+    _markers.forEach((key, marker) {
+      print("- ${key.value}: ${marker.position.latitude}, ${marker.position.longitude}");
+    });
+
+    if (_userRole == 'caregiver' && !_markers.containsKey(const MarkerId('patientLocation'))) {
+      print("WARNING: Patient marker not found in the markers collection!");
     }
   }
 
@@ -168,9 +208,14 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     });
   }
 
-  // Check current connection status
+  // Check current connection status with improved error handling
   Future<void> _checkConnectionStatus() async {
     try {
+      if (_authService.currentUser == null) {
+        print("Cannot check connection: No authenticated user");
+        return;
+      }
+
       final connectionInfo = await _locationService.getConnectedPatient();
       print("Connection status check result: $connectionInfo");
 
@@ -201,6 +246,15 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       }
     } catch (e) {
       print("Error checking connection status: $e");
+      // Added error handling with user feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error checking connection status: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -316,6 +370,8 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
         const ImageConfiguration(size: Size(48, 48)),
         'lib/assets/caregiver_marker.png',
       );
+
+      print("Custom markers loaded successfully");
     } catch (error) {
       print("Error loading custom markers: $error");
       _patientMarkerIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
@@ -374,6 +430,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     // Get current location without moving camera
     try {
       _currentLocation = await _location.getLocation();
+      print("Current location obtained: ${_currentLocation?.latitude}, ${_currentLocation?.longitude}");
 
       // Add marker for current user
       _updateCurrentLocationMarker();
@@ -414,6 +471,8 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     setState(() {
       _markers[markerId] = marker;
     });
+
+    print("Current location marker updated: ${_currentLocation!.latitude}, ${_currentLocation!.longitude}");
   }
 
   // Method to center on user's location when explicitly requested
@@ -425,6 +484,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           16, // Zoom level
         ),
       );
+      print("Centered map on current location");
     } else {
       _getCurrentLocation().then((_) {
         if (_currentLocation != null && _mapController != null) {
@@ -434,6 +494,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
               16, // Zoom level
             ),
           );
+          print("Fetched location and centered map");
         }
       });
     }
@@ -449,6 +510,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           16, // Zoom level
         ),
       );
+      print("Centered on existing patient marker");
     } else {
       if (_isConnected) {
         _getPatientLocationImmediately().then((_) {
@@ -460,6 +522,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                 16, // Zoom level
               ),
             );
+            print("Got patient location and centered map");
           } else {
             // Try one more time with the urgent trigger method
             _triggerPatientLocationUpdate();
@@ -472,7 +535,9 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
                     16, // Zoom level
                   ),
                 );
+                print("Used urgent method and centered map");
               } else {
+                print("Still cannot find patient marker after urgent request");
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Patient location is not available yet. They may need to open the app.'),
@@ -519,10 +584,13 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           );
         }
       });
+      print("Live location tracking enabled");
+    } else {
+      print("Live location tracking disabled");
     }
   }
 
-  // Start tracking the connected patient's location
+  // Start tracking the connected patient's location with improved error handling
   void _startTrackingPatient() {
     if (_connectedPatientId == null) {
       print("Cannot start tracking: No connected patient ID");
@@ -584,7 +652,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       }
     });
 
-    // Listen to patient location updates
+    // Listen to patient location updates with improved error handling
     _patientLocationSubscription = _locationService
         .getPatientLocationStream(_connectedPatientId!)
         .listen((DatabaseEvent event) {
@@ -625,6 +693,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
               });
 
               print("Patient marker updated on map");
+              _debugMarkersStatus();
 
               // Only center on patient location if it's the first time we're getting it
               if (!_patientLocationAvailable && _mapController != null) {
@@ -688,7 +757,9 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       DataSnapshot snapshot = await patientLocationRef.get();
 
       if (snapshot.exists) {
+        print("Patient location data exists in database");
         final data = Map<String, dynamic>.from(snapshot.value as Map);
+        print("Patient location data: $data");
 
         // Check if we have actual location data
         if (data.containsKey('latitude') && data.containsKey('longitude')) {
@@ -729,6 +800,9 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
               );
             }
 
+            // Debug markers
+            _debugMarkersStatus();
+
             // Location found successfully
             return;
           }
@@ -759,7 +833,47 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     }
   }
 
-  // Improved connect dialog method with better feedback and permission system
+  // Modified method to force patient location update in Firebase with better logging
+  Future<void> _triggerPatientLocationUpdate() async {
+    if (_connectedPatientId == null) return;
+
+    try {
+      print("Triggering immediate location update for patient: $_connectedPatientId");
+
+      // Print out the exact path being accessed
+      String locationPath = 'locations/${_connectedPatientId}';
+      print("Accessing path: $locationPath");
+
+      // Try to read the node first to verify access
+      DataSnapshot snapshot = await _database.ref().child(locationPath).get();
+      print("Current node data: ${snapshot.exists ? 'exists' : 'does not exist'}");
+
+      if (snapshot.exists) {
+        print("Node contents: ${snapshot.value}");
+      }
+
+      // Continue with the existing code
+      DatabaseReference patientLocationRef = _database.ref().child(locationPath);
+
+      // Add priority flag to ensure quick processing
+      await patientLocationRef.update({
+        'urgent_location_request': true,
+        'requested_at': ServerValue.timestamp,
+        'requester': {
+          'id': _authService.currentUser?.uid,
+          'email': _authService.currentUser?.email,
+          'timestamp': ServerValue.timestamp
+        },
+        'priority': 'high'
+      });
+
+      print("Urgent location update request sent for patient");
+    } catch (e) {
+      print("Error requesting urgent location update: $e");
+    }
+  }
+
+  // Improved connect dialog method with better input validation and error handling
   Future<void> _showConnectDialog() async {
     if (_userRole == null) {
       // First fetch user role if not already done
@@ -792,29 +906,29 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     }
 
     if (_userRole == 'caregiver') {
-      // CAREGIVER FLOW: Show connect dialog to enter patient email
+      // CAREGIVER FLOW: Show connect dialog to enter patient email or ID
       setState(() {
         _isConnecting = true;
       });
 
       // Display connection dialog
-      final patientEmail = await Navigator.of(context).push<String>(
-        PageRouteBuilder(
-          opaque: false,
-          pageBuilder: (BuildContext context, _, __) {
-            return const ConnectScreen();
-          },
-          transitionsBuilder: (_, animation, __, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        ),
+      final patientIdentifier = await Navigator.of(context).push<String>(
+          PageRouteBuilder(
+            opaque: false,
+            pageBuilder: (BuildContext context, _, __) {
+              return const ConnectScreen();
+            },
+            transitionsBuilder: (_, animation, __, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          ),
       );
 
-      // If no email was returned (user canceled), stop here
-      if (patientEmail == null || patientEmail.isEmpty) {
+      // If no identifier was returned (user canceled), stop here
+      if (patientIdentifier == null || patientIdentifier.isEmpty) {
         setState(() {
           _isConnecting = false;
         });
@@ -830,95 +944,57 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
       );
 
       try {
-        // Find the patient's user ID by email
-        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: patientEmail)
-            .limit(1)
-            .get();
+        // Directly use the improved connectWithPatient method that handles both email and UIDs
+        final result = await _locationService.connectWithPatient(patientIdentifier);
 
-        if (userSnapshot.docs.isEmpty) {
+        if (result['success']) {
           if (mounted) {
+            // Connection successful
+            setState(() {
+              _connectedPatientId = result['patientId'];
+              _connectedPatientEmail = result['patientEmail'];
+              _isConnected = true;
+              _isConnecting = false;
+            });
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('No user found with email: $patientEmail'),
-                backgroundColor: Colors.red,
+                content: Text('Successfully connected with ${result['patientEmail']}'),
+                backgroundColor: Colors.green,
               ),
             );
+
+            // Start tracking the patient immediately
+            _startTrackingPatient();
+          }
+        } else {
+          // Connection failed
+          if (mounted) {
             setState(() {
               _isConnecting = false;
             });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${result['message']}'),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
-          return;
-        }
-
-        // Get patient ID
-        String patientId = userSnapshot.docs.first.id;
-
-        // Get caregiver info for request
-        String caregiverName = _authService.currentUser?.displayName ?? 'Caregiver';
-        String caregiverEmail = _authService.currentUser?.email ?? '';
-
-        // Show requesting permission message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Requesting location permission from patient...'),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-
-        // Send request for location tracking permission
-        bool requestSent = await _permissionHandler.sendConnectionRequest(
-          patientId: patientId,
-          patientEmail: patientEmail,
-          caregiverName: caregiverName,
-          caregiverEmail: caregiverEmail,
-        );
-
-        if (requestSent && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Permission request sent to $patientEmail. Waiting for response...'),
-              backgroundColor: Colors.blue,
-              duration: const Duration(seconds: 5),
-            ),
-          );
-
-          // Set connection data to display in UI
-          setState(() {
-            _connectedPatientEmail = patientEmail;
-            _isConnecting = false;
-          });
-
-          // Check connection status after a delay (in case patient responds quickly)
-          Future.delayed(const Duration(seconds: 10), () {
-            _checkConnectionStatus();
-          });
-        } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send location permission request'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          setState(() {
-            _isConnecting = false;
-          });
         }
       } catch (e) {
-        print("Error sending permission request: $e");
+        print("Error connecting with patient: $e");
         if (mounted) {
+          setState(() {
+            _isConnecting = false;
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: $e'),
               backgroundColor: Colors.red,
             ),
           );
-          setState(() {
-            _isConnecting = false;
-          });
         }
       }
     } else if (_userRole == 'patient') {
@@ -1013,734 +1089,6 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
     });
   }
 
-  // New method to force patient location update in Firebase
-  Future<void> _triggerPatientLocationUpdate() async {
-    if (_connectedPatientId == null) return;
-
-    try {
-      print("Triggering immediate location update for patient: $_connectedPatientId");
-
-      // Create a special request in the database to signal the patient's device
-      // to update its location immediately
-      DatabaseReference patientLocationRef = _database
-          .ref()
-          .child('locations')
-          .child(_connectedPatientId!);
-
-      // Add priority flag to ensure quick processing
-      await patientLocationRef.update({
-        'urgent_location_request': true,
-        'requested_at': ServerValue.timestamp,
-        'requester': {
-          'id': _authService.currentUser?.uid,
-          'email': _authService.currentUser?.email,
-          'timestamp': ServerValue.timestamp
-        },
-        'priority': 'high'
-      });
-
-      print("Urgent location update request sent for patient");
-    } catch (e) {
-      print("Error requesting urgent location update: $e");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        // Applying the gradient to the entire screen background
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF503663), Color(0xFF77588D)],
-          ),
-        ),
-        child: Column(
-          children: [
-            // App bar without its own gradient now
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    // Back button and title
-                    Row(
-                      children: [
-                        // Custom back arrow image
-                        GestureDetector(
-                          onTap: () {
-                            // Back functionality - Navigate to dashboard
-                            Navigator.pop(context);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 16.0, right: 8.0),
-                            child: Image.asset(
-                              'lib/assets/back_arrow.png',
-                              width: 28,
-                              height: 28,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8), // Added spacing
-                        const Expanded(
-                          child: Text(
-                            'Location Tracking',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24, // Reduced font size to prevent overflow
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center, // Ensure text is centered
-                          ),
-                        ),
-                        const SizedBox(width: 8), // Added spacing
-                        // Brain icon - using the specified asset with adjusted size
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
-                          child: Image.asset(
-                            'lib/assets/images/brain_icon.png',
-                            width: 40, // Reduced size to prevent overflow
-                            height: 40,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.psychology,
-                              color: Colors.white,
-                              size: 35,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Search bar with Google Maps icon
-                    Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        children: [
-                          // Google Maps icon
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            child: Image.asset(
-                              'lib/assets/google-maps.png',
-                              width: 26,
-                              height: 26,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.map,
-                                color: Colors.black,
-                                size: 26,
-                              ),
-                            ),
-                          ),
-                          const Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search Here........',
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 8),
-                              ),
-                            ),
-                          ),
-                          // Microphone icon in black
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            child: const Icon(
-                              Icons.mic,
-                              color: Colors.black, // Changed to black
-                              size: 30,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Expanded map view with rounded corners and UI elements as overlays
-            Expanded(
-              child: Stack(
-                children: [
-                  // Map with rounded corners
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2), // Small offset to ensure no gap
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(25),
-                        topRight: Radius.circular(25),
-                      ),
-                      child: GoogleMap(
-                        // Improve responsiveness with these settings
-                        compassEnabled: true,
-                        trafficEnabled: false,
-                        buildingsEnabled: true,
-                        indoorViewEnabled: false,
-                        initialCameraPosition: _initialCameraPosition,
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: false,
-                        zoomControlsEnabled: false,
-                        mapToolbarEnabled: false,
-                        padding: const EdgeInsets.only(top: 10),
-                        markers: Set<Marker>.of(_markers.values),
-                        onMapCreated: (controller) {
-                          setState(() {
-                            _mapController = controller;
-                          });
-
-                          // Apply the custom map style
-                          _mapController!.setMapStyle(MapStyle.mapStyle);
-
-                          // Position the map appropriately based on available data
-                          _positionMapInitially();
-                        },
-                      ),
-                    ),
-                  ),
-
-                  // UI elements on top of map
-                  Positioned(
-                    top: 30, // Moved a tiny bit lower
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: FractionallySizedBox(
-                        widthFactor: 0.85, // Use 85% of screen width
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Safe Zone / Red Alert tabs with selection behavior
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(15),
-                                    topRight: Radius.circular(15),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    // Safe Zone Alert
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _safeZoneSelected = true;
-                                          });
-
-                                          // Navigate to SafeZoneScreen
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => const SafeZoneScreen(),
-                                            ),
-                                          );
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: _safeZoneSelected
-                                                ? const Color(0xFFD9D9D9)
-                                                : Colors.white,
-                                            borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(15),
-                                            ),
-                                          ),
-                                          child: const Center(
-                                            child: Text(
-                                              'Safe Zone Alert',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                                fontSize: 15, // Reduced font size to avoid overflow
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Red Alert
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _safeZoneSelected = false;
-                                          });
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: !_safeZoneSelected
-                                                ? const Color(0xFFD9D9D9)
-                                                : Colors.white,
-                                            borderRadius: const BorderRadius.only(
-                                              topRight: Radius.circular(15),
-                                            ),
-                                          ),
-                                          child: const Center(
-                                            child: Text(
-                                              'Red Alert',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                                fontSize: 15, // Reduced font size to avoid overflow
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Connected user info box - shows either patient or caregiver info based on role
-                              if (_isConnected)
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFECE5F1),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.person_pin_circle,
-                                        color: Color(0xFF503663),
-                                        size: 18, // Reduced size
-                                      ),
-                                      const SizedBox(width: 4), // Reduced spacing
-                                      Expanded(
-                                        child: _userRole == 'patient'
-                                            ? Text(
-                                          'Sharing with: ${_connectedCaregiverEmail ?? 'Caregiver'}',
-                                          style: const TextStyle(
-                                            color: Color(0xFF503663),
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 13, // Reduced font size
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        )
-                                            : Row(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                'Tracking: ${_connectedPatientEmail ?? 'Patient'}',
-                                                style: const TextStyle(
-                                                  color: Color(0xFF503663),
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize: 13, // Reduced font size
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            if (_patientLocationAvailable)
-                                              const Padding(
-                                                padding: EdgeInsets.only(left: 4.0),
-                                                child: Icon(
-                                                  Icons.check_circle,
-                                                  color: Colors.green,
-                                                  size: 14, // Reduced size
-                                                ),
-                                              )
-                                            else if (_showPatientOfflineStatus)
-                                              const Padding(
-                                                padding: EdgeInsets.only(left: 4.0),
-                                                child: Icon(
-                                                  Icons.offline_bolt,
-                                                  color: Colors.orange,
-                                                  size: 14, // Reduced size
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (_userRole == 'caregiver' && _patientLocationAvailable)
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.center_focus_strong,
-                                            color: Color(0xFF503663),
-                                            size: 18, // Reduced size
-                                          ),
-                                          onPressed: _centerOnPatientLocation,
-                                          constraints: const BoxConstraints(),
-                                          padding: const EdgeInsets.all(6), // Reduced padding
-                                          visualDensity: VisualDensity.compact, // Make button more compact
-                                          tooltip: 'Focus on patient',
-                                        ),
-                                    ],
-                                  ),
-                                ),
-
-                              // Location sharing status for patients
-                              if (_userRole == 'patient')
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: _isLocationShared ? const Color(0xFFE5F1E9) : const Color(0xFFF1E5E5),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _isLocationShared ? Icons.location_on : Icons.location_off,
-                                        color: _isLocationShared ? Colors.green : Colors.red,
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          _isLocationShared
-                                              ? 'Location sharing is active'
-                                              : 'Location sharing is inactive',
-                                          style: TextStyle(
-                                            color: _isLocationShared ? Colors.green.shade800 : Colors.red.shade800,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              // Live location toggle
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF503663),
-                                  borderRadius: BorderRadius.only(
-                                    bottomLeft: Radius.circular(15),
-                                    bottomRight: Radius.circular(15),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Reduced vertical padding
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        // Location pin icon next to "Live Location" text
-                                        Image.asset(
-                                          'lib/assets/location_pin.png',
-                                          width: 20, // Reduced size
-                                          height: 20, // Reduced size
-                                          color: Colors.white,
-                                          errorBuilder: (context, error, stackTrace) => const Icon(
-                                            Icons.location_on,
-                                            color: Colors.white,
-                                            size: 20, // Reduced size
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          'Live Location',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 16, // Reduced font size
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Transform.scale(
-                                      scale: 0.8, // Scale down the switch
-                                      child: Switch(
-                                        value: _liveLocationEnabled,
-                                        onChanged: _toggleLiveLocation,
-                                        activeColor: Colors.white,
-                                        activeTrackColor: const Color(0xFF6246A3),
-                                        inactiveTrackColor: Colors.grey[700],
-                                        inactiveThumbColor: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Position buttons at right side
-                  // First circle (Navigation button)
-                  Positioned(
-                    right: 16,
-                    top: MediaQuery.of(context).size.height * 0.4, // Keep original position
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.navigation,
-                          size: 28, // Reduced size
-                        ),
-                        iconSize: 46, // Reduced size
-                        onPressed: _centerOnCurrentLocation,
-                      ),
-                    ),
-                  ),
-
-                  // Second circle (Target location button) - moved closer to the first one
-                  Positioned(
-                    right: 16,
-                    top: MediaQuery.of(context).size.height * 0.47, // Adjusted position
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF77588D),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.my_location,
-                          color: Colors.white,
-                          size: 28, // Reduced size
-                        ),
-                        iconSize: 46, // Reduced size
-                        onPressed: _getCurrentLocation,
-                      ),
-                    ),
-                  ),
-
-                  // Connect button (bottom right corner)
-                  // Only show for caregivers (patients can't initiate connections)
-                  if (_userRole == 'caregiver')
-                    Positioned(
-                      bottom: 20,
-                      right: 16,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _isConnected ? Colors.green : const Color(0xFF77588D),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _isConnecting ? null : () {
-                              _showConnectDialog();
-                              _startLoadingTimeout(); // Start the timeout timer
-                            },
-                            borderRadius: BorderRadius.circular(30),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24, // Reduced horizontal padding
-                                vertical: 10, // Reduced vertical padding
-                              ),
-                              child: _isConnecting
-                                  ? const SizedBox(
-                                height: 22, // Reduced size
-                                width: 22, // Reduced size
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _isConnected ? Icons.link : Icons.link_off,
-                                    color: Colors.white,
-                                    size: 18, // Reduced size
-                                  ),
-                                  const SizedBox(width: 6), // Reduced spacing
-                                  Text(
-                                    _isConnected ? 'Connected' : 'Connect',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16, // Reduced font size
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Connection status button for patients (shows current sharing status)
-                  if (_userRole == 'patient')
-                    Positioned(
-                      bottom: 20,
-                      right: 16,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _isConnected ? Colors.green : const Color(0xFF77588D),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _isConnecting ? null : () {
-                              // For patients, this will just show the current connection status
-                              _checkConnectionStatus();
-
-                              // Show appropriate message
-                              if (_isConnected) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('You are sharing your location with: $_connectedCaregiverEmail'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('No caregiver is currently tracking your location.'),
-                                    backgroundColor: Colors.blue,
-                                  ),
-                                );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(30),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 10,
-                              ),
-                              child: _isConnecting
-                                  ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _isConnected ? Icons.visibility : Icons.visibility_off,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _isConnected ? 'Sharing Location' : 'Not Being Tracked',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Offline message if patient is not sharing location
-                  if (_isConnected && _userRole == 'caregiver' && _showPatientOfflineStatus)
-                    Positioned(
-                      top: MediaQuery.of(context).size.height * 0.2,
-                      left: 16,
-                      right: 16,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reduced padding
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                            border: Border.all(color: Colors.orange, width: 1),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.info_outline,
-                                color: Colors.orange,
-                                size: 16, // Reduced size
-                              ),
-                              const SizedBox(width: 6), // Reduced spacing
-                              Flexible(
-                                child: Text(
-                                  'Patient may be offline. Updates will appear when they come online.',
-                                  style: TextStyle(
-                                    color: Colors.orange.shade800,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12, // Reduced font size
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // Position the map based on available data
   void _positionMapInitially() {
     if (_mapController == null) return;
@@ -1754,6 +1102,7 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           16, // Zoom level
         ),
       );
+      print("Positioned map initially on patient location");
     }
     // Second priority: Center on user's location if available
     else if (_currentLocation != null) {
@@ -1763,12 +1112,716 @@ class _MapsScreenState extends State<MapsScreen> with WidgetsBindingObserver {
           16, // Zoom level
         ),
       );
+      print("Positioned map initially on user's current location");
     }
     // Fall back to initial position
     else {
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(_initialCameraPosition),
       );
+      print("Positioned map at default location (Sri Lanka)");
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+      // Applying the gradient to the entire screen background
+      decoration: const BoxDecoration(
+      gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF503663), Color(0xFF77588D)],
+    ),
+    ),
+    child: Column(
+    children: [
+    // App bar without its own gradient now
+    SafeArea(
+    bottom: false,
+    child: Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Column(
+    children: [
+    // Back button and title
+    Row(
+    children: [
+    // Custom back arrow image
+    GestureDetector(
+    onTap: () {
+    // Back functionality - Navigate to dashboard
+    Navigator.pop(context);
+    },
+    child: Padding(
+    padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+    child: Image.asset(
+    'lib/assets/back_arrow.png',
+    width: 28,
+    height: 28,
+    errorBuilder: (context, error, stackTrace) => const Icon(
+    Icons.arrow_back,
+    color: Colors.white,
+    size: 28,
+    ),
+    ),
+    ),
+    ),
+    const SizedBox(width: 8), // Added spacing
+    const Expanded(
+    child: Text(
+    'Location Tracking',
+    style: TextStyle(
+    color: Colors.white,
+    fontSize: 24, // Reduced font size to prevent overflow
+    fontWeight: FontWeight.bold,
+    ),
+    textAlign: TextAlign.center, // Ensure text is centered
+    ),
+    ),
+    const SizedBox(width: 8), // Added spacing
+    // Brain icon - using the specified asset with adjusted size
+    Padding(
+    padding: const EdgeInsets.only(right: 16.0),
+    child: Image.asset(
+    'lib/assets/images/brain_icon.png',
+    width: 40, // Reduced size to prevent overflow
+    height: 40,
+    errorBuilder: (context, error, stackTrace) => const Icon(
+    Icons.psychology,
+    color: Colors.white,
+    size: 35,
+    ),
+    ),
+    ),
+    ],
+    ),
+
+    // Search bar with Google Maps icon
+    Container(
+    margin: const EdgeInsets.symmetric(
+    horizontal: 16,
+    vertical: 8,
+    ),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(30),
+    ),
+    child: Row(
+    children: [
+    // Google Maps icon
+    Container(
+    padding: const EdgeInsets.all(8),
+    child: Image.asset(
+    'lib/assets/google-maps.png',
+    width: 26,
+    height: 26,
+    errorBuilder: (context, error, stackTrace) => const Icon(
+    Icons.map,
+    color: Colors.black,
+    size: 26,
+    ),
+    ),
+    ),
+    const Expanded(
+    child: TextField(
+    decoration: InputDecoration(
+    hintText: 'Search Here........',
+    border: InputBorder.none,
+    contentPadding: EdgeInsets.symmetric(horizontal: 8),
+    ),
+    ),
+    ),
+    // Microphone icon in black
+    Container(
+    padding: const EdgeInsets.all(8),
+    child: const Icon(
+    Icons.mic,
+    color: Colors.black, // Changed to black
+    size: 30,
+    ),
+    ),
+    ],
+    ),
+    ),
+    ],
+    ),
+    ),
+    ),
+
+    // Expanded map view with rounded corners and UI elements as overlays
+    Expanded(
+    child: Stack(
+    children: [
+    // Map with rounded corners
+    Padding(
+    padding: const EdgeInsets.only(top: 2), // Small offset to ensure no gap
+    child: ClipRRect(
+    borderRadius: const BorderRadius.only(
+    topLeft: Radius.circular(25),
+    topRight: Radius.circular(25),
+    ),
+    child: GoogleMap(
+    // Improve responsiveness with these settings
+    compassEnabled: true,
+    trafficEnabled: false,
+    buildingsEnabled: true,
+    indoorViewEnabled: false,
+    initialCameraPosition: _initialCameraPosition,
+    myLocationEnabled: true,
+    myLocationButtonEnabled: false,
+    zoomControlsEnabled: false,
+    mapToolbarEnabled: false,
+    padding: const EdgeInsets.only(top: 10),
+    markers: Set<Marker>.of(_markers.values),
+    onMapCreated: (controller) {
+    setState(() {
+    _mapController = controller;
+    });
+
+    // Apply the custom map style with improved error handling
+    try {
+    print("Attempting to apply custom map style...");
+    Future<void> styleApplied = _mapController!.setMapStyle(MapStyle.mapStyle);
+    print("Map style applied successfully: $styleApplied");
+    } catch (e) {
+    print("Error applying map style: $e");
+    }
+
+    // Position the map appropriately based on available data
+    _positionMapInitially();
+    },
+    ),
+    ),
+    ),
+
+    // UI elements on top of map
+    Positioned(
+    top: 30, // Moved a tiny bit lower
+    left: 0,
+    right: 0,
+    child: Center(
+    child: FractionallySizedBox(
+    widthFactor: 0.85, // Use 85% of screen width
+    child: Container(
+    decoration: BoxDecoration(
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black.withOpacity(0.1),
+    blurRadius: 4,
+    offset: const Offset(0, 2),
+    ),
+    ],
+    ),
+    child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    // Safe Zone / Red Alert tabs with selection behavior
+    Container(
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: const BorderRadius.only(
+    topLeft: Radius.circular(15),
+    topRight: Radius.circular(15),
+    ),
+    ),
+    child: Row(
+    children: [
+    // Safe Zone Alert
+    Expanded(
+    child: GestureDetector(
+    onTap: () {
+    setState(() {
+    _safeZoneSelected = true;
+    });
+
+    // Navigate to SafeZoneScreen
+    Navigator.push(
+    context,
+    MaterialPageRoute(
+    builder: (context) => const SafeZoneScreen(),
+    ),
+    );
+    },
+    child: Container(
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    decoration: BoxDecoration(
+    color: _safeZoneSelected
+    ? const Color(0xFFD9D9D9)
+        : Colors.white,
+    borderRadius: const BorderRadius.only(
+    topLeft: Radius.circular(15),
+    ),
+    ),
+    child: const Center(
+    child: Text(
+    'Safe Zone Alert',
+    style: TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+    fontSize: 15, // Reduced font size to avoid overflow
+    ),
+    ),
+    ),
+    ),
+    ),
+    ),
+    // Red Alert
+    Expanded(
+    child: GestureDetector(
+    onTap: () {
+    setState(() {
+    _safeZoneSelected = false;
+    });
+    },
+    child: Container(
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    decoration: BoxDecoration(
+    color: !_safeZoneSelected
+    ? const Color(0xFFD9D9D9)
+        : Colors.white,
+    borderRadius: const BorderRadius.only(
+    topRight: Radius.circular(15),
+    ),
+    ),
+    child: const Center(
+    child: Text(
+    'Red Alert',
+    style: TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+    fontSize: 15, // Reduced font size to avoid overflow
+    ),
+    ),
+    ),
+    ),
+    ),
+    ),
+    ],
+    ),
+    ),
+      // Connected user info box - shows either patient or caregiver info based on role
+      if (_isConnected)
+        Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFECE5F1),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.person_pin_circle,
+                color: Color(0xFF503663),
+                size: 18, // Reduced size
+              ),
+              const SizedBox(width: 4), // Reduced spacing
+              Expanded(
+                child: _userRole == 'patient'
+                    ? Text(
+                  'Sharing with: ${_connectedCaregiverEmail ?? 'Caregiver'}',
+                  style: const TextStyle(
+                    color: Color(0xFF503663),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13, // Reduced font size
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                )
+                    : Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Tracking: ${_connectedPatientEmail ?? 'Patient'}',
+                        style: const TextStyle(
+                          color: Color(0xFF503663),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13, // Reduced font size
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_patientLocationAvailable)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4.0),
+                        child: Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 14, // Reduced size
+                        ),
+                      )
+                    else if (_showPatientOfflineStatus)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4.0),
+                        child: Icon(
+                          Icons.offline_bolt,
+                          color: Colors.orange,
+                          size: 14, // Reduced size
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (_userRole == 'caregiver' && _patientLocationAvailable)
+                IconButton(
+                  icon: const Icon(
+                    Icons.center_focus_strong,
+                    color: Color(0xFF503663),
+                    size: 18, // Reduced size
+                  ),
+                  onPressed: _centerOnPatientLocation,
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.all(6), // Reduced padding
+                  visualDensity: VisualDensity.compact, // Make button more compact
+                  tooltip: 'Focus on patient',
+                ),
+            ],
+          ),
+        ),
+
+      // Location sharing status for patients
+      if (_userRole == 'patient')
+        Container(
+          decoration: BoxDecoration(
+            color: _isLocationShared ? const Color(0xFFE5F1E9) : const Color(0xFFF1E5E5),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                _isLocationShared ? Icons.location_on : Icons.location_off,
+                color: _isLocationShared ? Colors.green : Colors.red,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _isLocationShared
+                      ? 'Location sharing is active'
+                      : 'Location sharing is inactive',
+                  style: TextStyle(
+                    color: _isLocationShared ? Colors.green.shade800 : Colors.red.shade800,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+      // Live location toggle
+      Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF503663),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(15),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Reduced vertical padding
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                // Location pin icon next to "Live Location" text
+                Image.asset(
+                  'lib/assets/location_pin.png',
+                  width: 20, // Reduced size
+                  height: 20, // Reduced size
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.location_on,
+                    color: Colors.white,
+                    size: 20, // Reduced size
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Live Location',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16, // Reduced font size
+                  ),
+                ),
+              ],
+            ),
+            Transform.scale(
+              scale: 0.8, // Scale down the switch
+              child: Switch(
+                value: _liveLocationEnabled,
+                onChanged: _toggleLiveLocation,
+                activeColor: Colors.white,
+                activeTrackColor: const Color(0xFF6246A3),
+                inactiveTrackColor: Colors.grey[700],
+                inactiveThumbColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+    ),
+    ),
+    ),
+    ),
+    ),
+
+          // Position buttons at right side
+          // First circle (Navigation button)
+          Positioned(
+            right: 16,
+            top: MediaQuery.of(context).size.height * 0.4, // Keep original position
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.navigation,
+                  size: 28, // Reduced size
+                ),
+                iconSize: 46, // Reduced size
+                onPressed: _centerOnCurrentLocation,
+              ),
+            ),
+          ),
+
+          // Second circle (Target location button) - moved closer to the first one
+          Positioned(
+            right: 16,
+            top: MediaQuery.of(context).size.height * 0.47, // Adjusted position
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF77588D),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.my_location,
+                  color: Colors.white,
+                  size: 28, // Reduced size
+                ),
+                iconSize: 46, // Reduced size
+                onPressed: _getCurrentLocation,
+              ),
+            ),
+          ),
+
+          // Connect button (bottom right corner)
+          // Only show for caregivers (patients can't initiate connections)
+          if (_userRole == 'caregiver')
+      Positioned(
+      bottom: 20,
+      right: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          color: _isConnected ? Colors.green : const Color(0xFF77588D),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _isConnecting ? null : () {
+              _showConnectDialog();
+              _startLoadingTimeout(); // Start the timeout timer
+            },
+            borderRadius: BorderRadius.circular(30),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24, // Reduced horizontal padding
+                vertical: 10, // Reduced vertical padding
+              ),
+              child: _isConnecting
+                  ? const SizedBox(
+                height: 22, // Reduced size
+                width: 22, // Reduced size
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+                  : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _isConnected ? Icons.link : Icons.link_off,
+                    color: Colors.white,
+                    size: 18, // Reduced size
+                  ),
+                  const SizedBox(width: 6), // Reduced spacing
+                  Text(
+                    _isConnected ? 'Connected' : 'Connect',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16, // Reduced font size
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+
+    // Connection status button for patients (shows current sharing status)
+    if (_userRole == 'patient')
+    Positioned(
+    bottom: 20,
+    right: 16,
+    child: Container(
+    decoration: BoxDecoration(
+    color: _isConnected ? Colors.green : const Color(0xFF77588D),
+    borderRadius: BorderRadius.circular(30),
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black.withOpacity(0.2),
+    blurRadius: 4,
+    offset: const Offset(0, 2),
+    ),
+    ],
+    ),
+    child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+    onTap: _isConnecting ? null : () {
+    // For patients, this will just show the current connection status
+    _checkConnectionStatus();
+    _verifyAndDisplayConnection();
+
+    // Show appropriate message
+    if (_isConnected) {
+    ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+    content: Text('You are sharing your location with: $_connectedCaregiverEmail'),
+    backgroundColor: Colors.green,
+    ),
+    );
+    } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+    content: Text('No caregiver is currently tracking your location.'),
+    backgroundColor: Colors.blue,
+    ),
+    );
+    }
+    },
+    borderRadius: BorderRadius.circular(30),
+    child: Padding(
+    padding: const EdgeInsets.symmetric(
+    horizontal: 24,
+    vertical: 10,
+    ),
+    child: _isConnecting
+    ? const SizedBox(
+    height: 22,
+    width: 22,
+    child: CircularProgressIndicator(
+    color: Colors.white,
+    strokeWidth: 2,
+    ),
+    )
+        : Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    Icon(
+    _isConnected ? Icons.visibility : Icons.visibility_off,
+    color: Colors.white,
+    size: 18,
+    ),
+    const SizedBox(width: 6),
+    Text(
+    _isConnected ? 'Sharing Location' : 'Not Being Tracked',
+    style: const TextStyle(
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    ),
+    ),
+    ],
+    ),
+    ),
+    ),
+    ),
+    ),
+    ),
+
+    // Offline message if patient is not sharing location
+    if (_isConnected && _userRole == 'caregiver' && _showPatientOfflineStatus)
+    Positioned(
+    top: MediaQuery.of(context).size.height * 0.2,
+    left: 16,
+    right: 16,
+    child: Center(
+    child: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reduced padding
+    decoration: BoxDecoration(
+    color: Colors.orange.shade100,
+    borderRadius: BorderRadius.circular(20),
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black.withOpacity(0.2),
+    blurRadius: 4,
+    offset: const Offset(0, 2),
+    ),
+    ],
+    border: Border.all(color: Colors.orange, width: 1),
+    ),
+    child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    const Icon(
+    Icons.info_outline,
+    color: Colors.orange,
+    size: 16, // Reduced size
+    ),
+    const SizedBox(width: 6), // Reduced spacing
+    Flexible(
+    child: Text(
+      'Patient may be offline. Updates will appear when they come online.',
+      style: TextStyle(
+        color: Colors.orange.shade800,
+        fontWeight: FontWeight.bold,
+        fontSize: 12, // Reduced font size
+      ),
+      textAlign: TextAlign.center,
+    ),
+    ),
+    ],
+    ),
+    ),
+    ),
+    ),
+    ],
+    ),
+    ),
+    ],
+    ),
+      ),
+    );
   }
 }
