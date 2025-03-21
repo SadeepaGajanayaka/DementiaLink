@@ -119,15 +119,15 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     },
                   ),
                   // More options menu
-                  IconButton(
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      _showMoreOptionsMenu(context);
-                    },
-                  ),
+                  // IconButton(
+                  //   icon: Icon(
+                  //     Icons.more_vert,
+                  //     color: Colors.white,
+                  //   ),
+                  //   onPressed: () {
+                  //     _showMoreOptionsMenu(context);
+                  //   },
+                  // ),
                 ],
               ),
             ],
@@ -334,123 +334,123 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  void _showMoreOptionsMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bottomSheetContext) => Container(
-        color: Colors.grey.shade200,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.favorite_border),
-              title: Text('Remove all from favorites'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                _showRemoveAllConfirmation(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.filter_list),
-              title: Text('Filter favorites'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                _showFilterOptions(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.share),
-              title: Text('Share favorites'),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement share functionality
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // void _showMoreOptionsMenu(BuildContext context) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext bottomSheetContext) => Container(
+  //       color: Colors.grey.shade200,
+  //       child: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           ListTile(
+  //             leading: Icon(Icons.favorite_border),
+  //             title: Text('Remove all from favorites'),
+  //             onTap: () {
+  //               Navigator.of(bottomSheetContext).pop();
+  //               _showRemoveAllConfirmation(context);
+  //             },
+  //           ),
+  //           ListTile(
+  //             leading: Icon(Icons.filter_list),
+  //             title: Text('Filter favorites'),
+  //             onTap: () {
+  //               Navigator.of(bottomSheetContext).pop();
+  //               _showFilterOptions(context);
+  //             },
+  //           ),
+  //           ListTile(
+  //             leading: Icon(Icons.share),
+  //             title: Text('Share favorites'),
+  //             onTap: () {
+  //               Navigator.of(bottomSheetContext).pop();
+  //               // Implement share functionality
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  void _showRemoveAllConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Remove All from Favorites'),
-        content: Text('Are you sure you want to remove all items from favorites? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implement remove all functionality
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: Text('Remove All'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFilterOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Filter Favorites'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.calendar_today),
-              title: Text('By date'),
-              onTap: () {
-                Navigator.pop(context);
-                // Show date picker
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.videocam),
-              title: Text('Videos only'),
-              onTap: () {
-                Navigator.pop(context);
-                // Filter to videos
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.image),
-              title: Text('Photos only'),
-              onTap: () {
-                Navigator.pop(context);
-                // Filter to photos
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.note),
-              title: Text('With notes only'),
-              onTap: () {
-                Navigator.pop(context);
-                // Filter to items with notes
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showRemoveAllConfirmation(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text('Remove All from Favorites'),
+  //       content: Text('Are you sure you want to remove all items from favorites? This action cannot be undone.'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.pop(context);
+  //           },
+  //           child: Text('Cancel'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.pop(context);
+  //             // Implement remove all functionality
+  //           },
+  //           style: TextButton.styleFrom(
+  //             foregroundColor: Colors.red,
+  //           ),
+  //           child: Text('Remove All'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+  // void _showFilterOptions(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text('Filter Favorites'),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           ListTile(
+  //             leading: Icon(Icons.calendar_today),
+  //             title: Text('By date'),
+  //             onTap: () {
+  //               Navigator.pop(context);
+  //               // Show date picker
+  //             },
+  //           ),
+  //           ListTile(
+  //             leading: Icon(Icons.videocam),
+  //             title: Text('Videos only'),
+  //             onTap: () {
+  //               Navigator.pop(context);
+  //               // Filter to videos
+  //             },
+  //           ),
+  //           ListTile(
+  //             leading: Icon(Icons.image),
+  //             title: Text('Photos only'),
+  //             onTap: () {
+  //               Navigator.pop(context);
+  //               // Filter to photos
+  //             },
+  //           ),
+  //           ListTile(
+  //             leading: Icon(Icons.note),
+  //             title: Text('With notes only'),
+  //             onTap: () {
+  //               Navigator.pop(context);
+  //               // Filter to items with notes
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.pop(context);
+  //           },
+  //           child: Text('Cancel'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  //}
 }

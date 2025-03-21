@@ -15,14 +15,6 @@ class DeletedScreen extends StatefulWidget {
 class _DeletedScreenState extends State<DeletedScreen> {
   bool _isSelecting = false;
   List<String> _selectedPhotoIds = [];
-  bool _isSearchVisible = false;
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +30,7 @@ class _DeletedScreenState extends State<DeletedScreen> {
 
     return Column(
       children: [
-        // Header with search and selection toggle
+        // Header with selection toggle
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -52,76 +44,24 @@ class _DeletedScreenState extends State<DeletedScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Row(
-                children: [
-                  // Search icon
-                  IconButton(
-                    icon: Icon(
-                      Icons.search,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isSearchVisible = !_isSearchVisible;
-                        if (!_isSearchVisible) {
-                          _searchController.clear();
-                        }
-                      });
-                    },
-                  ),
-                  // Select icon
-                  IconButton(
-                    icon: Icon(
-                      _isSelecting ? Icons.close : Icons.checklist,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isSelecting = !_isSelecting;
-                        if (!_isSelecting) {
-                          _selectedPhotoIds.clear();
-                        }
-                      });
-                    },
-                  ),
-                ],
+              // Select icon only
+              IconButton(
+                icon: Icon(
+                  _isSelecting ? Icons.close : Icons.checklist,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isSelecting = !_isSelecting;
+                    if (!_isSelecting) {
+                      _selectedPhotoIds.clear();
+                    }
+                  });
+                },
               ),
             ],
           ),
         ),
-
-        if (_isSearchVisible)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search in deleted items...',
-                hintStyle: TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Colors.white24,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                prefixIcon: Icon(Icons.search, color: Colors.white70),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.clear, color: Colors.white70),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _isSearchVisible = false;
-                    });
-                  },
-                ),
-              ),
-              style: TextStyle(color: Colors.white),
-              onChanged: (value) {
-                // Filter results as user types
-                setState(() {});
-              },
-            ),
-          ),
 
         // Main content
         Expanded(
@@ -137,13 +77,7 @@ class _DeletedScreenState extends State<DeletedScreen> {
               }
 
               final deletedPhotos = snapshot.data ?? [];
-
-              // Apply search filter if search is active
-              final displayPhotos = _isSearchVisible && _searchController.text.isNotEmpty
-                  ? deletedPhotos.where((photo) =>
-              (photo.note?.toLowerCase().contains(_searchController.text.toLowerCase()) ?? false))
-                  .toList()
-                  : deletedPhotos;
+              final displayPhotos = deletedPhotos;
 
               if (displayPhotos.isEmpty) {
                 return _buildEmptyState();

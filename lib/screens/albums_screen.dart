@@ -76,15 +76,15 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
                 },
               ),
               // More options menu
-              IconButton(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  _showMoreOptionsMenu(context);
-                },
-              ),
+              // IconButton(
+              //   icon: Icon(
+              //     Icons.more_vert,
+              //     color: Colors.white,
+              //   ),
+              //   onPressed: () {
+              //     _showMoreOptionsMenu(context);
+              //   },
+              // ),
             ],
           ),
 
@@ -160,46 +160,58 @@ class _AlbumsScreenState extends State<AlbumsScreen> {
     );
   }
 
-  void _showMoreOptionsMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bottomSheetContext) => Container(
-        color: Colors.grey.shade200,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.edit),
-              title: Text('Edit Albums'),
-              trailing: Icon(Icons.edit),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement edit albums functionality
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.add),
-              title: Text('Add Albums'),
-              trailing: Icon(Icons.add),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                _showAddAlbumDialog(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete),
-              title: Text('Delete Albums'),
-              trailing: Icon(Icons.delete),
-              onTap: () {
-                Navigator.of(bottomSheetContext).pop();
-                // Implement delete albums functionality
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // void _showMoreOptionsMenu(BuildContext context) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext bottomSheetContext) => Container(
+  //       color: Colors.grey.shade200,
+  //       child: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           ListTile(
+  //             leading: Icon(Icons.delete),
+  //             title: Text('Delete Albums'),
+  //             trailing: Icon(Icons.delete),
+  //             onTap: () {
+  //               Navigator.of(bottomSheetContext).pop();
+  //               // Implement your delete albums functionality here
+  //               _showDeleteAlbumsDialog(context);
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  // void _showDeleteAlbumsDialog(BuildContext context) {
+  //   // If you want to add a confirmation dialog before deleting
+  //   showDialog(
+  //     context: context,
+  //     builder: (dialogContext) => AlertDialog(
+  //       title: Text('Delete Albums'),
+  //       content: Text('Are you sure you want to delete the selected albums? This action cannot be undone.'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.pop(dialogContext);
+  //           },
+  //           child: Text('Cancel'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () {
+  //             // Add your actual delete logic here
+  //             Navigator.pop(dialogContext);
+  //             // Example: Provider.of<StorageProvider>(context, listen: false).deleteAlbum(albumId);
+  //           },
+  //           style: TextButton.styleFrom(
+  //             foregroundColor: Colors.red,
+  //           ),
+  //           child: Text('Delete'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildEmptyState(BuildContext context) {
     if (_isSearchVisible && _searchController.text.isNotEmpty) {
