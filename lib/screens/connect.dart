@@ -16,6 +16,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
   bool _isInputEmail = true;
   final LocationService _locationService = LocationService();
 
+  // IMPROVED: Add more UI feedback
+  bool _hasExistingConnection = false;
+  String? _existingPatientEmail;
+
   @override
   void initState() {
     super.initState();
@@ -32,22 +36,27 @@ class _ConnectScreenState extends State<ConnectScreen> {
     super.dispose();
   }
 
-  // Check if there's already a connection
+  // IMPROVED: Better connection checking with error handling
   Future<void> _checkExistingConnection() async {
     try {
       final connectionInfo = await _locationService.getConnectedPatient();
-      if (connectionInfo['connected']) {
+      setState(() {
+        _hasExistingConnection = connectionInfo['connected'] == true;
+        _existingPatientEmail = connectionInfo['patientEmail'] as String?;
+      });
+
+      if (_hasExistingConnection && _existingPatientEmail != null) {
         // Pre-fill the email field if there's an existing connection
-        setState(() {
-          _identifierController.text = connectionInfo['patientEmail'] ?? '';
-        });
+        _identifierController.text = _existingPatientEmail!;
+        print("Prefilled email with existing connection: $_existingPatientEmail");
       }
     } catch (e) {
       print("Error checking existing connection: $e");
+      // Don't update state here as we want to allow connection attempts even if check fails
     }
   }
 
-  // Validate input
+  // Validate input with better error messages
   bool _validateInput() {
     final identifier = _identifierController.text.trim();
 
@@ -70,7 +79,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     return true;
   }
 
-  // Connect with patient
+  // IMPROVED: Connect with patient with better feedback
   Future<void> _connectWithPatient() async {
     if (!_validateInput()) return;
 
@@ -84,6 +93,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
     try {
       print("Attempting to connect with patient: $identifier");
 
+      // Show searching message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Searching for patient...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
       final result = await _locationService.connectWithPatient(identifier);
 
       if (mounted) {
@@ -96,6 +113,13 @@ class _ConnectScreenState extends State<ConnectScreen> {
             ),
           );
 
+          // IMPROVED: Update local UI state
+          setState(() {
+            _hasExistingConnection = true;
+            _existingPatientEmail = result['patientEmail'];
+            _isConnecting = false;
+          });
+
           // Restore system UI before popping
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
           Navigator.pop(context, result['patientId']);
@@ -103,6 +127,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
           // Error
           setState(() {
             _errorMessage = result['message'];
+            _isConnecting = false;
           });
 
           // Show error in SnackBar for better visibility
@@ -119,6 +144,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (mounted) {
         setState(() {
           _errorMessage = 'Error connecting: $e';
+          _isConnecting = false;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,16 +154,10 @@ class _ConnectScreenState extends State<ConnectScreen> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isConnecting = false;
-        });
-      }
     }
   }
 
-  // Disconnect from patient
+  // IMPROVED: Disconnect from patient with better feedback
   Future<void> _disconnectFromPatient() async {
     setState(() {
       _isConnecting = true;
@@ -145,6 +165,15 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
     try {
       print("Attempting to disconnect from patient");
+
+      // Show that we're processing
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Disconnecting...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
       bool success = await _locationService.disconnectFromPatient();
 
       if (mounted) {
@@ -159,10 +188,14 @@ class _ConnectScreenState extends State<ConnectScreen> {
           setState(() {
             _identifierController.clear();
             _errorMessage = null;
+            _hasExistingConnection = false;
+            _existingPatientEmail = null;
+            _isConnecting = false;
           });
         } else {
           setState(() {
             _errorMessage = 'Error disconnecting from patient';
+            _isConnecting = false;
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -178,6 +211,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
       if (mounted) {
         setState(() {
           _errorMessage = 'Error: $e';
+          _isConnecting = false;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -186,12 +220,6 @@ class _ConnectScreenState extends State<ConnectScreen> {
             backgroundColor: Colors.red,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isConnecting = false;
-        });
       }
     }
   }
@@ -288,11 +316,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
-                          'Enter the patient\'s email address or ID to track their location',
+                          _hasExistingConnection
+                              ? 'Currently connected to: $_existingPatientEmail'
+                              : 'Enter the patient\'s email address or ID to track their location',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.black54,
+                            color: _hasExistingConnection ?
+                            Colors.green.shade700 : Colors.black54,
+                            fontWeight: _hasExistingConnection ?
+                            FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -341,11 +374,12 @@ class _ConnectScreenState extends State<ConnectScreen> {
                           children: [
                             // Disconnect button on the left
                             ElevatedButton.icon(
-                              onPressed: _isConnecting
+                              onPressed: _isConnecting || !_hasExistingConnection
                                   ? null
                                   : _disconnectFromPatient,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red[400],
+                                disabledBackgroundColor: Colors.grey[300],
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25),
@@ -389,9 +423,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                 Icons.link,
                                 color: Colors.white,
                               ),
-                              label: const Text(
-                                'Connect',
-                                style: TextStyle(
+                              label: Text(
+                                _hasExistingConnection ? 'Reconnect' : 'Connect',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),

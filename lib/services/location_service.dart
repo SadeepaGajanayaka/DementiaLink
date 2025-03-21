@@ -99,6 +99,10 @@ class LocationService {
       // Set up the database reference
       DatabaseReference userLocationRef = _database.ref().child('locations').child(_auth.currentUser!.uid);
 
+      // IMPORTANT FIX: Clear any existing location data to ensure we start fresh
+      await userLocationRef.remove();
+      print("Cleared existing location data for a fresh start");
+
       // Create the locations node if it doesn't exist
       // Include more user details for easier identification
       await userLocationRef.set({
@@ -208,7 +212,7 @@ class LocationService {
     }
   }
 
-  // Update location in Firebase Realtime Database
+  // Update location in Firebase Realtime Database with improved reliability
   Future<void> _updateLocationInFirebase(LocationData locationData) async {
     if (_auth.currentUser == null) return;
 
@@ -221,24 +225,47 @@ class LocationService {
       print("Updating location: ${locationData.latitude}, ${locationData.longitude}");
 
       // Reference to user location in Firebase
-      DatabaseReference userLocationRef = _database.ref().child('locations').child(_auth.currentUser!.uid);
+      String userUid = _auth.currentUser!.uid;
+      DatabaseReference userLocationRef = _database.ref().child('locations').child(userUid);
 
-      // Update the location with timestamp and additional metadata
-      await userLocationRef.update({
-        'latitude': locationData.latitude,
-        'longitude': locationData.longitude,
-        'heading': locationData.heading,
-        'speed': locationData.speed,
-        'accuracy': locationData.accuracy,
-        'altitude': locationData.altitude,
-        'timestamp': ServerValue.timestamp,
-        'userEmail': _auth.currentUser!.email,
-        'userName': _auth.currentUser!.displayName ?? 'User',
-        'deviceInfo': {
-          'online': true,
-          'lastActive': ServerValue.timestamp,
-        }
-      });
+      // IMPROVED: First check if the node exists
+      DataSnapshot snapshot = await userLocationRef.get();
+      if (!snapshot.exists) {
+        // If node doesn't exist, create it first with full data
+        await userLocationRef.set({
+          'latitude': locationData.latitude,
+          'longitude': locationData.longitude,
+          'heading': locationData.heading,
+          'speed': locationData.speed,
+          'accuracy': locationData.accuracy,
+          'altitude': locationData.altitude,
+          'timestamp': ServerValue.timestamp,
+          'userEmail': _auth.currentUser!.email,
+          'userName': _auth.currentUser!.displayName ?? 'User',
+          'deviceInfo': {
+            'online': true,
+            'lastActive': ServerValue.timestamp,
+          }
+        });
+        print("Created new location node with complete data");
+      } else {
+        // Update the existing location with timestamp and additional metadata
+        await userLocationRef.update({
+          'latitude': locationData.latitude,
+          'longitude': locationData.longitude,
+          'heading': locationData.heading,
+          'speed': locationData.speed,
+          'accuracy': locationData.accuracy,
+          'altitude': locationData.altitude,
+          'timestamp': ServerValue.timestamp,
+          'userEmail': _auth.currentUser!.email,
+          'userName': _auth.currentUser!.displayName ?? 'User',
+          'deviceInfo': {
+            'online': true,
+            'lastActive': ServerValue.timestamp,
+          }
+        });
+      }
 
       print("Location updated successfully in Firebase");
     } catch (e) {
@@ -246,7 +273,7 @@ class LocationService {
     }
   }
 
-// Connect with a patient by email or UID
+  // Connect with a patient by email or UID with improved notifications
   Future<Map<String, dynamic>> connectWithPatient(String patientIdentifier) async {
     print("Attempting to connect with patient: $patientIdentifier");
 
@@ -438,24 +465,45 @@ class LocationService {
 
       print("Created patient connection record");
 
+      // IMPROVED: Send explicit notification to patient about the new connection
+      await _database
+          .ref()
+          .child('notifications')
+          .child(patientId)
+          .push()
+          .set({
+        'type': 'connection_established',
+        'caregiverId': _auth.currentUser!.uid,
+        'caregiverEmail': caregiverEmail,
+        'caregiverName': caregiverName,
+        'timestamp': ServerValue.timestamp,
+        'message': 'You are now connected with caregiver: $caregiverEmail',
+        'priority': 'high'
+      });
+
+      print("Sent connection notification to patient");
+
       // Initialize location node if it doesn't exist
       DatabaseReference patientLocationRef = _database.ref().child('locations').child(patientId);
 
-      // Try to ping patient location to confirm access
-      try {
-        await patientLocationRef.update({
-          'trackedAt': ServerValue.timestamp,
-          'trackRequest': true,
-          'requestedBy': {
-            'caregiverId': _auth.currentUser!.uid,
-            'caregiverEmail': caregiverEmail,
-            'timestamp': ServerValue.timestamp,
-          }
-        });
-        print("Successfully updated patient location node");
-      } catch (e) {
-        print("Warning: Could not update patient location node: $e");
-        // We'll continue anyway as the patient may update their location later
+      // Try to ping patient location to confirm access with multiple retries
+      for (int attempt = 0; attempt < 3; attempt++) {
+        try {
+          await patientLocationRef.update({
+            'trackedAt': ServerValue.timestamp,
+            'trackRequest': true,
+            'requestedBy': {
+              'caregiverId': _auth.currentUser!.uid,
+              'caregiverEmail': caregiverEmail,
+              'timestamp': ServerValue.timestamp,
+            }
+          });
+          print("Successfully updated patient location node on attempt ${attempt + 1}");
+          break;
+        } catch (e) {
+          print("Warning: Could not update patient location node on attempt ${attempt + 1}: $e");
+          if (attempt < 2) await Future.delayed(Duration(seconds: 1)); // Brief delay before retry
+        }
       }
 
       return {
@@ -478,47 +526,85 @@ class LocationService {
     print("Getting location stream for patient: $patientId");
     DatabaseReference patientLocationRef = _database.ref().child('locations').child(patientId);
 
-    // Attempt to update tracking status to improve responsiveness
-    patientLocationRef.update({
-      'trackedAt': ServerValue.timestamp,
-      'trackRequest': true,
-    }).catchError((e) {
-      // Ignore errors here, this is just to improve responsiveness
-      print("Non-critical error updating track request: $e");
-    });
+    // IMPROVED: Make multiple attempts to update tracking status
+    for (int i = 0; i < 3; i++) {
+      patientLocationRef.update({
+        'trackedAt': ServerValue.timestamp,
+        'trackRequest': true,
+        'priority': 'high',
+        'requestTime': DateTime.now().toIso8601String(), // Adding timestamps helps debug
+      }).then((_) {
+        print("Track request sent successfully on attempt ${i+1}");
+      }).catchError((e) {
+        print("Error updating track request on attempt ${i+1}: $e");
+      });
+
+      // Small delay between attempts
+      if (i < 2) Future.delayed(Duration(milliseconds: 500));
+    }
 
     return patientLocationRef.onValue;
   }
 
-  // One-time get of patient's current location
+  // One-time get of patient's current location with improved reliability
   Future<Map<String, dynamic>?> getPatientCurrentLocation(String patientId) async {
     try {
       print("Getting current location for patient: $patientId");
       DatabaseReference patientLocationRef = _database.ref().child('locations').child(patientId);
 
-      // Update tracking status to request a fresh location
-      await patientLocationRef.update({
-        'trackedAt': ServerValue.timestamp,
-        'trackRequest': true,
-        'requestedBy': {
-          'caregiverId': _auth.currentUser?.uid,
-          'caregiverEmail': _auth.currentUser?.email,
-          'timestamp': ServerValue.timestamp,
-        }
-      });
+      // IMPROVED: First check if the node exists
+      DataSnapshot checkSnapshot = await patientLocationRef.get();
+      if (!checkSnapshot.exists) {
+        print("Patient location node doesn't exist yet, creating it");
+        await patientLocationRef.set({
+          'initialized': true,
+          'trackedAt': ServerValue.timestamp,
+          'trackRequest': true,
+          'requestedBy': {
+            'caregiverId': _auth.currentUser?.uid,
+            'caregiverEmail': _auth.currentUser?.email,
+            'timestamp': ServerValue.timestamp,
+          }
+        });
+      } else {
+        // Update tracking status to request a fresh location
+        await patientLocationRef.update({
+          'trackedAt': ServerValue.timestamp,
+          'trackRequest': true,
+          'urgent': true, // Added priority flag
+          'requestedBy': {
+            'caregiverId': _auth.currentUser?.uid,
+            'caregiverEmail': _auth.currentUser?.email,
+            'timestamp': ServerValue.timestamp,
+          }
+        });
+      }
 
       // Wait a moment for patient to respond with location
-      await Future.delayed(Duration(seconds: 1));
+      await Future.delayed(Duration(seconds: 2)); // IMPROVED: longer wait
 
-      DataSnapshot snapshot = await patientLocationRef.get();
+      // Try multiple times
+      for (int attempt = 0; attempt < 3; attempt++) {
+        DataSnapshot snapshot = await patientLocationRef.get();
 
-      if (snapshot.exists) {
-        print("Patient location data found");
-        return Map<String, dynamic>.from(snapshot.value as Map);
-      } else {
-        print("No location data found for patient");
-        return null;
+        if (snapshot.exists) {
+          Map<dynamic, dynamic>? data = snapshot.value as Map?;
+          if (data != null &&
+              data.containsKey('latitude') &&
+              data.containsKey('longitude')) {
+            print("Patient location data found with coordinates");
+            return Map<String, dynamic>.from(data);
+          } else {
+            print("Patient location data found but missing coordinates, attempt ${attempt + 1}");
+            if (attempt < 2) await Future.delayed(Duration(seconds: 1));
+          }
+        } else {
+          print("No location data found for patient, attempt ${attempt + 1}");
+          if (attempt < 2) await Future.delayed(Duration(seconds: 1));
+        }
       }
+
+      return null;
     } catch (e) {
       print("Error getting patient location: $e");
       return null;
@@ -528,8 +614,18 @@ class LocationService {
   // Check if patient is online based on last active time
   Future<bool> isPatientOnline(String patientId) async {
     try {
-      DatabaseReference patientLocationRef = _database.ref().child('locations').child(patientId).child('deviceInfo');
-      DataSnapshot snapshot = await patientLocationRef.get();
+      // First check the whole location node
+      DatabaseReference patientLocationRef = _database.ref().child('locations').child(patientId);
+      DataSnapshot fullSnapshot = await patientLocationRef.get();
+
+      if (!fullSnapshot.exists) {
+        print("Patient location node doesn't exist at all");
+        return false;
+      }
+
+      // Then check the device info specifically
+      DatabaseReference deviceInfoRef = _database.ref().child('locations').child(patientId).child('deviceInfo');
+      DataSnapshot snapshot = await deviceInfoRef.get();
 
       if (snapshot.exists) {
         Map<dynamic, dynamic> deviceInfo = snapshot.value as Map<dynamic, dynamic>;
@@ -632,6 +728,19 @@ class LocationService {
 
       print("Disconnected from patient: $patientId");
 
+      // IMPROVED: Send notification to patient about disconnection
+      await _database
+          .ref()
+          .child('notifications')
+          .child(patientId)
+          .push()
+          .set({
+        'type': 'connection_terminated',
+        'caregiverEmail': _auth.currentUser!.email,
+        'timestamp': ServerValue.timestamp,
+        'message': 'Your location sharing with ${_auth.currentUser!.email} has been stopped',
+      });
+
       return true;
     } catch (e) {
       print("Error disconnecting from patient: $e");
@@ -664,6 +773,50 @@ class LocationService {
     } catch (e) {
       print("Error disconnecting patient: $e");
       return false;
+    }
+  }
+
+  // Debug method to check connection status and location data
+  Future<Map<String, dynamic>> debugLocationSystem(String? targetUserId) async {
+    Map<String, dynamic> results = {};
+
+    try {
+      final userId = _auth.currentUser?.uid;
+      results['currentUserId'] = userId;
+
+      if (userId == null) {
+        results['error'] = 'No authenticated user';
+        return results;
+      }
+
+      // Get user's current connection status
+      final connectionData = await getConnectedPatient();
+      results['connectionData'] = connectionData;
+
+      // Check own location node
+      final ownLocationRef = _database.ref().child('locations').child(userId);
+      final ownSnapshot = await ownLocationRef.get();
+      results['ownLocationExists'] = ownSnapshot.exists;
+
+      if (ownSnapshot.exists) {
+        results['ownLocationData'] = ownSnapshot.value;
+      }
+
+      // Check target user's location if specified
+      if (targetUserId != null) {
+        final targetLocationRef = _database.ref().child('locations').child(targetUserId);
+        final targetSnapshot = await targetLocationRef.get();
+        results['targetLocationExists'] = targetSnapshot.exists;
+
+        if (targetSnapshot.exists) {
+          results['targetLocationData'] = targetSnapshot.value;
+        }
+      }
+
+      return results;
+    } catch (e) {
+      results['error'] = e.toString();
+      return results;
     }
   }
 

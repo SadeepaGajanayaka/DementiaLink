@@ -83,7 +83,7 @@ class PermissionHandler {
     }
   }
 
-  // Respond to a permission request
+  // IMPROVED: Respond to a permission request with better feedback
   Future<bool> respondToRequest(String requestId, bool accept) async {
     try {
       if (_auth.currentUser == null) {
@@ -93,6 +93,29 @@ class PermissionHandler {
 
       final patientId = _auth.currentUser!.uid;
       print("Responding to request $requestId with accept=$accept");
+
+      // Get the request data first (before updating status)
+      final snapshot = await _database
+          .ref()
+          .child('permission_requests')
+          .child(patientId)
+          .child(requestId)
+          .get();
+
+      if (!snapshot.exists) {
+        print("Request data not found");
+        return false;
+      }
+
+      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      final caregiverId = data['caregiverId'] as String?;
+      final caregiverEmail = data['caregiverEmail'] as String?;
+      final patientEmail = data['patientEmail'] as String?;
+
+      if (caregiverId == null) {
+        print("Missing caregiver ID in request data");
+        return false;
+      }
 
       // Update request status
       await _database
@@ -107,84 +130,75 @@ class PermissionHandler {
 
       // If accepted, establish the connection
       if (accept) {
-        // Get request data
-        final snapshot = await _database
-            .ref()
-            .child('permission_requests')
-            .child(patientId)
-            .child(requestId)
-            .get();
+        // Create connection record for patient
+        await _firestore.collection('connections').doc(patientId).set({
+          'connectedTo': caregiverId,
+          'caregiverId': caregiverId,
+          'caregiverEmail': caregiverEmail,
+          'caregiverName': data['caregiverName'],
+          'patientId': patientId,
+          'patientEmail': patientEmail,
+          'timestamp': FieldValue.serverTimestamp(),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
 
-        if (snapshot.exists) {
-          final data = Map<String, dynamic>.from(snapshot.value as Map);
+        // Create connection record for caregiver
+        await _firestore.collection('connections').doc(caregiverId).set({
+          'connectedTo': patientId,
+          'patientId': patientId,
+          'patientEmail': patientEmail,
+          'caregiverId': caregiverId,
+          'caregiverEmail': caregiverEmail,
+          'caregiverName': data['caregiverName'],
+          'timestamp': FieldValue.serverTimestamp(),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
 
-          // Create connection record for patient
-          await _firestore.collection('connections').doc(patientId).set({
-            'connectedTo': data['caregiverId'],
-            'caregiverId': data['caregiverId'],
-            'caregiverEmail': data['caregiverEmail'],
-            'caregiverName': data['caregiverName'],
-            'patientId': patientId,
-            'patientEmail': data['patientEmail'],
-            'timestamp': FieldValue.serverTimestamp(),
-            'lastUpdated': FieldValue.serverTimestamp(),
-          });
+        // IMPROVED: Initialize patient location node if it doesn't exist
+        final patientLocationRef = _database.ref().child('locations').child(patientId);
+        final locationSnapshot = await patientLocationRef.get();
 
-          // Create connection record for caregiver
-          await _firestore.collection('connections').doc(data['caregiverId']).set({
-            'connectedTo': patientId,
-            'patientId': patientId,
-            'patientEmail': data['patientEmail'],
-            'caregiverId': data['caregiverId'],
-            'caregiverEmail': data['caregiverEmail'],
-            'caregiverName': data['caregiverName'],
-            'timestamp': FieldValue.serverTimestamp(),
-            'lastUpdated': FieldValue.serverTimestamp(),
-          });
-
-          // Notify caregiver that request was accepted
-          await _database
-              .ref()
-              .child('notifications')
-              .child(data['caregiverId'])
-              .push()
-              .set({
-            'type': 'permission_accepted',
-            'patientEmail': data['patientEmail'],
+        if (!locationSnapshot.exists) {
+          await patientLocationRef.set({
+            'initialized': true,
             'timestamp': ServerValue.timestamp,
-            'message': 'Your location access request has been accepted',
+            'userEmail': _auth.currentUser!.email,
+            'userUid': patientId,
+            'deviceInfo': {
+              'online': true,
+              'lastActive': ServerValue.timestamp,
+            }
           });
-
-          print("Connection established successfully");
-        } else {
-          print("Request data not found");
-          return false;
+          print("Created initial location entry for patient");
         }
+
+        // Notify caregiver that request was accepted
+        await _database
+            .ref()
+            .child('notifications')
+            .child(caregiverId)
+            .push()
+            .set({
+          'type': 'permission_accepted',
+          'patientEmail': patientEmail,
+          'timestamp': ServerValue.timestamp,
+          'message': 'Your location access request has been accepted',
+        });
+
+        print("Connection established successfully");
       } else {
-        // Get caregiver ID from request
-        final snapshot = await _database
+        // Notify caregiver that request was rejected
+        await _database
             .ref()
-            .child('permission_requests')
-            .child(patientId)
-            .child(requestId)
-            .get();
-
-        if (snapshot.exists) {
-          final data = Map<String, dynamic>.from(snapshot.value as Map);
-
-          // Notify caregiver that request was rejected
-          await _database
-              .ref()
-              .child('notifications')
-              .child(data['caregiverId'])
-              .push()
-              .set({
-            'type': 'permission_rejected',
-            'patientEmail': data['patientEmail'],
-            'timestamp': ServerValue.timestamp,
-            'message': 'Your location access request has been rejected',
-          });
-        }
+            .child('notifications')
+            .child(caregiverId)
+            .push()
+            .set({
+          'type': 'permission_rejected',
+          'patientEmail': patientEmail,
+          'timestamp': ServerValue.timestamp,
+          'message': 'Your location access request has been rejected',
+        });
 
         print("Rejection notification sent");
       }
@@ -274,7 +288,7 @@ class PermissionHandler {
   }
 }
 
-// Permission Dialog shown to patients
+// Permission Dialog shown to patients - IMPROVED with clearer messages
 class PermissionDialog extends StatefulWidget {
   final Map<String, dynamic> requestData;
 
@@ -304,6 +318,17 @@ class _PermissionDialogState extends State<PermissionDialog> {
 
       if (mounted) {
         if (success) {
+          // Show confirmation snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(accept
+                  ? 'Location sharing enabled'
+                  : 'Location sharing request declined'),
+              backgroundColor: accept ? Colors.green : Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+
           // Close dialog and return result
           Navigator.of(context).pop(accept);
         } else {
@@ -360,7 +385,7 @@ class _PermissionDialogState extends State<PermissionDialog> {
           Text('Email: $caregiverEmail'),
           const SizedBox(height: 16),
           const Text(
-            'If you accept, this person will be able to see your location in real-time.',
+            'If you accept, this person will be able to see your location in real-time. This helps them ensure your safety.',
             style: TextStyle(
               color: Colors.black54,
             ),
