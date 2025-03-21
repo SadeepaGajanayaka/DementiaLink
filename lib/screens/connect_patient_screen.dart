@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/location_service.dart';
 
-class ConnectScreen extends StatefulWidget {
-  const ConnectScreen({Key? key}) : super(key: key);
+class ConnectPatientScreen extends StatefulWidget {
+  const ConnectPatientScreen({Key? key}) : super(key: key);
 
   @override
-  State<ConnectScreen> createState() => _ConnectScreenState();
+  State<ConnectPatientScreen> createState() => _ConnectPatientScreenState();
 }
 
-class _ConnectScreenState extends State<ConnectScreen> {
+class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final LocationService _locationService = LocationService();
   String? _emailError;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -41,6 +44,46 @@ class _ConnectScreenState extends State<ConnectScreen> {
 
     setState(() => _emailError = null);
     return true;
+  }
+
+  Future<void> _handleConnect() async {
+    if (!_validateEmail()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final success = await _locationService.requestConnection(email);
+
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Connection request sent successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Return to maps screen with the validated email
+          Navigator.pop(context, email);
+        } else {
+          setState(() {
+            _isLoading = false;
+            _emailError = 'Failed to connect with this user';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _emailError = 'Error: ${e.toString()}';
+        });
+      }
+    }
   }
 
   @override
@@ -104,56 +147,74 @@ class _ConnectScreenState extends State<ConnectScreen> {
                     children: [
                       const SizedBox(height: 20),
                       // Image and text centered
-                      Center(
-                        child: SizedBox(
-                          height: 150,
-                          child: Image.asset(
-                            'lib/assets/image.jpeg',
-                            // If you don't have this asset, replace with:
-                            // Icon(Icons.person_outline, size: 150, color: Color(0xFF77588D))
+                      Container(
+                        height: 80,
+                        width: 80,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF77588D),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.person_pin_circle,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'Connect with Patient',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF503663),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      const Center(
+                      const SizedBox(height: 8),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
-                          'Enter Patient Email',
+                          'Enter the email of the patient you want to track',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.grey,
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
                       // Input field - centered
                       Container(
-                        width: MediaQuery.of(context).size.width * 0.6,
+                        width: MediaQuery.of(context).size.width * 0.8,
                         margin: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Center(
-                          child: TextField(
-                            controller: _emailController,
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              hintText: 'example@email.com',
-                              errorText: _emailError,
-                              enabledBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.grey),
+                        child: TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            hintText: 'patient@example.com',
+                            errorText: _emailError,
+                            prefixIcon: const Icon(
+                              Icons.email,
+                              color: Color(0xFF77588D),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF77588D),
                               ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Color(0xFF77588D)),
-                              ),
-                              errorBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.red),
-                              ),
-                              focusedErrorBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.red),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF77588D),
+                                width: 2,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       // Action buttons row
                       Padding(
                         padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
@@ -180,19 +241,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
                               ),
                             ),
 
-                            // Send button on the right
+                            // Connect button on the right
                             ElevatedButton(
-                              onPressed: () {
-                                // Validate email before proceeding
-                                if (_validateEmail()) {
-                                  // Process email and navigate back
-                                  final email = _emailController.text.trim();
-                                  // Restore system UI before popping
-                                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                                  // Return to maps screen with the validated email
-                                  Navigator.pop(context, email);
-                                }
-                              },
+                              onPressed: _isLoading ? null : _handleConnect,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF77588D),
                                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
@@ -200,7 +251,16 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                   borderRadius: BorderRadius.circular(25),
                                 ),
                               ),
-                              child: const Text(
+                              child: _isLoading
+                                  ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                                  : const Text(
                                 'Connect',
                                 style: TextStyle(
                                   color: Colors.white,
