@@ -293,6 +293,150 @@ class DatabaseService {
     }
   }
 
+  // Add these methods to your DatabaseService class in database_service.dart
+
+// Create a connection request
+  Future<String> createConnectionRequest({
+    required String caregiverId,
+    required String patientEmail,
+  }) async {
+    try {
+      print("Creating connection request from $caregiverId to $patientEmail");
+
+      // First, find the user with the given email
+      QuerySnapshot userQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: patientEmail)
+          .limit(1)
+          .get();
+
+      if (userQuery.docs.isEmpty) {
+        throw Exception('No user found with this email address');
+      }
+
+      String patientId = userQuery.docs.first.id;
+
+      // Check if a connection already exists
+      QuerySnapshot existingConnections = await _firestore
+          .collection('connections')
+          .where('caregiverId', isEqualTo: caregiverId)
+          .where('patientId', isEqualTo: patientId)
+          .get();
+
+      if (existingConnections.docs.isNotEmpty) {
+        // Get the existing connection status
+        String status = existingConnections.docs.first['status'];
+        if (status == 'pending') {
+          throw Exception('A connection request is already pending with this user');
+        } else if (status == 'accepted') {
+          throw Exception('You are already connected with this user');
+        } else if (status == 'rejected') {
+          // If rejected, update the existing connection instead of creating a new one
+          await _firestore
+              .collection('connections')
+              .doc(existingConnections.docs.first.id)
+              .update({
+            'status': 'pending',
+            'requestedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          return existingConnections.docs.first.id;
+        }
+      }
+
+      // Create a new connection document
+      DocumentReference docRef = await _firestore.collection('connections').add({
+        'caregiverId': caregiverId,
+        'patientId': patientId,
+        'patientEmail': patientEmail,
+        'status': 'pending',
+        'requestedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print("Connection request created with ID: ${docRef.id}");
+      return docRef.id;
+    } catch (e) {
+      print('Error creating connection request: $e');
+      rethrow;
+    }
+  }
+
+// Get all connections for a user (both as caregiver and patient)
+  Stream<QuerySnapshot> getUserConnectionsStream(String userId) {
+    print("Getting connections stream for user: $userId");
+    return _firestore
+        .collection('connections')
+        .where(Filter.or(
+        Filter('caregiverId', isEqualTo: userId),
+        Filter('patientId', isEqualTo: userId)
+    ))
+        .snapshots();
+  }
+
+// Update connection status
+  Future<void> updateConnectionStatus({
+    required String connectionId,
+    required String status,
+  }) async {
+    try {
+      print("Updating connection $connectionId to status: $status");
+      await _firestore
+          .collection('connections')
+          .doc(connectionId)
+          .update({
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      print("Connection status updated successfully");
+    } catch (e) {
+      print('Error updating connection status: $e');
+      rethrow;
+    }
+  }
+
+// Update user location
+  Future<void> updateUserLocation({
+    required String userId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      print("Updating location for user: $userId");
+
+      // Update user document with location
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .update({
+        'lastLocation': GeoPoint(latitude, longitude),
+        'lastLocationUpdate': FieldValue.serverTimestamp(),
+      });
+
+      // Also update all active connections where this user is the patient
+      QuerySnapshot connections = await _firestore
+          .collection('connections')
+          .where('patientId', isEqualTo: userId)
+          .where('status', isEqualTo: 'accepted')
+          .get();
+
+      for (var doc in connections.docs) {
+        await _firestore
+            .collection('connections')
+            .doc(doc.id)
+            .update({
+          'lastLocation': GeoPoint(latitude, longitude),
+          'lastLocationUpdate': FieldValue.serverTimestamp(),
+        });
+      }
+
+      print("Location updated successfully");
+    } catch (e) {
+      print('Error updating user location: $e');
+      // Don't rethrow as this might be a background operation
+    }
+  }
+
   // Get caregiver notes for a patient
   Stream<QuerySnapshot> getCaregiverNotesStream(String userId, String patientId) {
     print("Getting caregiver notes stream for user: $userId, patient: $patientId");
