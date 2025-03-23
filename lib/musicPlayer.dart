@@ -407,4 +407,6 @@ class PlayerScreenState extends State<PlayerScreen> {
       ],
     );
   }
+
+  _buildControls() {}
 }
