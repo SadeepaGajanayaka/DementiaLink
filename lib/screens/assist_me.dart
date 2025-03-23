@@ -335,7 +335,7 @@ class _AssistMeState extends State<AssistMe> {
                           _buildTextInput('Doctor or Hospital Name', controller: _diagnosingDoctorController),
                         ),
                         
-                        // Other Medical Conditions
+                        
                         _buildQuestionBox(
                           'Any other medical conditions?',
                           Column(
@@ -385,7 +385,7 @@ class _AssistMeState extends State<AssistMe> {
                           ),
                         ),
                         
-                        // Allergies
+                       
                         _buildQuestionBox(
                           'Allergies',
                           Column(
@@ -449,7 +449,7 @@ class _AssistMeState extends State<AssistMe> {
                         // COGNITIVE & DAILY ACTIVITY SECTION
                         _buildSectionHeader('Cognitive & Daily Activity Information'),
                         
-                        // Difficulty Remembering
+                        
                         _buildQuestionBox(
                           'Do you experience difficulty in remembering daily tasks?',
                           _buildYesNoSelection(
@@ -539,7 +539,7 @@ class _AssistMeState extends State<AssistMe> {
                         // CAREGIVER ASSIGNMENT SECTION
                         _buildSectionHeader('Caregiver Assignment'),
                         
-                        // Primary Caregiver
+                        
                         _buildQuestionBox(
                           'Do you have a primary caregiver?',
                           Column(

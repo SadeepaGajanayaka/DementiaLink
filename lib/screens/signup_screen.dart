@@ -39,16 +39,16 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  // Validate email format
+  // Validate email, password
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  // Validate form
+
   bool _validateForm() {
     bool isValid = true;
 
-    // Validate name
+    
     if (_nameController.text.trim().isEmpty) {
       setState(() => _nameError = 'Name is required');
       isValid = false;
@@ -56,7 +56,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() => _nameError = null);
     }
 
-    // Validate email
+   
     if (_emailController.text.trim().isEmpty) {
       setState(() => _emailError = 'Email is required');
       isValid = false;
@@ -67,7 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() => _emailError = null);
     }
 
-    // Validate password
+    
     if (_passwordController.text.length < 8) {
       setState(() => _passwordError = 'Password must be at least 8 characters');
       isValid = false;
@@ -75,7 +75,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() => _passwordError = null);
     }
 
-    // Validate confirm password
+    
     if (_confirmPasswordController.text != _passwordController.text) {
       setState(() => _confirmPasswordError = 'Passwords do not match');
       isValid = false;

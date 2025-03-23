@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context) => ForgotPasswordDialog(
         onSubmit: (submittedEmail) async {
           final emailToReset = submittedEmail.isEmpty ? email : submittedEmail;
-          // Close the dialog
+          
           Navigator.of(context).pop();
           
           if (emailToReset.isNotEmpty) {
@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Send password reset email
               await _authService.resetPassword(emailToReset);
               
-              // Show success message
+              
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 );
               }
             } catch (error) {
-              // Show error message
+              
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             }
           } else {
-            // Show error if email is empty
+            
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Please enter an email address'),
@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // Clear previous errors
+    
     setState(() {
       _errorMessage = null;
     });
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     
-    // Simple validation
+    
     if (email.isEmpty || password.isEmpty) {
       setState(() {
         _errorMessage = 'Please enter both email and password';
@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     
-    // Set loading state
+  
     setState(() {
       _isLoading = true;
     });
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (error) {
-      // Handle errors
+      
       setState(() {
         _errorMessage = error.toString();
         _isLoading = false;
@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
   
-  // Social authentication methods
+  // Social authentication method
   Future<void> _handleGoogleSignIn() async {
     setState(() {
       _isLoading = true;
@@ -156,10 +156,10 @@ class _LoginScreenState extends State<LoginScreen> {
     
     try {
       // Call the Google sign-in method from auth service
-      // This will show the Google account picker dialog
+
       await _authService.signInWithGoogle();
       
-      // Get user's name from Firebase Auth
+      
       final displayName = _authService.currentUser?.displayName ?? 'User';
       
       // Navigate to welcome screen on success
@@ -174,14 +174,14 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (error) {
-      // Handle errors
+      
       if (mounted) {
         setState(() {
           _errorMessage = error.toString();
           _isLoading = false;
         });
         
-        // Show a more user-friendly error in Snackbar
+       
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_errorMessage ?? 'Failed to sign in with Google'),
@@ -190,24 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     }
-  }
-  
-  Future<void> _handleFacebookSignIn() async {
-    // Similar placeholder for Facebook login
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Facebook Sign-In will be implemented'),
-      ),
-    );
-  }
-  
-  Future<void> _handleAppleSignIn() async {
-    // Similar placeholder for Apple login
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Apple Sign-In will be implemented'),
-      ),
-    );
   }
 
   @override
@@ -423,22 +405,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Login with',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
+                      
+                      // Redesigned Google Sign-in button
+                      ElevatedButton.icon(
+                        onPressed: _handleGoogleSignIn,
+                        icon: Image.asset(
+                          'lib/assets/google_logo.png',
+                          width: 24,
+                          height: 24,
+                        ),
+                        label: const Text(
+                          'Sign up with Google',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            side: const BorderSide(color: Colors.grey, width: 1),
+                          ),
+                          elevation: 1,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      // Social login buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _socialLoginButton('lib/assets/google_logo.png', _handleGoogleSignIn),
-                          
-                        ],
-                      ),
+                      
                       const SizedBox(height: 24),
                       // Sign up link
                       Row(
@@ -479,33 +474,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _socialLoginButton(String iconPath, VoidCallback onPressed) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: IconButton(
-        icon: Image.asset(
-          iconPath,
-          width: 24,
-          height: 24,
-        ),
-        onPressed: onPressed,
       ),
     );
   }

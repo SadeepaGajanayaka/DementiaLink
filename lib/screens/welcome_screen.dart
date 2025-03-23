@@ -34,8 +34,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         setState(() {
           _profileImage = File(pickedImage.path);
         });
-        // Here you would typically upload the image to storage
-        // and update the user's profile in your database
+        
       }
     } catch (e) {
       // Handle errors, such as when a user denies camera permissions
@@ -105,8 +104,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF77588D), // Lighter purple at top
-              Color(0xFF503663), // Darker purple at bottom
+              Color(0xFF77588D), 
+              Color(0xFF503663), 
             ],
           ),
         ),
@@ -122,7 +121,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SizedBox(width: 40), // For centering
+                      const SizedBox(width: 40), 
                       Image.asset(
                         'lib/assets/brain_logo.png',
                         width: 60,
@@ -172,7 +171,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         // Profile Image with Edit Option
                         Stack(
                           children: [
-                            // Profile image container
+                            
                             GestureDetector(
                               onTap: _showImageSourceOptions,
                               child: Container(
@@ -195,7 +194,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                       ),
                               ),
                             ),
-                            // Edit icon positioned at bottom right
+                            
                             Positioned(
                               right: 10,
                               bottom: 10,
@@ -226,7 +225,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 32),
-                        // Welcome Text
+                       
                         Text(
                           'Welcome ${widget.userName}!',
                           style: const TextStyle(

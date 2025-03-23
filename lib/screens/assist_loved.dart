@@ -53,7 +53,7 @@ class _AssistLovedState extends State<AssistLoved> {
 
   // Collect form data to save to Firebase
   Map<String, dynamic> _collectFormData() {
-    // Get selected symptoms
+   
     List<String> selectedSymptoms = [];
     symptoms.forEach((key, value) {
       if (value) {
@@ -61,7 +61,7 @@ class _AssistLovedState extends State<AssistLoved> {
       }
     });
     
-    // Get selected needs
+   
     List<String> selectedNeeds = [];
     needs.forEach((key, value) {
       if (value) {
@@ -390,7 +390,7 @@ class _AssistLovedState extends State<AssistLoved> {
                           ),
                         ),
 
-                        // Needs Section
+                        
                         _buildQuestionBox(
                           'What are the main needs of your loved one?',
                           Column(

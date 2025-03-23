@@ -482,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // CAREGIVER ASSIGNMENT SECTION
                         _buildSectionHeader('Caregiver Assignment'),
                         
-                        // Primary Caregiver
+                        
                         _buildQuestionBox(
                           'Do you have a primary caregiver?',
                           Column(

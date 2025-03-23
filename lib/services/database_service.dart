@@ -6,16 +6,16 @@ class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   
-  // Save patient data (works for both AssistMe and AssistLoved)
+  // Save patient data 
   Future<String> savePatientData({
     required String userId, 
-    required String formType, // 'self' or 'loved_one'
+    required String formType,
     required Map<String, dynamic> patientData
   }) async {
     try {
       print("Starting savePatientData for userId: $userId, formType: $formType");
       
-      // Add timestamp
+     
       patientData['created_at'] = FieldValue.serverTimestamp();
       patientData['updated_at'] = FieldValue.serverTimestamp();
       patientData['form_type'] = formType;
@@ -35,7 +35,7 @@ class DatabaseService {
       return docRef.id; // Return the document ID
     } catch (e) {
       print('Error saving patient data: $e');
-      // Print stack trace for debugging
+      
       print(StackTrace.current);
       rethrow;
     }
@@ -50,7 +50,7 @@ class DatabaseService {
     try {
       print("Updating patient data for user: $userId, patient: $patientId");
       
-      // Add timestamp
+      
       patientData['updated_at'] = FieldValue.serverTimestamp();
       
       // Update in Firestore
@@ -80,7 +80,7 @@ class DatabaseService {
         .snapshots();
   }
   
-  // Get a specific patient
+  
   Future<DocumentSnapshot> getPatient(String userId, String patientId) {
     print("Fetching patient document for user: $userId, patient: $patientId");
     return _firestore
@@ -99,7 +99,7 @@ class DatabaseService {
       bool exists = snapshot.exists;
       print("User exists: $exists");
       
-      // If user doesn't exist, create an empty document
+      
       if (!exists) {
         print("Creating new user document for: $userId");
         await _firestore.collection('users').doc(userId).set({
@@ -137,7 +137,7 @@ class DatabaseService {
   Future<String> uploadPatientImage(String userId, String patientId, File imageFile) async {
     try {
       print("Uploading profile image for user: $userId, patient: $patientId");
-      // Create a reference to the location you want to upload to in firebase
+     
       Reference ref = _storage
           .ref()
           .child('users')
@@ -146,7 +146,7 @@ class DatabaseService {
           .child(patientId)
           .child('profile_image.jpg');
       
-      // Upload the file
+      
       UploadTask uploadTask = ref.putFile(
         imageFile,
         SettableMetadata(contentType: 'image/jpeg'),
@@ -186,7 +186,7 @@ class DatabaseService {
   }) async {
     try {
       print("Saving medication reminder for user: $userId, patient: $patientId");
-      // Add timestamps
+      
       reminderData['created_at'] = FieldValue.serverTimestamp();
       reminderData['updated_at'] = FieldValue.serverTimestamp();
       
@@ -229,7 +229,7 @@ class DatabaseService {
   }) async {
     try {
       print("Saving activity log for user: $userId, patient: $patientId");
-      // Add timestamp
+      
       activityData['timestamp'] = FieldValue.serverTimestamp();
       
       // Save to Firestore
@@ -271,7 +271,7 @@ class DatabaseService {
   }) async {
     try {
       print("Saving caregiver note for user: $userId, patient: $patientId");
-      // Add timestamp
+      
       noteData['created_at'] = FieldValue.serverTimestamp();
       noteData['updated_at'] = FieldValue.serverTimestamp();
       

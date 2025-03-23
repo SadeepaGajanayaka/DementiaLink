@@ -20,7 +20,7 @@ void main() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
     print("Current user at app start: ${currentUser?.uid ?? 'Not logged in'}");
     
-    // Sign in anonymously if no user is logged in
+   
     if (currentUser == null) {
       print("No user logged in, attempting anonymous sign-in");
       try {

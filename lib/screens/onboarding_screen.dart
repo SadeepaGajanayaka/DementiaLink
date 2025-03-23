@@ -51,14 +51,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               borderRadius: BorderRadius.circular(40),
               child: Stack(
                 children: [
-                  // Image container
+                  
                   Positioned.fill(
                     child: Image.asset(
                       image,
                       fit: BoxFit.cover,
                     ),
                   ),
-                  // Bottom gradient overlay for smooth transition
+                  
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -98,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
         ),
-        // Content
+        
         Positioned(
           bottom: 0,
           left: 0,
@@ -137,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Dots indicator
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
