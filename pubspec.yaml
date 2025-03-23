@@ -1,6 +1,5 @@
-# pubspec.yaml
-name: dementialink
-description: "Software Development Group Project"
+name: firebase
+description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,10 +9,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^2.27.1
-  firebase_auth: ^4.17.9
   cupertino_icons: ^1.0.8
   just_audio: ^0.9.34
+  http: ^1.1.0
+  path_provider: ^2.0.15
+  path: ^1.8.3
+  image_picker: ^1.0.2
+  file_picker: ^6.1.1
+  flutter_cache_manager: ^3.3.0
+  connectivity_plus: ^4.0.2
+  firebase_core: ^2.27.1
+
 
 dev_dependencies:
   flutter_test:
@@ -22,15 +28,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
-    - assets/images/i1.png
-    - assets/images/i2.png
-    - assets/images/i3.png
-    - assets/images/i4.png
-    - assets/images/i5.jpg
     - assets/images/brain_icon.png
-    - assets/audio/track1.mp3
-    - assets/audio/track2.mp3
-    - assets/audio/track3.mp3
-    - assets/audio/track4.mp3
-    - assets/audio/track5.mp3
