@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'dart:io';
 
 class DrawingApp extends StatelessWidget {
-  const DrawingApp({Key? key}) : super(key: key);
+  const DrawingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +16,235 @@ class DrawingApp extends StatelessWidget {
         primaryColor: const Color(0xFF503663),
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: const DrawingPage(),
+      initialRoute: '/home',
+      routes: {
+        '/home': (context) => const SavedDrawingsPage(),
+        '/drawing': (context) => const DrawingPage(),
+      },
+    );
+  }
+}
+
+class SavedDrawingsPage extends StatefulWidget {
+  const SavedDrawingsPage({super.key});
+
+  @override
+  _SavedDrawingsPageState createState() => _SavedDrawingsPageState();
+}
+
+class _SavedDrawingsPageState extends State<SavedDrawingsPage> {
+  final Color themeColor = const Color(0xFF503663);
+  bool showSavedPictures = true;
+  List<DrawingItem> savedDrawings = [];
+  List<DrawingItem> favoriteDrawings = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedDrawings();
+  }
+
+  Future<void> _loadSavedDrawings() async {
+    // This would typically load from local storage or a database
+    // Mocking some data for demonstration
+    setState(() {
+      savedDrawings = [
+        DrawingItem(
+          id: '1',
+          imageBytes: Uint8List(0), // This would be actual image data
+          name: 'Drawing 1',
+          date: DateTime.now().subtract(const Duration(days: 1)),
+          isFavorite: true,
+        ),
+        DrawingItem(
+          id: '2',
+          imageBytes: Uint8List(0),
+          name: 'Drawing 2',
+          date: DateTime.now().subtract(const Duration(days: 3)),
+          isFavorite: false,
+        ),
+      ];
+
+      favoriteDrawings = savedDrawings.where((drawing) => drawing.isFavorite).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: themeColor,
+        title: const Text(
+          'DementiaLink- Drawing',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.white),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.insert_drive_file, color: Colors.white),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            // Left side - Drawings and New Drawing button
+            Expanded(
+              flex: 7,
+              child: Column(
+                children: [
+                  _buildDrawingItem(context, savedDrawings.isNotEmpty ? savedDrawings[0] : null),
+                  const SizedBox(height: 16),
+                  _buildNewDrawingButton(context),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Right side - Saved/Favorites section
+            Expanded(
+              flex: 3,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: themeColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    // Tab button for Saved Pictures
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            showSavedPictures = true;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: themeColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text('Saved Pictures'),
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Undo and reset buttons
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.undo, color: themeColor),
+                                onPressed: () {},
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.refresh, color: themeColor),
+                                onPressed: () {},
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: themeColor,
+        onPressed: () {
+          Navigator.pushNamed(context, '/drawing');
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildDrawingItem(BuildContext context, DrawingItem? drawing) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: themeColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: drawing != null
+          ? Stack(
+        children: [
+          // This would display the actual drawing
+          Center(
+            child: Text(
+              drawing.name,
+              style: TextStyle(color: themeColor, fontWeight: FontWeight.bold),
+            ),
+          ),
+          // Edit button
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: IconButton(
+              icon: Icon(Icons.edit, color: themeColor),
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/drawing',
+                  arguments: drawing,
+                );
+              },
+            ),
+          ),
+        ],
+      )
+          : const Center(
+        child: Text('No drawings yet'),
+      ),
+    );
+  }
+
+  Widget _buildNewDrawingButton(BuildContext context) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: themeColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: Text(
+              'Create a new drawing',
+              style: TextStyle(color: themeColor, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: IconButton(
+              icon: Icon(Icons.add, color: themeColor),
+              onPressed: () {
+                Navigator.pushNamed(context, '/drawing');
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -20,13 +252,14 @@ class DrawingApp extends StatelessWidget {
 enum DrawingTool { pencil, brush, marker, spray }
 
 class DrawingPage extends StatefulWidget {
-  const DrawingPage({Key? key}) : super(key: key);
+  const DrawingPage({super.key});
 
   @override
   _DrawingPageState createState() => _DrawingPageState();
 }
 
 class _DrawingPageState extends State<DrawingPage> {
+  final GlobalKey _globalKey = GlobalKey();
   Color selectedColor = Colors.black;
   double strokeWidth = 5;
   double eraserWidth = 20;
@@ -40,6 +273,7 @@ class _DrawingPageState extends State<DrawingPage> {
   bool showAppBar = true;
   DrawingTool currentTool = DrawingTool.pencil;
   Offset panOffset = Offset.zero;
+  DrawingItem? existingDrawing;
 
   final Color themeColor = const Color(0xFF503663);
 
@@ -59,12 +293,25 @@ class _DrawingPageState extends State<DrawingPage> {
   ];
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if we're editing an existing drawing
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is DrawingItem) {
+      existingDrawing = args;
+      // In a real app, you would load the drawing data here
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: showAppBar ? AppBar(
+      appBar: showAppBar
+          ? AppBar(
         backgroundColor: themeColor,
-        title: const Text('DementiaLink- Drawing', style: TextStyle(color: Colors.white)),
+        title: const Text('DementiaLink- Drawing',
+            style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -72,14 +319,15 @@ class _DrawingPageState extends State<DrawingPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.save, color: Colors.white),
-            onPressed: () {/* Implement save functionality */},
+            onPressed: () => saveDrawing(),
           ),
           IconButton(
             icon: const Icon(Icons.folder_open, color: Colors.white),
-            onPressed: () {/* Implement load functionality */},
+            onPressed: () => Navigator.pop(context),
           ),
         ],
-      ) : null,
+      )
+          : null,
       body: GestureDetector(
         onTapDown: (_) {
           setState(() {
@@ -90,65 +338,70 @@ class _DrawingPageState extends State<DrawingPage> {
         },
         child: Stack(
           children: [
-            GestureDetector(
-              onPanStart: (details) {
-                if (isPanning) {
-                  return;
-                }
+            RepaintBoundary(
+              key: _globalKey,
+              child: GestureDetector(
+                onPanStart: (details) {
+                  if (isPanning) {
+                    return;
+                  }
 
-                setState(() {
-                  showAppBar = false;
-                  showStrokeSizeControl = false;
-                  showEraserSizeControl = false;
+                  setState(() {
+                    showAppBar = false;
+                    showStrokeSizeControl = false;
+                    showEraserSizeControl = false;
+
+                    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                    final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+                    final adjustedPosition =
+                        localPosition - Offset(0, showAppBar ? AppBar().preferredSize.height : 0);
+
+                    currentPoints.add(
+                      DrawingPoint(
+                        adjustedPosition - panOffset,
+                        _getPaintSettings(),
+                      ),
+                    );
+                  });
+                },
+                onPanUpdate: (details) {
+                  if (isPanning) {
+                    setState(() {
+                      panOffset += details.delta;
+                    });
+                    return;
+                  }
 
                   final RenderBox renderBox = context.findRenderObject() as RenderBox;
                   final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
-                  final adjustedPosition = localPosition - Offset(0, showAppBar ? AppBar().preferredSize.height : 0);
+                  final adjustedPosition =
+                      localPosition - Offset(0, showAppBar ? AppBar().preferredSize.height : 0);
 
-                  currentPoints.add(
-                    DrawingPoint(
-                      adjustedPosition - panOffset,
-                      _getPaintSettings(),
-                    ),
-                  );
-                });
-              },
-              onPanUpdate: (details) {
-                if (isPanning) {
                   setState(() {
-                    panOffset += details.delta;
+                    currentPoints.add(
+                      DrawingPoint(
+                        adjustedPosition - panOffset,
+                        _getPaintSettings(),
+                      ),
+                    );
                   });
-                  return;
-                }
-
-                final RenderBox renderBox = context.findRenderObject() as RenderBox;
-                final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
-                final adjustedPosition = localPosition - Offset(0, showAppBar ? AppBar().preferredSize.height : 0);
-
-                setState(() {
-                  currentPoints.add(
-                    DrawingPoint(
-                      adjustedPosition - panOffset,
-                      _getPaintSettings(),
-                    ),
-                  );
-                });
-              },
-              onPanEnd: (details) {
-                if (!isPanning) {
-                  setState(() {
-                    currentPoints.add(null);
-                    undoList.add(List.from(currentPoints));
-                    redoList.clear();
-                  });
-                }
-              },
-              child: CustomPaint(
-                painter: DrawingPainter(
-                  points: currentPoints,
-                  panOffset: panOffset,
+                },
+                onPanEnd: (details) {
+                  if (!isPanning) {
+                    setState(() {
+                      currentPoints.add(null);
+                      undoList.add(List.from(currentPoints));
+                      redoList.clear();
+                    });
+                  }
+                },
+                child: CustomPaint(
+                  painter: DrawingPainter(
+                    points: currentPoints,
+                    panOffset: panOffset,
+                  ),
+                  size: Size.infinite,
                 ),
-                size: Size.infinite,
               ),
             ),
             if (showStrokeSizeControl)
@@ -163,8 +416,7 @@ class _DrawingPageState extends State<DrawingPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('Stroke Size',
-                            style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)
-                        ),
+                            style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)),
                         Slider(
                           value: strokeWidth,
                           min: 1,
@@ -191,8 +443,7 @@ class _DrawingPageState extends State<DrawingPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text('Eraser Size',
-                            style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)
-                        ),
+                            style: TextStyle(color: themeColor, fontWeight: FontWeight.bold)),
                         Slider(
                           value: eraserWidth,
                           min: 1,
@@ -474,6 +725,54 @@ class _DrawingPageState extends State<DrawingPage> {
       redoList.clear();
     });
   }
+
+  Future<void> saveDrawing() async {
+    try {
+      // Get the render object
+      final RenderRepaintBoundary boundary =
+      _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+      // Convert to image
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+
+      // Convert to bytes
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw Exception('Failed to convert image to bytes');
+      }
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      // In a real app, you would save this to storage and database
+      // For now, we'll just show a success message
+
+      // Create a new drawing item or update existing
+      final DrawingItem newDrawing = existingDrawing != null
+          ? existingDrawing!.copyWith(imageBytes: pngBytes)
+          : DrawingItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imageBytes: pngBytes,
+        name: 'Drawing ${DateTime.now().toString().substring(0, 16)}',
+        date: DateTime.now(),
+        isFavorite: false,
+      );
+
+      // Show success message
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Drawing saved successfully!')),
+      );
+
+      // Navigate back
+      Navigator.pop(context);
+    } catch (e) {
+      print('Error saving drawing: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving drawing: $e')),
+      );
+    }
+  }
 }
 
 class DrawingPoint {
@@ -516,4 +815,36 @@ class DrawingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant DrawingPainter oldDelegate) =>
       true || oldDelegate.panOffset != panOffset;
+}
+
+class DrawingItem {
+  final String id;
+  final Uint8List imageBytes;
+  final String name;
+  final DateTime date;
+  final bool isFavorite;
+
+  DrawingItem({
+    required this.id,
+    required this.imageBytes,
+    required this.name,
+    required this.date,
+    required this.isFavorite,
+  });
+
+  DrawingItem copyWith({
+    String? id,
+    Uint8List? imageBytes,
+    String? name,
+    DateTime? date,
+    bool? isFavorite,
+  }) {
+    return DrawingItem(
+      id: id ?? this.id,
+      imageBytes: imageBytes ?? this.imageBytes,
+      name: name ?? this.name,
+      date: date ?? this.date,
+      isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
 }
