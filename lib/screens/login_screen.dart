@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Get user's name from Firebase Auth
       final displayName = _authService.currentUser?.displayName ?? 'User';
       
-      // Navigate to welcome screen on success
+      
       if (mounted) {
         Navigator.pushReplacement(
           context,
