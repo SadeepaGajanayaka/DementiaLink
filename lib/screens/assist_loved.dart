@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import 'dashboard_screen.dart';
 
 class AssistLoved extends StatefulWidget {
   final String userName;
-  
+
   const AssistLoved({super.key, required this.userName});
 
   @override
@@ -17,14 +18,14 @@ class _AssistLovedState extends State<AssistLoved> {
   final AuthService _authService = AuthService();
   final DatabaseService _databaseService = DatabaseService();
   bool _isSubmitting = false;
-  
+
   // Controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _dateController = TextEditingController();
   final _otherSymptomsController = TextEditingController();
   final _otherNeedsController = TextEditingController();
-  
+
   // Dropdown selections
   String _selectedGender = 'Male';
   String _selectedRelation = 'Father';
@@ -53,22 +54,22 @@ class _AssistLovedState extends State<AssistLoved> {
 
   // Collect form data to save to Firebase
   Map<String, dynamic> _collectFormData() {
-   
+    // Get selected symptoms
     List<String> selectedSymptoms = [];
     symptoms.forEach((key, value) {
       if (value) {
         selectedSymptoms.add(key);
       }
     });
-    
-   
+
+    // Get selected needs
     List<String> selectedNeeds = [];
     needs.forEach((key, value) {
       if (value) {
         selectedNeeds.add(key);
       }
     });
-    
+
     return {
       'basic_information': {
         'first_name': _firstNameController.text,
@@ -313,7 +314,7 @@ class _AssistLovedState extends State<AssistLoved> {
                                               });
                                             },
                                             fillColor: MaterialStateProperty.resolveWith(
-                                              (states) => states.contains(MaterialState.selected)
+                                                  (states) => states.contains(MaterialState.selected)
                                                   ? Colors.white
                                                   : Colors.white,
                                             ),
@@ -349,7 +350,7 @@ class _AssistLovedState extends State<AssistLoved> {
                                         });
                                       },
                                       fillColor: MaterialStateProperty.resolveWith(
-                                        (states) => states.contains(MaterialState.selected)
+                                            (states) => states.contains(MaterialState.selected)
                                             ? Colors.white
                                             : Colors.white,
                                       ),
@@ -390,7 +391,7 @@ class _AssistLovedState extends State<AssistLoved> {
                           ),
                         ),
 
-                        
+                        // Needs Section
                         _buildQuestionBox(
                           'What are the main needs of your loved one?',
                           Column(
@@ -416,7 +417,7 @@ class _AssistLovedState extends State<AssistLoved> {
                                               });
                                             },
                                             fillColor: MaterialStateProperty.resolveWith(
-                                              (states) => states.contains(MaterialState.selected)
+                                                  (states) => states.contains(MaterialState.selected)
                                                   ? Colors.white
                                                   : Colors.white,
                                             ),
@@ -452,7 +453,7 @@ class _AssistLovedState extends State<AssistLoved> {
                                         });
                                       },
                                       fillColor: MaterialStateProperty.resolveWith(
-                                        (states) => states.contains(MaterialState.selected)
+                                            (states) => states.contains(MaterialState.selected)
                                             ? Colors.white
                                             : Colors.white,
                                       ),
@@ -510,24 +511,24 @@ class _AssistLovedState extends State<AssistLoved> {
                                 );
                                 return;
                               }
-                              
+
                               setState(() {
                                 _isSubmitting = true;
                               });
-                              
+
                               try {
                                 final userId = _authService.currentUser?.uid;
                                 if (userId != null) {
                                   // Collect data from form
                                   final formData = _collectFormData();
-                                  
+
                                   // Save to Firebase
                                   final patientId = await _databaseService.savePatientData(
                                     userId: userId,
                                     formType: 'loved_one',  // This is for "Assist Loved One"
                                     patientData: formData,
                                   );
-                                  
+
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -535,7 +536,14 @@ class _AssistLovedState extends State<AssistLoved> {
                                         backgroundColor: Colors.green,
                                       ),
                                     );
-                                    Navigator.pop(context);
+
+                                    // Navigate to Dashboard instead of just popping back
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const DashboardScreen(),
+                                      ),
+                                    );
                                   }
                                 } else {
                                   throw Exception('User not authenticated');
@@ -567,20 +575,20 @@ class _AssistLovedState extends State<AssistLoved> {
                             ),
                             child: _isSubmitting
                                 ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Color(0xFF77588D),
-                                      strokeWidth: 3,
-                                    ),
-                                  )
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF77588D),
+                                strokeWidth: 3,
+                              ),
+                            )
                                 : const Text(
-                                    'SUBMIT',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                              'SUBMIT',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -649,7 +657,7 @@ class _AssistLovedState extends State<AssistLoved> {
           color: Color(0xFF503663),
           fontSize: 16,
         ),
-      ),
-    );
-  }
+      ),
+    );
+  }
 }
