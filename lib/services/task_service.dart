@@ -1,7 +1,8 @@
-// lib/services/task_service.dart
+// lib/services/task_service.dart - modified to handle missing FCM token
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../models/task_model.dart';
@@ -9,45 +10,80 @@ import 'firebase_service.dart';
 
 class TaskService {
   // Base URL of your API
-  static const String baseUrl = 'http://10.0.2.2:5000/api'; // For Android emulator
-  // static const String baseUrl = 'http://localhost:5000/api'; // For iOS simulator
-  // static const String baseUrl = 'https://your-production-api.com/api'; // For production
+  static const String baseUrl = 'http://10.0.2.2:5000/api/tasks'; // For Android emulator
+  // static const String baseUrl = 'http://localhost:5000/api/tasks'; // For iOS simulator
+  // static const String baseUrl = 'https://your-production-api.com/api/tasks'; // For production
 
   // Device ID
   static String? _deviceId;
   static String? _fcmToken;
+  static bool _isInitialized = false;
 
   // Initialize the task service
   static Future<void> initialize() async {
-    await _getDeviceId();
-    _fcmToken = await FirebaseService.getFCMToken();
+    if (_isInitialized) return;
 
-    // Update FCM token on the server
-    if (_deviceId != null && _fcmToken != null) {
-      await updateFcmToken();
+    try {
+      print("TaskService: Initializing...");
+
+      // Initialize Firebase (with fallback mode)
+      await FirebaseService.initialize();
+
+      // Get device ID
+      await _getDeviceId();
+
+      // Try to get FCM token (may be null in fallback mode)
+      _fcmToken = await FirebaseService.getFCMToken();
+
+      print("TaskService: Initialization complete");
+      print("TaskService: Device ID: $_deviceId");
+      print("TaskService: FCM Token: ${_fcmToken != null ? 'Available' : 'Not available'}");
+
+      if (_deviceId != null && _fcmToken != null) {
+        try {
+          await updateFcmToken();
+        } catch (e) {
+          print("TaskService: Failed to update FCM token: $e");
+          // This is not critical, continue anyway
+        }
+      }
+
+      _isInitialized = true;
+    } catch (e) {
+      print("TaskService: Error during initialization: $e");
+      // Still mark as initialized to prevent repeated init attempts
+      _isInitialized = true;
+      rethrow;
     }
   }
 
   // Get or generate device ID
   static Future<void> _getDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
-    _deviceId = prefs.getString('device_id');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _deviceId = prefs.getString('device_id');
 
-    if (_deviceId == null) {
-      // Generate a new device ID
-      final deviceInfo = DeviceInfoPlugin();
-      String? id;
+      if (_deviceId == null) {
+        // Generate a new device ID
+        final deviceInfo = DeviceInfoPlugin();
+        String? id;
 
-      if (Theme.of(GlobalContext.navigatorKey.currentContext!).platform == TargetPlatform.android) {
-        final androidInfo = await deviceInfo.androidInfo;
-        id = androidInfo.id;
-      } else if (Theme.of(GlobalContext.navigatorKey.currentContext!).platform == TargetPlatform.iOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        id = iosInfo.identifierForVendor;
+        // Check platform without using BuildContext
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          final androidInfo = await deviceInfo.androidInfo;
+          id = androidInfo.id;
+        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+          final iosInfo = await deviceInfo.iosInfo;
+          id = iosInfo.identifierForVendor;
+        }
+
+        _deviceId = id ?? DateTime.now().millisecondsSinceEpoch.toString();
+        await prefs.setString('device_id', _deviceId!);
       }
-
-      _deviceId = id ?? DateTime.now().millisecondsSinceEpoch.toString();
-      await prefs.setString('device_id', _deviceId!);
+    } catch (e) {
+      print("TaskService: Error getting device ID: $e");
+      // Create a fallback ID in case of error
+      _deviceId = 'fallback_${DateTime.now().millisecondsSinceEpoch}';
     }
   }
 
@@ -57,7 +93,7 @@ class TaskService {
 
     try {
       await http.put(
-        Uri.parse('$baseUrl/tasks/device/$_deviceId/token'),
+        Uri.parse('$baseUrl/device/$_deviceId/token'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'fcmToken': _fcmToken}),
       );
@@ -68,11 +104,12 @@ class TaskService {
 
   // Get all tasks for the current device
   static Future<List<Task>> getAllTasks() async {
+    if (!_isInitialized) await initialize();
     if (_deviceId == null) await _getDeviceId();
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/tasks/device/$_deviceId'),
+        Uri.parse('$baseUrl/device/$_deviceId'),
       );
 
       if (response.statusCode == 200) {
@@ -89,17 +126,24 @@ class TaskService {
 
   // Get tasks for a specific date
   static Future<List<Task>> getTasksByDate(DateTime date) async {
+    if (!_isInitialized) await initialize();
     if (_deviceId == null) await _getDeviceId();
 
     try {
       final formattedDate = date.toIso8601String().split('T')[0];
+      final url = '$baseUrl/device/$_deviceId/date/$formattedDate';
+
+      print("TaskService: Fetching tasks by date from URL: $url");
 
       final response = await http.get(
-        Uri.parse('$baseUrl/tasks/device/$_deviceId/date/$formattedDate'),
+        Uri.parse(url),
       );
+
+      print("TaskService: Tasks by date response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         final List<dynamic> tasksJson = json.decode(response.body);
+        print("TaskService: Retrieved ${tasksJson.length} tasks for date $formattedDate");
         return tasksJson.map((json) => _convertJsonToTask(json)).toList();
       } else {
         throw Exception('Failed to load tasks');
@@ -112,23 +156,39 @@ class TaskService {
 
   // Create a new task
   static Future<Task?> createTask(Task task) async {
+    if (!_isInitialized) await initialize();
     if (_deviceId == null) await _getDeviceId();
-    if (_fcmToken == null) _fcmToken = await FirebaseService.getFCMToken();
+
+    // No need to try getting FCM token again as it might throw an error
 
     try {
+      print("TaskService: Creating new task: ${task.title}");
+
+      // Create task data object
+      final Map<String, dynamic> taskData = {
+        ..._convertTaskToJson(task),
+        'deviceId': _deviceId,
+      };
+
+      // Add FCM token if available
+      if (_fcmToken != null) {
+        taskData['fcmToken'] = _fcmToken;
+      }
+
+      print("TaskService: Sending task data to backend");
       final response = await http.post(
-        Uri.parse('$baseUrl/tasks'),
+        Uri.parse(baseUrl),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          ..._convertTaskToJson(task),
-          'deviceId': _deviceId,
-          'fcmToken': _fcmToken,
-        }),
+        body: json.encode(taskData),
       );
 
+      print("TaskService: Create task response: ${response.statusCode}");
+
       if (response.statusCode == 201) {
+        print("TaskService: Task created successfully");
         return _convertJsonToTask(json.decode(response.body));
       } else {
+        print("TaskService: Failed to create task: ${response.body}");
         throw Exception('Failed to create task');
       }
     } catch (e) {
@@ -143,7 +203,7 @@ class TaskService {
 
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/tasks/${task.id}'),
+        Uri.parse('$baseUrl/${task.id}'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(_convertTaskToJson(task)),
       );
@@ -163,7 +223,7 @@ class TaskService {
   static Future<Task?> completeTask(String taskId) async {
     try {
       final response = await http.patch(
-        Uri.parse('$baseUrl/tasks/$taskId/complete'),
+        Uri.parse('$baseUrl/$taskId/complete'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -182,7 +242,7 @@ class TaskService {
   static Future<bool> deleteTask(String taskId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/tasks/$taskId'),
+        Uri.parse('$baseUrl/$taskId'),
       );
 
       return response.statusCode == 200;

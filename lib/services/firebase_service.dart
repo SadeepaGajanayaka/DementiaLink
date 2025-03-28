@@ -1,266 +1,3 @@
-// // // lib/services/firebase_service.dart
-// // import 'package:firebase_core/firebase_core.dart';
-// // import 'package:firebase_messaging/firebase_messaging.dart';
-// // import 'package:flutter/material.dart';
-// // import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// //
-// // class FirebaseService {
-// //   static FirebaseMessaging messaging = FirebaseMessaging.instance;
-// //   static FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
-// //
-// //   // Initialize Firebase
-// //   static Future<void> initialize() async {
-// //     // Initialize Firebase
-// //     await Firebase.initializeApp();
-// //
-// //     // Set up local notifications
-// //     const AndroidInitializationSettings initializationSettingsAndroid =
-// //     AndroidInitializationSettings('@mipmap/ic_launcher');
-// //
-// //     const DarwinInitializationSettings initializationSettingsIOS =
-// //     DarwinInitializationSettings(
-// //       requestAlertPermission: true,
-// //       requestBadgePermission: true,
-// //       requestSoundPermission: true,
-// //     );
-// //
-// //     const InitializationSettings initializationSettings = InitializationSettings(
-// //       android: initializationSettingsAndroid,
-// //       iOS: initializationSettingsIOS,
-// //     );
-// //
-// //     await localNotifications.initialize(
-// //       initializationSettings,
-// //       onDidReceiveNotificationResponse: _onNotificationTapped,
-// //     );
-// //
-// //     // Create notification channel for Android
-// //     await _createNotificationChannel();
-// //
-// //     // Request permission for iOS
-// //     await messaging.requestPermission(
-// //       alert: true,
-// //       badge: true,
-// //       sound: true,
-// //     );
-// //
-// //     // Handle background messages
-// //     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-// //
-// //     // Handle foreground messages
-// //     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-// //   }
-// //
-// //   // Create notification channel for Android
-// //   static Future<void> _createNotificationChannel() async {
-// //     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-// //       'task_reminders', // id
-// //       'Task Reminders', // title
-// //       description: 'Notifications for task reminders', // description
-// //       importance: Importance.high,
-// //     );
-// //
-// //     await localNotifications
-// //         .resolvePlatformSpecificImplementation<
-// //         AndroidFlutterLocalNotificationsPlugin>()
-// //         ?.createNotificationChannel(channel);
-// //   }
-// //
-// //   // Get FCM token
-// //   static Future<String?> getFCMToken() async {
-// //     return await messaging.getToken();
-// //   }
-// //
-// //   // Handle background messages
-// //   @pragma('vm:entry-point')
-// //   static Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-// //     await Firebase.initializeApp();
-// //     _showLocalNotification(message);
-// //   }
-// //
-// //   // Handle foreground messages
-// //   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
-// //     _showLocalNotification(message);
-// //   }
-// //
-// //   // Show local notification
-// //   static Future<void> _showLocalNotification(RemoteMessage message) async {
-// //     RemoteNotification? notification = message.notification;
-// //     AndroidNotification? android = message.notification?.android;
-// //
-// //     if (notification != null) {
-// //       await localNotifications.show(
-// //         notification.hashCode,
-// //         notification.title,
-// //         notification.body,
-// //         NotificationDetails(
-// //           android: AndroidNotificationDetails(
-// //             'task_reminders',
-// //             'Task Reminders',
-// //             channelDescription: 'Notifications for task reminders',
-// //             importance: Importance.high,
-// //             priority: Priority.high,
-// //             icon: '@mipmap/ic_launcher',
-// //           ),
-// //           iOS: const DarwinNotificationDetails(
-// //             presentAlert: true,
-// //             presentBadge: true,
-// //             presentSound: true,
-// //           ),
-// //         ),
-// //         payload: message.data['taskId'],
-// //       );
-// //     }
-// //   }
-// //
-// //   // Handle notification tap
-// //   static void _onNotificationTapped(NotificationResponse response) {
-// //     if (response.payload != null) {
-// //       final taskId = response.payload;
-// //       // You can navigate to task details screen here
-// //       print('Tapped on notification for task: $taskId');
-// //
-// //       // Example:
-// //       // Navigator.of(GlobalContext.navigatorKey.currentContext!).push(
-// //       //   MaterialPageRoute(
-// //       //     builder: (context) => TaskDetailsScreen(taskId: taskId!),
-// //       //   ),
-// //       // );
-// //     }
-// //   }
-// // }
-// // lib/services/firebase_service.dart
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-//
-// class FirebaseService {
-//   static FirebaseMessaging messaging = FirebaseMessaging.instance;
-//   static FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
-//
-//   // Initialize Firebase
-//   static Future<void> initialize() async {
-//     // Initialize Firebase
-//     await Firebase.initializeApp();
-//
-//     // Set up local notifications
-//     const AndroidInitializationSettings initializationSettingsAndroid =
-//     AndroidInitializationSettings('@mipmap/ic_launcher');
-//
-//     const DarwinInitializationSettings initializationSettingsIOS =
-//     DarwinInitializationSettings(
-//       requestAlertPermission: true,
-//       requestBadgePermission: true,
-//       requestSoundPermission: true,
-//     );
-//
-//     const InitializationSettings initializationSettings = InitializationSettings(
-//       android: initializationSettingsAndroid,
-//       iOS: initializationSettingsIOS,
-//     );
-//
-//     await localNotifications.initialize(
-//       initializationSettings,
-//       onDidReceiveNotificationResponse: _onNotificationTapped,
-//     );
-//
-//     // Create notification channel for Android
-//     await _createNotificationChannel();
-//
-//     // Request permission for iOS
-//     await messaging.requestPermission(
-//       alert: true,
-//       badge: true,
-//       sound: true,
-//     );
-//
-//     // Handle background messages
-//     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-//
-//     // Handle foreground messages
-//     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-//   }
-//
-//   // Create notification channel for Android
-//   static Future<void> _createNotificationChannel() async {
-//     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-//       'task_reminders', // id
-//       'Task Reminders', // title
-//       description: 'Notifications for task reminders', // description
-//       importance: Importance.high,
-//     );
-//
-//     await localNotifications
-//         .resolvePlatformSpecificImplementation
-//     AndroidFlutterLocalNotificationsPlugin>()
-//         ?.createNotificationChannel(channel);
-//   }
-//
-//   // Get FCM token
-//   static Future<String?> getFCMToken() async {
-//     return await messaging.getToken();
-//   }
-//
-//   // Handle background messages
-//   @pragma('vm:entry-point')
-//   static Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//     await Firebase.initializeApp();
-//     _showLocalNotification(message);
-//   }
-//
-//   // Handle foreground messages
-//   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
-//     _showLocalNotification(message);
-//   }
-//
-//   // Show local notification - modified to avoid using problematic APIs
-//   static Future<void> _showLocalNotification(RemoteMessage message) async {
-//     RemoteNotification? notification = message.notification;
-//
-//     if (notification != null) {
-//       await localNotifications.show(
-//         notification.hashCode,
-//         notification.title,
-//         notification.body,
-//         NotificationDetails(
-//           android: AndroidNotificationDetails(
-//             'task_reminders',
-//             'Task Reminders',
-//             channelDescription: 'Notifications for task reminders',
-//             importance: Importance.high,
-//             priority: Priority.high,
-//             // Removed icon to avoid any potential conflicts
-//             // You can add it back if needed after confirming compatibility
-//           ),
-//           iOS: const DarwinNotificationDetails(
-//             presentAlert: true,
-//             presentBadge: true,
-//             presentSound: true,
-//           ),
-//         ),
-//         payload: message.data['taskId'],
-//       );
-//     }
-//   }
-//
-//   // Handle notification tap
-//   static void _onNotificationTapped(NotificationResponse response) {
-//     if (response.payload != null) {
-//       final taskId = response.payload;
-//       // You can navigate to task details screen here
-//       print('Tapped on notification for task: $taskId');
-//
-//       // Example:
-//       // Navigator.of(GlobalContext.navigatorKey.currentContext!).push(
-//       //   MaterialPageRoute(
-//       //     builder: (context) => TaskDetailsScreen(taskId: taskId!),
-//       //   ),
-//       // );
-//     }
-//   }
-// }
-
 // lib/services/firebase_service.dart
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -268,50 +5,79 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class FirebaseService {
-  static FirebaseMessaging messaging = FirebaseMessaging.instance;
+  static FirebaseMessaging? _messaging;
   static FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
+  static bool _initialized = false;
+  static bool _fallbackMode = false;
+
+  // Getter for messaging with fallback handling
+  static FirebaseMessaging get messaging {
+    if (_fallbackMode) {
+      throw Exception('Firebase is in fallback mode - messaging not available');
+    }
+    return _messaging!;
+  }
 
   // Initialize Firebase
   static Future<void> initialize() async {
-    // Initialize Firebase
-    await Firebase.initializeApp();
+    if (_initialized) return;
 
-    // Set up local notifications
-    const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+    try {
+      print("FirebaseService: Attempting to initialize Firebase");
 
-    const DarwinInitializationSettings initializationSettingsIOS =
-    DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+      // Initialize Firebase
+      await Firebase.initializeApp();
+      _messaging = FirebaseMessaging.instance;
 
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+      // Set up local notifications
+      const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    await localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
+      const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    // Create notification channel for Android
-    await _createNotificationChannel();
+      const InitializationSettings initializationSettings = InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      );
 
-    // Request permission for iOS
-    await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+      await localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
 
-    // Handle background messages
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      // Create notification channel for Android
+      await _createNotificationChannel();
 
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      // Request permission for iOS
+      if (_messaging != null) {
+        await _messaging!.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+        // Handle background messages
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+        // Handle foreground messages
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      }
+
+      _initialized = true;
+      _fallbackMode = false;
+      print("FirebaseService: Firebase initialized successfully");
+
+    } catch (e) {
+      print("FirebaseService: Failed to initialize Firebase - $e");
+      print("FirebaseService: Continuing in fallback mode without Firebase");
+      _fallbackMode = true;
+      _initialized = true;
+    }
   }
 
   // Create notification channel for Android
@@ -331,9 +97,23 @@ class FirebaseService {
     }
   }
 
-  // Get FCM token
+  // Get FCM token with fallback
   static Future<String?> getFCMToken() async {
-    return await messaging.getToken();
+    if (!_initialized) {
+      await initialize();
+    }
+
+    if (_fallbackMode) {
+      print("FirebaseService: Using device ID as token in fallback mode");
+      return null;
+    }
+
+    try {
+      return await _messaging?.getToken();
+    } catch (e) {
+      print("FirebaseService: Error getting FCM token - $e");
+      return null;
+    }
   }
 
   // Handle background messages
@@ -358,7 +138,7 @@ class FirebaseService {
         notification.title,
         notification.body,
         NotificationDetails(
-          android: AndroidNotificationDetails(
+          android: const AndroidNotificationDetails(
             'task_reminders',
             'Task Reminders',
             channelDescription: 'Notifications for task reminders',
@@ -382,13 +162,6 @@ class FirebaseService {
       final taskId = response.payload;
       // You can navigate to task details screen here
       print('Tapped on notification for task: $taskId');
-
-      // Example:
-      // Navigator.of(GlobalContext.navigatorKey.currentContext!).push(
-      //   MaterialPageRoute(
-      //     builder: (context) => TaskDetailsScreen(taskId: taskId!),
-      //   ),
-      // );
     }
   }
 }
