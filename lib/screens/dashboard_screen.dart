@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'custom_drawer.dart';
+import 'community_feed_screen.dart'; // Import the community screen
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -79,6 +80,16 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     });
   }
 
+  // Navigation to Community Feed
+  void _navigateToCommunity() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CommunityFeedScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                         ),
                         GestureDetector(
                           onTap: () {
-                            // Profile pic tap handler (removed functionality)
+                            // Profile pic tap handler
                           },
                           child: Container(
                             width: 45,
@@ -158,41 +169,72 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: const [
-                            // All shortcuts with navigation removed
+                          children: [
+                            // Journal shortcut
                             ShortcutButton(
                               imagePath: 'lib/assets/icons/journal_icon.png',
                               label: 'Story/Memory\nJournal',
+                              onTap: () {
+                                // Navigate to journal
+                              },
                             ),
-                            SizedBox(width: 24),
+                            const SizedBox(width: 24),
+
+                            // Notification shortcut
                             ShortcutButton(
                               imagePath: 'lib/assets/icons/notification_icon.png',
                               label: 'Notification &\nReminders',
+                              onTap: () {
+                                // Navigate to notifications
+                              },
                             ),
-                            SizedBox(width: 24),
+                            const SizedBox(width: 24),
+
+                            // Location shortcut
                             ShortcutButton(
                               imagePath: 'lib/assets/icons/location_icon.png',
                               label: 'Location\nTracking',
+                              onTap: () {
+                                // Navigate to location tracking
+                              },
                             ),
-                            SizedBox(width: 24),
+                            const SizedBox(width: 24),
+
+                            // Music shortcut
                             ShortcutButton(
                               imagePath: 'lib/assets/icons/music_icon.png',
                               label: 'Music\nTherapy',
+                              onTap: () {
+                                // Navigate to music therapy
+                              },
                             ),
-                            SizedBox(width: 24),
+                            const SizedBox(width: 24),
+
+                            // Art shortcut
                             ShortcutButton(
                               imagePath: 'lib/assets/icons/art_icon.png',
                               label: 'Art\nTherapy',
+                              onTap: () {
+                                // Navigate to art therapy
+                              },
                             ),
-                            SizedBox(width: 24),
+                            const SizedBox(width: 24),
+
+                            // Community chat shortcut - NEW
                             ShortcutButton(
-                              imagePath: 'lib/assets/icons/feature1_icon.png',
-                              label: 'Feature 1',
+                              imagePath: 'lib/assets/icons/community_icon.png', // You'll need to add this icon
+                              label: 'Community\nChat',
+                              onTap: _navigateToCommunity, // Navigate to community
                             ),
-                            SizedBox(width: 24),
+                            const SizedBox(width: 24),
+
+                            // Feature 2 shortcut
                             ShortcutButton(
                               imagePath: 'lib/assets/icons/feature2_icon.png',
                               label: 'Feature 2',
+                              onTap: () {
+                                // Navigate to feature 2
+                              },
                             ),
                           ],
                         ),
@@ -237,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: () {
-                              // Emergency call button (functionality removed)
+                              // Emergency call button
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF503663),
@@ -260,63 +302,98 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                     ),
                     const SizedBox(height: 20),
 
-                    // Dashboard items - all navigation removed
+                    // Dashboard items - with navigation
                     Column(
-                      children: const [
+                      children: [
+                        // First row
                         Row(
                           children: [
+                            // Notifications card
                             Expanded(
                               child: DashboardCard(
                                 title: 'Notification &\nReminders',
                                 imagePath: 'lib/assets/notifications.png',
+                                onTap: () {
+                                  // Navigate to notifications
+                                },
                               ),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
+
+                            // Journal card
                             Expanded(
                               child: DashboardCard(
                                 title: 'Story/ Memory\nJournal',
                                 imagePath: 'lib/assets/journal.png',
+                                onTap: () {
+                                  // Navigate to journal
+                                },
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
+
+                        // Location tracking card
                         DashboardCard(
                           title: 'Location Tracking',
                           imagePath: 'lib/assets/location.png',
+                          onTap: () {
+                            // Navigate to location tracking
+                          },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
+
+                        // Second row
                         Row(
                           children: [
+                            // Art therapy card
                             Expanded(
                               child: DashboardCard(
                                 title: 'Art Therapy',
                                 imagePath: 'lib/assets/art.png',
+                                onTap: () {
+                                  // Navigate to art therapy
+                                },
                               ),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
+
+                            // Music therapy card
                             Expanded(
                               child: DashboardCard(
                                 title: 'Music Therapy',
                                 imagePath: 'lib/assets/music.png',
+                                onTap: () {
+                                  // Navigate to music therapy
+                                },
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
+
+                        // Third row
                         Row(
                           children: [
+                            // AI chatbot card
                             Expanded(
                               child: DashboardCard(
                                 title: 'AI Chatbot',
                                 imagePath: 'lib/assets/bot.png',
+                                onTap: () {
+                                  // Navigate to AI chatbot
+                                },
                               ),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
+
+                            // Community chat card - NEW IMPLEMENTATION
                             Expanded(
                               child: DashboardCard(
                                 title: 'Community Chat',
-                                imagePath: 'lib/assets/community.png',
+                                imagePath: 'lib/assets/community.png', // Make sure to add this image
+                                onTap: _navigateToCommunity, // Use the navigation method
                               ),
                             ),
                           ],
@@ -351,79 +428,85 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   }
 }
 
+// Enhanced ShortcutButton with onTap functionality
 class ShortcutButton extends StatelessWidget {
   final String imagePath;
   final String label;
+  final VoidCallback? onTap;
 
   const ShortcutButton({
     Key? key,
     required this.imagePath,
     required this.label,
+    this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: ClipOval(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback icon in case image is not found
-                  IconData iconData;
-                  if (imagePath.contains('journal')) {
-                    iconData = Icons.book;
-                  } else if (imagePath.contains('notification')) {
-                    iconData = Icons.notifications;
-                  } else if (imagePath.contains('location')) {
-                    iconData = Icons.location_on;
-                  } else if (imagePath.contains('music')) {
-                    iconData = Icons.music_note;
-                  } else if (imagePath.contains('art')) {
-                    iconData = Icons.palette;
-                  } else if (imagePath.contains('chatbot')) {
-                    iconData = Icons.star;
-                  } else if (imagePath.contains('community chat')) {
-                    iconData = Icons.lightbulb;
-                  } else {
-                    iconData = Icons.image;
-                  }
-                  return Icon(
-                    iconData,
-                    color: const Color(0xFF503663),
-                    size: 30,
-                  );
-                },
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback icon in case image is not found
+                    IconData iconData;
+                    if (imagePath.contains('journal')) {
+                      iconData = Icons.book;
+                    } else if (imagePath.contains('notification')) {
+                      iconData = Icons.notifications;
+                    } else if (imagePath.contains('location')) {
+                      iconData = Icons.location_on;
+                    } else if (imagePath.contains('music')) {
+                      iconData = Icons.music_note;
+                    } else if (imagePath.contains('art')) {
+                      iconData = Icons.palette;
+                    } else if (imagePath.contains('community')) {
+                      iconData = Icons.people;
+                    } else if (imagePath.contains('chatbot')) {
+                      iconData = Icons.star;
+                    } else {
+                      iconData = Icons.image;
+                    }
+                    return Icon(
+                      iconData,
+                      color: const Color(0xFF503663),
+                      size: 30,
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-
+// Enhanced DashboardCard with onTap functionality
 class DashboardCard extends StatelessWidget {
   final String title;
   final String imagePath;
@@ -438,40 +521,43 @@ class DashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-          onError: (exception, stackTrace) {
-            // This won't actually show, but it handles the error
-          },
-        ),
-        color: const Color(0xFF77588D), // Fallback color if image fails to load
-      ),
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
+        height: 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              Colors.black.withOpacity(0.7),
-            ],
+          image: DecorationImage(
+            image: AssetImage(imagePath),
+            fit: BoxFit.cover,
+            onError: (exception, stackTrace) {
+              // This won't actually show, but it handles the error
+            },
           ),
+          color: const Color(0xFF77588D), // Fallback color if image fails to load
         ),
-        padding: const EdgeInsets.all(12),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withOpacity(0.7),
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
