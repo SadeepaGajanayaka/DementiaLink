@@ -43,9 +43,19 @@ void main() async {
 
   runApp(const MyApp());
 }
+import 'package:provider/provider.dart';
+import 'models/storage_provider.dart';
+import 'screens/home_screen.dart';
+import 'utils/ThumbnailManager.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Create StorageProvider early to allow cleanup
+  final storageProvider = StorageProvider();
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +67,27 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF5D4E77),
           primary: const Color(0xFF503663),
+  // Wait for database initialization
+  while (!storageProvider.isInitialized) {
+    await Future.delayed(Duration(milliseconds: 100));
+  }
+
+  // Cleanup expired deleted photos
+  await storageProvider.cleanupExpiredDeletedPhotos();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: storageProvider,
+      child: ThumbnailManager(
+        child: MaterialApp(
+          title: 'Memory Journal',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.deepPurple,
+            scaffoldBackgroundColor: Color(0xFF503663),
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          home: HomeScreen(),
         ),
         useMaterial3: true,
         fontFamily: 'SF Pro Display',
@@ -64,4 +95,7 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
     );
   }
+}
+    ),
+  );
 }
