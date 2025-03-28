@@ -16,11 +16,15 @@ if (localPropertiesFile.exists()) {
 android {
     namespace = "com.dementialink.dementialink"
     compileSdk = flutter.compileSdkVersion
+//    compileSdk = 34
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        // Enable core library desugaring
+        coreLibraryDesugaringEnabled true
+
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
@@ -34,9 +38,13 @@ android {
     defaultConfig {
         applicationId = "com.dementialink.dementialink"
         minSdkVersion 23
-        targetSdk = flutter.targetSdkVersion
+       targetSdk = flutter.targetSdkVersion
+//        targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Enable multidex support
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -52,6 +60,12 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    // Add desugaring dependency with required version
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
+
+    // Add multidex support
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
 
 apply plugin: 'com.google.gms.google-services'
