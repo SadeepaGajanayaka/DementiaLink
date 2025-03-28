@@ -575,7 +575,7 @@ class _LoginScreenState extends State<LoginScreen> {
           height: 24,
         ),
         onPressed: onPressed,
-      ),
-    );
-  }
+     ),
+);
+}
 }

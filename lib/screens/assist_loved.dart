@@ -657,7 +657,7 @@ class _AssistLovedState extends State<AssistLoved> {
           color: Color(0xFF503663),
           fontSize: 16,
         ),
-      ),
-    );
-  }
+     ),
+);
+}
 }

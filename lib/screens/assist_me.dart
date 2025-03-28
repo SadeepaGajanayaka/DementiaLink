@@ -850,7 +850,7 @@ class _AssistMeState extends State<AssistMe> {
             ),
           ],
         ),
-      ],
-    );
-  }
+     ],
+);
+}
 }

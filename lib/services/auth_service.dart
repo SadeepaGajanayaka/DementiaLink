@@ -297,6 +297,6 @@ class AuthService {
         message = e.message ?? 'An unknown error occurred.';
     }
     
-    return message;
-  }
+    return message;
+}
 }
