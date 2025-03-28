@@ -14,6 +14,8 @@ import 'maps_screen.dart';
 import '../services/auth_service.dart';
 // Import drawing app
 import 'drawing_app.dart';
+// Import community chat screen
+import 'community_chat_screen.dart';
 
 // Import the PlaylistScreen
 class Song {
@@ -491,7 +493,7 @@ class JournalScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: Colors.white.withOpacity(0.2),
                     ),
-                    child: ClipOval(
+                    child: const ClipOval(
                       child: Icon(
                         Icons.photo_camera,
                         color: Colors.white,
@@ -636,6 +638,23 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
+  // Updated method to navigate to the AI Chatbot feature
+  void navigateToFeature1() {
+    // TODO: Implement AI Chatbot feature
+    print("Navigate to AI Chatbot");
+  }
+
+  // Updated method to navigate to the Community Chat feature
+  void navigateToFeature2() {
+    // Navigate to the Community Chat screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CommunityScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -755,6 +774,23 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                               ),
                             ),
                             const SizedBox(width: 24),
+                            // Updated AI Chatbot with navigation
+                            GestureDetector(
+                              onTap: navigateToFeature1,
+                              child: const ShortcutButton(
+                                imagePath: 'lib/assets/icons/feature1_icon.png',
+                                label: 'AI\nChatbot',
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            // Updated Community Chat with navigation
+                            GestureDetector(
+                              onTap: navigateToFeature2,
+                              child: const ShortcutButton(
+                                imagePath: 'lib/assets/icons/feature2_icon.png',
+                                label: 'Community\nChat',
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -868,6 +904,27 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        // Updated dashboard cards for AI Chatbot and Community Chat
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DashboardCard(
+                                title: 'AI Chatbot',
+                                imagePath: 'lib/assets/feature1.png',
+                                onTap: navigateToFeature1,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: DashboardCard(
+                                title: 'Community Chat',
+                                imagePath: 'lib/assets/feature2.png',
+                                onTap: navigateToFeature2,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -939,6 +996,10 @@ class ShortcutButton extends StatelessWidget {
                     iconData = Icons.music_note;
                   } else if (imagePath.contains('art')) {
                     iconData = Icons.palette;
+                  } else if (imagePath.contains('feature1')) {
+                    iconData = Icons.chat_bubble_outline;
+                  } else if (imagePath.contains('feature2')) {
+                    iconData = Icons.people;
                   } else {
                     iconData = Icons.image;
                   }
