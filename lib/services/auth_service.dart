@@ -39,7 +39,7 @@ class AuthService {
       
       print("User created successfully with UID: ${userCredential.user?.uid}");
       
-      
+      // Update display name
       await userCredential.user!.updateDisplayName(name);
       
       // Add user details to Firestore
@@ -67,7 +67,7 @@ class AuthService {
   }) async {
     try {
       print("Attempting to sign in user with email: $email");
-      
+      // Sign in with email and password
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -75,7 +75,7 @@ class AuthService {
       
       print("User signed in successfully with UID: ${userCredential.user?.uid}");
       
-      
+      // Update last login timestamp
       await _firestore.collection('users').doc(userCredential.user!.uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
@@ -94,7 +94,7 @@ class AuthService {
       UserCredential userCredential = await _auth.signInAnonymously();
       print("Anonymous sign-in successful: ${userCredential.user?.uid}");
       
-      
+      // Create a document for the anonymous user
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'name': 'Anonymous User',
         'createdAt': FieldValue.serverTimestamp(),
@@ -140,7 +140,7 @@ class AuthService {
   Future<void> signOut() async {
     try {
       print("Signing out user: ${currentUser?.uid}");
-      
+      // Sign out from social providers
       await _googleSignIn.signOut();
       
       // Sign out from Firebase
@@ -156,7 +156,7 @@ class AuthService {
   Future<UserCredential> signInWithGoogle() async {
     try {
       print("Starting Google sign-in flow");
-      
+      // Trigger the authentication flow - This shows the account picker
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       // Check if sign in was canceled
@@ -167,10 +167,10 @@ class AuthService {
       
       print("Google account selected: ${googleUser.email}");
       
-     
+      // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
-      
+      // Create a new credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -217,7 +217,7 @@ class AuthService {
       }
     } catch (e) {
       print("Error handling social sign-in Firestore update: $e");
-      
+      // Don't throw, just log the error
     }
   }
   
@@ -297,6 +297,6 @@ class AuthService {
         message = e.message ?? 'An unknown error occurred.';
     }
     
-    return message;
-  }
+    return message;
+  }
 }
