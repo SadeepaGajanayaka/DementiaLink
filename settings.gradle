@@ -1,0 +1,8 @@
+rootProject.name = 'DementiaLink'
+
+// Include all the modules in your project
+// For example, if you have an app module:
+include ':app'
+
+// If you have other modules, include them as well
+// include ':library1', ':library2'
