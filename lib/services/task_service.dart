@@ -1,4 +1,4 @@
-// lib/services/task_service.dart - modified to handle missing FCM token
+// lib/services/task_service.dart - updated to include notification scheduling
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../models/task_model.dart';
 import 'firebase_service.dart';
+import 'notification_service.dart';
 
 class TaskService {
   // Base URL of your API
@@ -28,6 +29,10 @@ class TaskService {
 
       // Initialize Firebase (with fallback mode)
       await FirebaseService.initialize();
+
+      // Initialize notification service
+      await NotificationService.instance.initialize();
+      await NotificationService.instance.requestPermissions();
 
       // Get device ID
       await _getDeviceId();
@@ -114,7 +119,12 @@ class TaskService {
 
       if (response.statusCode == 200) {
         final List<dynamic> tasksJson = json.decode(response.body);
-        return tasksJson.map((json) => _convertJsonToTask(json)).toList();
+        final tasks = tasksJson.map((json) => _convertJsonToTask(json)).toList();
+
+        // Schedule notifications for all active tasks
+        _scheduleNotificationsForTasks(tasks);
+
+        return tasks;
       } else {
         throw Exception('Failed to load tasks');
       }
@@ -144,7 +154,12 @@ class TaskService {
       if (response.statusCode == 200) {
         final List<dynamic> tasksJson = json.decode(response.body);
         print("TaskService: Retrieved ${tasksJson.length} tasks for date $formattedDate");
-        return tasksJson.map((json) => _convertJsonToTask(json)).toList();
+        final tasks = tasksJson.map((json) => _convertJsonToTask(json)).toList();
+
+        // Schedule notifications for the tasks of this day
+        _scheduleNotificationsForTasks(tasks);
+
+        return tasks;
       } else {
         throw Exception('Failed to load tasks');
       }
@@ -158,8 +173,6 @@ class TaskService {
   static Future<Task?> createTask(Task task) async {
     if (!_isInitialized) await initialize();
     if (_deviceId == null) await _getDeviceId();
-
-    // No need to try getting FCM token again as it might throw an error
 
     try {
       print("TaskService: Creating new task: ${task.title}");
@@ -186,7 +199,14 @@ class TaskService {
 
       if (response.statusCode == 201) {
         print("TaskService: Task created successfully");
-        return _convertJsonToTask(json.decode(response.body));
+        final createdTask = _convertJsonToTask(json.decode(response.body));
+
+        // Schedule notification for the new task
+        if (!createdTask.isCompleted) {
+          await NotificationService.instance.scheduleTaskReminder(createdTask);
+        }
+
+        return createdTask;
       } else {
         print("TaskService: Failed to create task: ${response.body}");
         throw Exception('Failed to create task');
@@ -209,7 +229,16 @@ class TaskService {
       );
 
       if (response.statusCode == 200) {
-        return _convertJsonToTask(json.decode(response.body));
+        final updatedTask = _convertJsonToTask(json.decode(response.body));
+
+        // Cancel previous notifications and schedule new ones if task is not completed
+        if (updatedTask.isCompleted) {
+          await NotificationService.instance.cancelTaskReminders(updatedTask.id!);
+        } else {
+          await NotificationService.instance.scheduleTaskReminder(updatedTask);
+        }
+
+        return updatedTask;
       } else {
         throw Exception('Failed to update task');
       }
@@ -228,7 +257,12 @@ class TaskService {
       );
 
       if (response.statusCode == 200) {
-        return _convertJsonToTask(json.decode(response.body));
+        final completedTask = _convertJsonToTask(json.decode(response.body));
+
+        // Cancel notifications for completed task
+        await NotificationService.instance.cancelTaskReminders(taskId);
+
+        return completedTask;
       } else {
         throw Exception('Failed to complete task');
       }
@@ -245,10 +279,57 @@ class TaskService {
         Uri.parse('$baseUrl/$taskId'),
       );
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        // Cancel notifications for deleted task
+        await NotificationService.instance.cancelTaskReminders(taskId);
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Error deleting task: $e');
       return false;
+    }
+  }
+
+  // Helper method to schedule notifications for a list of tasks
+  static Future<void> _scheduleNotificationsForTasks(List<Task> tasks) async {
+    for (final task in tasks) {
+      if (!task.isCompleted && task.id != null) {
+        // Only schedule for future tasks
+        final taskDateTime = DateTime(
+          task.date.year,
+          task.date.month,
+          task.date.day,
+          task.startTime.hour,
+          task.startTime.minute,
+        );
+
+        // Parse the remind before string to get the notification time
+        Duration reminderOffset;
+        switch (task.remindBefore) {
+          case '5 minutes early':
+            reminderOffset = Duration(minutes: 5);
+            break;
+          case '10 minutes early':
+            reminderOffset = Duration(minutes: 10);
+            break;
+          case '15 minutes early':
+            reminderOffset = Duration(minutes: 15);
+            break;
+          case '30 minutes early':
+            reminderOffset = Duration(minutes: 30);
+            break;
+          default:
+            reminderOffset = Duration(minutes: 10);
+        }
+
+        final reminderTime = taskDateTime.subtract(reminderOffset);
+
+        // Only schedule if the reminder time is in the future
+        if (reminderTime.isAfter(DateTime.now())) {
+          await NotificationService.instance.scheduleTaskReminder(task);
+        }
+      }
     }
   }
 
@@ -322,9 +403,4 @@ class TaskService {
         return 'medium';
     }
   }
-}
-
-// Global context for accessing navigator key
-class GlobalContext {
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 }

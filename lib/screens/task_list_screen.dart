@@ -4,6 +4,8 @@ import '../widgets/add_task_overlay.dart';
 import '../widgets/task_options_overalay.dart';
 import '../utils/formatters.dart';
 import '../services/task_service.dart';
+import '../screens/test_notification_screen.dart';
+import '../services/notification_service.dart';
 
 class TaskListScreen extends StatefulWidget {
   @override
@@ -171,6 +173,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
             setState(() {
               tasks.add(createdTask);
             });
+
+            // Schedule notification for the new task
+            if (!createdTask.isCompleted) {
+              try {
+                await NotificationService.instance.scheduleTaskReminder(createdTask);
+                print('Scheduled notification for new task: ${createdTask.title}');
+              } catch (e) {
+                print('Failed to schedule notification: $e');
+              }
+            }
           }
         },
       ),
@@ -190,6 +202,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
           Navigator.pop(context);
           if (task.id != null) {
             await _markTaskAsCompleted(task);
+
+            // Cancel notifications for completed task
+            if (task.id != null) {
+              try {
+                await NotificationService.instance.cancelTaskReminders(task.id!);
+                print('Cancelled notifications for completed task: ${task.title}');
+              } catch (e) {
+                print('Failed to cancel notifications: $e');
+              }
+            }
           }
         },
         onDeleteTask: () async {
@@ -200,6 +222,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
               setState(() {
                 tasks.removeAt(index);
               });
+
+              // Cancel notifications for deleted task
+              try {
+                await NotificationService.instance.cancelTaskReminders(task.id!);
+                print('Cancelled notifications for deleted task: ${task.title}');
+              } catch (e) {
+                print('Failed to cancel notifications: $e');
+              }
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -231,6 +261,22 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 tasks[idx] = savedTask;
               }
             });
+
+            // Update notification for the edited task
+            if (savedTask.id != null) {
+              try {
+                // First cancel existing notifications
+                await NotificationService.instance.cancelTaskReminders(savedTask.id!);
+
+                // Then schedule new notification if task is not completed
+                if (!savedTask.isCompleted) {
+                  await NotificationService.instance.scheduleTaskReminder(savedTask);
+                  print('Updated notification for edited task: ${savedTask.title}');
+                }
+              } catch (e) {
+                print('Failed to update notification: $e');
+              }
+            }
           }
         },
       ),
@@ -243,6 +289,50 @@ class _TaskListScreenState extends State<TaskListScreen> {
       _searchQuery = '';
       _isSearching = false;
     });
+  }
+
+  Future<void> _testNotification() async {
+    try {
+      // Get the first task from the list for testing, or create a dummy one
+      Task testTask;
+      if (tasks.isNotEmpty) {
+        testTask = tasks.first;
+      } else {
+        final now = DateTime.now();
+        final fiveMinutesLater = now.add(Duration(minutes: 5));
+        testTask = Task(
+          id: 'test_${DateTime.now().millisecondsSinceEpoch}',
+          title: 'Test Reminder',
+          description: 'This is a test notification',
+          date: now,
+          startTime: TimeOfDay.fromDateTime(fiveMinutesLater),
+          endTime: TimeOfDay.fromDateTime(fiveMinutesLater.add(Duration(hours: 1))),
+          priority: Priority.high,
+          remindBefore: '5 minutes early',
+          repeat: 'None',
+        );
+      }
+
+      await NotificationService.instance.showImmediateNotification(
+        'Test: ${testTask.title}',
+        'This task is scheduled for ${Formatters.formatTimeOfDay(testTask.startTime)}',
+        payload: testTask.id,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Test notification sent!'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send test notification: $e'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -399,7 +489,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.notifications_none, color: Colors.white),
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to test notification screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TestNotificationScreen(),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -575,6 +673,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
             ),
+          SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _testNotification,
+            icon: Icon(Icons.notifications),
+            label: Text('Test Notification'),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              backgroundColor: Colors.orange,
+            ),
+          ),
         ],
       ),
     );
@@ -674,6 +782,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     const SizedBox(width: 4),
                     Text(
                       _getPriorityString(task.priority),
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(
+                      Icons.notifications,
+                      size: 16,
+                      color: Colors.purple[700],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      task.remindBefore,
                       style: TextStyle(
                         color: Colors.grey[700],
                         fontSize: 12,
