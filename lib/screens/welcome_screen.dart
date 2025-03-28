@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'assist_me.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
@@ -20,8 +21,10 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
   final AuthService _authService = AuthService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _picker = ImagePicker();
   File? _profileImage;
+  bool _isProcessing = false;
 
   Future<void> _selectImage(ImageSource source) async {
     try {
@@ -34,7 +37,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         setState(() {
           _profileImage = File(pickedImage.path);
         });
-        
+        // Here you would typically upload the image to storage
+        // and update the user's profile in your database
       }
     } catch (e) {
       // Handle errors, such as when a user denies camera permissions
@@ -95,6 +99,138 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  // New method to handle "Assist Me" option with improved error handling
+  Future<void> _handleAssistMe() async {
+    // Prevent multiple taps
+    if (_isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final userId = _authService.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated. Please log in again.');
+      }
+
+      // First check if user document exists
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+
+      if (!userDoc.exists) {
+        // Create user document if it doesn't exist
+        await _firestore.collection('users').doc(userId).set({
+          'name': widget.userName,
+          'email': _authService.currentUser?.email,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Save user role as 'patient'
+      await _firestore.collection('users').doc(userId).update({
+        'role': 'patient',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print("User role set to 'patient' for user: $userId");
+
+      // Navigate to the Assist Me screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AssistMe(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving user role: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: There was a problem setting up your account. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  // New method to handle "Assist a Loved One" option with improved error handling
+  Future<void> _handleAssistLoved() async {
+    // Prevent multiple taps
+    if (_isProcessing) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final userId = _authService.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated. Please log in again.');
+      }
+
+      // First check if user document exists
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+
+      if (!userDoc.exists) {
+        // Create user document if it doesn't exist
+        await _firestore.collection('users').doc(userId).set({
+          'name': widget.userName,
+          'email': _authService.currentUser?.email,
+          'photoUrl': _authService.currentUser?.photoURL,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        print("Created new user document for: $userId");
+      }
+
+      // Now update the role (this should be allowed by security rules)
+      await _firestore.collection('users').doc(userId).update({
+        'role': 'caregiver',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print("User role set to 'caregiver' for user: $userId");
+
+      // Navigate to the Assist Loved One screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AssistLoved(
+              userName: widget.userName,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving user role: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: There was a problem setting up your account. ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,8 +240,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF77588D), 
-              Color(0xFF503663), 
+              Color(0xFF77588D), // Lighter purple at top
+              Color(0xFF503663), // Darker purple at bottom
             ],
           ),
         ),
@@ -121,11 +257,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SizedBox(width: 40), 
+                      const SizedBox(width: 40), // For centering
                       Image.asset(
                         'lib/assets/brain_logo.png',
                         width: 60,
                         height: 60,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.psychology,
+                          color: Colors.white,
+                          size: 60,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(
@@ -171,7 +312,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         // Profile Image with Edit Option
                         Stack(
                           children: [
-                            
+                            // Profile image container
                             GestureDetector(
                               onTap: _showImageSourceOptions,
                               child: Container(
@@ -180,21 +321,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color:
-                                      const Color(0xFF77588D).withOpacity(0.2),
+                                  const Color(0xFF77588D).withOpacity(0.2),
                                 ),
                                 clipBehavior: Clip.hardEdge,
                                 child: _profileImage != null
                                     ? Image.file(
-                                        _profileImage!,
-                                        fit: BoxFit.cover,
-                                      )
+                                  _profileImage!,
+                                  fit: BoxFit.cover,
+                                )
                                     : Image.asset(
-                                        'lib/assets/profile_setup.png',
-                                        fit: BoxFit.cover,
-                                      ),
+                                  'lib/assets/profile_setup.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.person,
+                                    color: Color(0xFF77588D),
+                                    size: 100,
+                                  ),
+                                ),
                               ),
                             ),
-                            
+                            // Edit icon positioned at bottom right
                             Positioned(
                               right: 10,
                               bottom: 10,
@@ -225,7 +371,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 32),
-                       
+                        // Welcome Text
                         Text(
                           'Welcome ${widget.userName}!',
                           style: const TextStyle(
@@ -252,16 +398,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AssistMe(
-                                    userName: widget.userName,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _isProcessing ? null : _handleAssistMe,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF77588D),
                               foregroundColor: Colors.white,
@@ -270,7 +407,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
+                            child: _isProcessing
+                                ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                                : const Text(
                               'Assist Me',
                               style: TextStyle(
                                 fontSize: 18,
@@ -285,16 +431,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AssistLoved(
-                                    userName: widget.userName,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _isProcessing ? null : _handleAssistLoved,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF77588D),
                               foregroundColor: Colors.white,
@@ -303,7 +440,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
+                            child: _isProcessing
+                                ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
+                                : const Text(
                               'Assist a Loved One',
                               style: TextStyle(
                                 fontSize: 18,
@@ -321,7 +467,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
+      ),
+    );
+  }
 }
