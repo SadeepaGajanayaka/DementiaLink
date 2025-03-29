@@ -84,6 +84,8 @@ flutter:
     - lib/assets/icons/location_icon.png
     - lib/assets/icons/music_icon.png
     - lib/assets/icons/art_icon.png
+    - lib/assets/bot.jpeg
+    - lib/assets/community.webp
     - lib/assets/images/i1.png
     - lib/assets/images/i2.png
     - lib/assets/images/i3.png

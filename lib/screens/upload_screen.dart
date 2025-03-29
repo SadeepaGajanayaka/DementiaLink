@@ -1,19 +1,11 @@
 // Add this new screen to your app
 import 'dart:io';
-<<<<<<< HEAD
-import 'package:firebase/services/song_service.dart';
-=======
->>>>>>> parent of f02c9a9 (Merge branch 'Uchini1234' of https://github.com/SadeepaGajanayaka/DementiaLink into Uchini1234)
+import '../services/song_service.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
-<<<<<<< HEAD
-=======
-import '../services/song_service.dart';
-
->>>>>>> parent of f02c9a9 (Merge branch 'Uchini1234' of https://github.com/SadeepaGajanayaka/DementiaLink into Uchini1234)
 class UploadScreen extends StatefulWidget {
   final SongService songService;
   final Function() onUploadComplete;
