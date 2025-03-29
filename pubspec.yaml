@@ -45,6 +45,8 @@ dependencies:
   connectivity_plus: ^4.0.2
   device_info_plus: ^9.0.2
   firebase_messaging: ^14.7.0
+  http: ^1.1.0
+
 
 
 
@@ -97,4 +99,5 @@ flutter:
     - lib/assets/location_pin.png
     - lib/assets/back_arrow.png
     - lib/assets/image.jpeg
+    - .env
 
