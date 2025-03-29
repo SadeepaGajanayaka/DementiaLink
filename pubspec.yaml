@@ -1,5 +1,6 @@
-name: firebase
-description: "A new Flutter project."
+# pubspec.yaml
+name: dementialink
+description: "Software Development Group Project"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,15 +10,45 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  firebase_core: ^2.27.1
+  google_maps_flutter: ^2.5.0
+  location: ^5.0.3
+  cloud_firestore: ^4.17.5
+  firebase_auth: ^4.16.0
   cupertino_icons: ^1.0.8
+  geolocator: ^10.1.0
+  permission_handler: ^10.4.3
+  firebase_database: ^10.0.15
+  google_fonts: ^6.1.0
+  intl: ^0.17.0
+  firebase_storage: ^11.6.5
+  google_sign_in: ^6.3.0
+  image_picker: ^0.8.7+5
   just_audio: ^0.9.34
-  http: ^1.1.0
-  path_provider: ^2.0.15
+  provider: ^6.0.5
+  shared_preferences: ^2.2.0
+  sqflite: ^2.3.0
+  photo_view: ^0.14.0
+  flutter_staggered_grid_view: ^0.6.2
   path: ^1.8.3
-  image_picker: ^1.0.2
+  uuid: ^3.0.7
+  video_player: ^2.4.0
+  chewie: ^1.3.0
+  path_provider: ^2.0.15
+  google_generative_ai: ^0.1.0
+  flutter_riverpod: ^2.4.10
+  flutter_dotenv: ^5.1.0
+  flutter_tts: ^3.8.5
+  flutter_speech: ^2.0.0
   file_picker: ^6.1.1
   flutter_cache_manager: ^3.3.0
   connectivity_plus: ^4.0.2
+  device_info_plus: ^9.0.2
+  firebase_messaging: ^14.7.0
+  http: ^1.1.0
+
+
+
 
 
 dev_dependencies:
@@ -29,4 +60,44 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/brain_icon.png
+    - lib/assets/apple_logo.png
+    - lib/assets/brain_logo.png
+    - lib/assets/facebook_logo.png
+    - lib/assets/google_logo.png
+    - lib/assets/intro1.png
+    - lib/assets/intro2.png
+    - lib/assets/intro3.png
+    - lib/assets/intro4.png
+    - lib/assets/msg.png
+    - lib/assets/profile_setup.png
+    - lib/assets/patient_profile.png
+    - lib/assets/notifications.png
+    - lib/assets/journal.png
+    - lib/assets/location.png
+    - lib/assets/art.png
+    - lib/assets/music.png
+    - lib/assets/111.png
+    - lib/assets/icons/brush.png
+    - lib/assets/icons/palette.png
+    - lib/assets/icons/journal_icon.png
+    - lib/assets/icons/notification_icon.png
+    - lib/assets/icons/location_icon.png
+    - lib/assets/icons/music_icon.png
+    - lib/assets/icons/art_icon.png
+    - lib/assets/images/i1.png
+    - lib/assets/images/i2.png
+    - lib/assets/images/i3.png
+    - lib/assets/images/i4.png
+    - lib/assets/images/i5.jpg
+    - lib/assets/images/brain_icon.png
+    - lib/assets/audio/track1.mp3
+    - lib/assets/audio/track2.mp3
+    - lib/assets/audio/track3.mp3
+    - lib/assets/audio/track4.mp3
+    - lib/assets/audio/track5.mp3
+    - lib/assets/google-maps.png
+    - lib/assets/location_pin.png
+    - lib/assets/back_arrow.png
+    - lib/assets/image.jpeg
+    - .env
+
