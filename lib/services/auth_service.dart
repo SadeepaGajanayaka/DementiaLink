@@ -5,7 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   // Initialize GoogleSignIn with scopes
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
@@ -36,12 +36,12 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       print("User created successfully with UID: ${userCredential.user?.uid}");
-      
+
       // Update display name
       await userCredential.user!.updateDisplayName(name);
-      
+
       // Add user details to Firestore
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'name': name,
@@ -51,7 +51,7 @@ class AuthService {
         'lastLogin': FieldValue.serverTimestamp(),
         'authProvider': 'email',
       });
-      
+
       print("User profile created in Firestore");
       return userCredential;
     } on FirebaseAuthException catch (e) {
@@ -72,28 +72,28 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       print("User signed in successfully with UID: ${userCredential.user?.uid}");
-      
+
       // Update last login timestamp
       await _firestore.collection('users').doc(userCredential.user!.uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
-      
+
       return userCredential;
     } on FirebaseAuthException catch (e) {
       print("Firebase Auth Error: ${e.code} - ${e.message}");
       throw _handleAuthException(e);
     }
   }
-  
+
   // Sign in anonymously
   Future<UserCredential> signInAnonymously() async {
     try {
       print("Attempting anonymous sign-in");
       UserCredential userCredential = await _auth.signInAnonymously();
       print("Anonymous sign-in successful: ${userCredential.user?.uid}");
-      
+
       // Create a document for the anonymous user
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'name': 'Anonymous User',
@@ -101,7 +101,7 @@ class AuthService {
         'lastLogin': FieldValue.serverTimestamp(),
         'authProvider': 'anonymous',
       });
-      
+
       return userCredential;
     } on FirebaseAuthException catch (e) {
       print("Firebase Auth Error: ${e.code} - ${e.message}");
@@ -120,7 +120,7 @@ class AuthService {
       throw _handleAuthException(e);
     }
   }
-  
+
   // Confirm password reset with code and new password
   Future<void> confirmPasswordReset(String code, String newPassword) async {
     try {
@@ -142,7 +142,7 @@ class AuthService {
       print("Signing out user: ${currentUser?.uid}");
       // Sign out from social providers
       await _googleSignIn.signOut();
-      
+
       // Sign out from Firebase
       await _auth.signOut();
       print("User signed out successfully");
@@ -158,32 +158,32 @@ class AuthService {
       print("Starting Google sign-in flow");
       // Trigger the authentication flow - This shows the account picker
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       // Check if sign in was canceled
       if (googleUser == null) {
         print("Google sign-in was cancelled by user");
         throw 'Google sign in was cancelled';
       }
-      
+
       print("Google account selected: ${googleUser.email}");
-      
+
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
+
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      
+
       // Sign in to Firebase with the credential
       print("Signing in to Firebase with Google credential");
       UserCredential userCredential = await _auth.signInWithCredential(credential);
       print("Google sign-in successful: ${userCredential.user?.uid}");
-      
+
       // Add or update user in Firestore
       await _handleSocialSignInFirestore(userCredential, 'google');
-      
+
       return userCredential;
     } catch (e) {
       print('Error during Google sign in: $e');
@@ -220,7 +220,7 @@ class AuthService {
       // Don't throw, just log the error
     }
   }
-  
+
   // Get user data from Firestore
   Future<Map<String, dynamic>> getUserData(String uid) async {
     try {
@@ -242,12 +242,12 @@ class AuthService {
   // Check if user exists and is authenticated
   Future<bool> ensureUserAuthenticated() async {
     User? user = _auth.currentUser;
-    
+
     if (user != null) {
       print("User is already authenticated: ${user.uid}");
       return true;
     }
-    
+
     try {
       print("No authenticated user found, attempting anonymous sign-in");
       UserCredential result = await signInAnonymously();
@@ -261,7 +261,7 @@ class AuthService {
   // Handle Firebase Auth exceptions with user-friendly messages
   String _handleAuthException(FirebaseAuthException e) {
     String message;
-    
+
     switch (e.code) {
       case 'email-already-in-use':
         message = 'This email is already registered. Please login instead.';
@@ -296,7 +296,7 @@ class AuthService {
       default:
         message = e.message ?? 'An unknown error occurred.';
     }
-    
+
     return message;
   }
 }

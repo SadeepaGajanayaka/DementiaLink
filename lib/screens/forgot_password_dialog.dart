@@ -24,7 +24,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
 
   bool _validateEmail() {
     final email = _emailController.text.trim();
-    
+
     if (email.isEmpty) {
       setState(() => _emailError = 'Please enter your email');
       return false;
@@ -32,7 +32,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       setState(() => _emailError = 'Please enter a valid email');
       return false;
     }
-    
+
     setState(() => _emailError = null);
     return true;
   }
@@ -129,7 +129,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                       errorText: _emailError,
                     ),
                   ),
-                 const SizedBox(height: 32),
+                  const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: () {
                       if (_validateEmail()) {

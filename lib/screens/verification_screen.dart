@@ -27,7 +27,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     try {
       await _authService.resetPassword(widget.email);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -155,7 +155,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             MaterialPageRoute(
                               builder: (context) => const LoginScreen(),
                             ),
-                            (route) => false,
+                                (route) => false,
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -179,32 +179,32 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         onPressed: _isResending ? null : _resendEmail,
                         child: _isResending
                             ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFF5D4E77),
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Sending...',
-                                    style: TextStyle(
-                                      color: Color(0xFF5D4E77),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : const Text(
-                                'Didn\'t receive the email? Resend',
-                                style: TextStyle(
-                                  color: Color(0xFF5D4E77),
-                                ),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF5D4E77),
                               ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Sending...',
+                              style: TextStyle(
+                                color: Color(0xFF5D4E77),
+                              ),
+                            ),
+                          ],
+                        )
+                            : const Text(
+                          'Didn\'t receive the email? Resend',
+                          style: TextStyle(
+                            color: Color(0xFF5D4E77),
+                          ),
+                        ),
                       ),
                     ],
                   ),
