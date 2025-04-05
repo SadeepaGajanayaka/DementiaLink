@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'lib/screens/login_screen.dart';
+import '../screens/login_screen.dart';
 
 class LogoutService {
   static final AuthService _authService = AuthService();
