@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
+import 'controllers/community_controller.dart';
+import 'controllers/messaging_controller.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +19,9 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print("Firebase initialized successfully");
+
+    // Initialize notification service
+    await NotificationService().initialize();
 
     // Check if a user is already logged in
     User? currentUser = FirebaseAuth.instance.currentUser;
@@ -30,8 +37,11 @@ void main() async {
         print("Anonymous sign-in failed: $e");
       }
     }
+
+    // Start listening for notifications
+    NotificationService().startListening();
   } catch (e) {
-    print("Error initializing Firebase: $e");
+    print("Error initializing app: $e");
   }
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -49,19 +59,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'DementiaLink',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF503663),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5D4E77),
-          primary: const Color(0xFF503663),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CommunityController()),
+        ChangeNotifierProvider(create: (_) => MessagingController()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'DementiaLink',
+        theme: ThemeData(
+          primaryColor: const Color(0xFF503663),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF5D4E77),
+            primary: const Color(0xFF503663),
+          ),
+          useMaterial3: true,
+          fontFamily: 'SF Pro Display',
         ),
-        useMaterial3: true,
-        fontFamily: 'SF Pro Display',
+        home: const SplashScreen(),
+        builder: (context, child) {
+          // Use a builder to access the global context for notifications
+          return GestureDetector(
+            onTap: () {
+              // Hide keyboard when tapping outside of text fields
+              FocusScope.of(context).unfocus();
+            },
+            child: child!,
+          );
+        },
       ),
-      home: const SplashScreen(),
     );
   }
 }
