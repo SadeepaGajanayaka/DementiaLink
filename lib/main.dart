@@ -12,16 +12,40 @@ main(){
 class MyApp extends StatelessWidget{
   Widget build (BuildContext context){
     return MaterialApp(
-      home: Scaffold (appBar: AppBar(
-        title: Text("FEEDBACK "),
-      ),
-      body: Center(
+     title: 'Dementia App Feedback',
+      home:FeedbackScreen(),
+      );
 
-        child: Text("Hello world s" , style: TextStyle(fontStyle:FontStyle.italic),),
-      ),
+
+  }
+
+}
+
+class FeedbackScreen extends StatelessWidget{
+  @override
+
+  Widget build(BuildContext context){
+    return Scaffold(
+      body: Container(
+        width : double.infinity,
+        height: double.infinity,
+
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors:[Color(0xFF667eea),Color(0xFF764ba2)
+          ],
+
+          begin: Alignment.topLeft,
+          end:Alignment.bottomRight,
+          ),
+        ),
+        child:Center(
+          child:Text(
+            'Feedback ',style: TextStyle(color:Colors.white,fontSize: 24,fontWeight: FontWeight.bold),
+          )
+        )
+
       ),
     );
   }
-
 }
 
