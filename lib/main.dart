@@ -85,6 +85,7 @@ class FeedbackScreen extends StatelessWidget{
                   SizedBox(height:8),
 
                   Text(
+
                     'Help us improve with your feedback',
                     style:TextStyle(
                     color: Colors.white.withOpacity(0.8),
@@ -96,6 +97,91 @@ class FeedbackScreen extends StatelessWidget{
                   ),
                 ],
               ),
+            ),
+
+            Expanded(
+                child:Container(
+                  margin: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color:Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+
+                    boxShadow: [
+                      BoxShadow(
+                        color:Colors.black.withOpacity(0.1),
+                        spreadRadius: 3,
+                        blurRadius: 7,
+                        offset: Offset(0,8),
+                      ),
+                    ],
+                  ),
+
+                  child : SingleChildScrollView(
+                    padding : EdgeInsets.all(30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children:[
+                        Center(
+                          child:Text(
+                            "We value your feedback! 💬",
+                            style:TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color:Colors.green.shade700,
+
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 15),
+
+                        Center(
+                          child:Text(
+                              'Your input helps us create better tools for dementia care and support.',
+                            style:TextStyle(
+                              fontSize:16,
+                              color:Colors.black,
+                            ),
+                              textAlign: TextAlign.center,
+
+                          ),
+                        ),
+
+                        SizedBox(height: 30),
+
+                        Container(
+                          width: double.infinity,
+                          padding:EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                            color:Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border:Border.all(
+                              color:Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+
+
+                          child:Center(
+                            child:Text(
+                                'Form fields will go here! 📝\n\nNext step: Add user type dropdown',
+                              style:TextStyle(
+                                fontSize:16,
+                                color:Colors.grey.shade500,
+                                fontStyle:FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.center,
+
+                            ),
+                          ),
+                        ),
+                      ],
+
+                    ),
+                  ),
+                ),
+
+
             ),
           ],
         ),
