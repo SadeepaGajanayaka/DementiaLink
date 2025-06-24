@@ -29,6 +29,9 @@ class FeedbackScreen extends StatefulWidget {
 class FeedbackScreenState extends State<FeedbackScreen>{
 
   String? selectedUserType;
+  String emailText = '';
+
+  TextEditingController emailController=TextEditingController();
 
   final List<String>userTypeOptions=[
     'Person with dementia',
@@ -37,6 +40,12 @@ class FeedbackScreenState extends State<FeedbackScreen>{
     'Healthcare provider',
     'Family member/friend',
   ];
+
+  void dispose(){
+    emailController.dispose();
+    super.dispose();
+  }
+  @override
   Widget build(BuildContext context){
     return Scaffold(
       body: Container(
@@ -219,11 +228,10 @@ class FeedbackScreenState extends State<FeedbackScreen>{
                     print('User selected: $newValue');
                   },
                 ),
-
-                    SizedBox(height: 20),
+                        SizedBox(height: 20),
 
                     // SHOW SELECTED VALUE (for testing)
-                    if (selectedUserType != null)
+            if (selectedUserType != null)
               Container(
               width: double.infinity,
               padding: EdgeInsets.all(15),
@@ -242,44 +250,173 @@ class FeedbackScreenState extends State<FeedbackScreen>{
               ),
             ),
 
+            SizedBox(height: 8),
+            TextField(
+              controller: emailController,
 
+              keyboardType:TextInputType.emailAddress,
 
+              decoration: InputDecoration(
+                border:OutlineInputBorder(
+                  borderRadius :BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
 
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                hintText: 'your.email@example.com',
+                hintStyle: TextStyle(color: Colors.grey.shade500),
 
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color:Colors.grey.shade500,
+                ),
+              ),
+              onChanged: (String value){
+                setState(() {
+                  emailText = value;
+                });
+                print('Email typed: $emailText');
 
+              },
 
-
-
-
-
-                        Center(
-                          child:Text(
-                              'Your input helps us create better tools for dementia care and support.',
-                            style:TextStyle(
-                              fontSize:16,
-                              color:Colors.black,
-                            ),
-                              textAlign: TextAlign.center,
-
-                          ),
-                        ),
-
-                        SizedBox(height: 30),
+            ),
+            SizedBox(height: 20),
 
                         Container(
                           width: double.infinity,
-                          padding:EdgeInsets.all(20),
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.purple.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '📝 Current Form Data:',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple.shade700,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'User Type: ${selectedUserType ?? "Not selected"}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.purple.shade600,
+                                ),
+                              ),
+                              Text(
+                                'Email: ${emailText.isEmpty ? "Not entered" : emailText}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.purple.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 30),
+
+                        // EMAIL VALIDATION HELPER (NEW!)
+                        if (emailText.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                            color:Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                            border:Border.all(
-                              color:Colors.grey.shade300,
-                              width: 1,
+                              color: _isValidEmail(emailText) ? Colors.green.shade50 : Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _isValidEmail(emailText) ? Colors.green.shade300 : Colors.red.shade300,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _isValidEmail(emailText) ? Icons.check_circle : Icons.error,
+                                  color: _isValidEmail(emailText) ? Colors.green : Colors.red,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  _isValidEmail(emailText)
+                                      ? 'Email format looks good!'
+                                      : 'Please enter a valid email format',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: _isValidEmail(emailText) ? Colors.green.shade700 : Colors.red.shade700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
 
+                        SizedBox(height: 30),
 
-                          child:Center(
+                        // Placeholder for next step
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Next step: Add star rating system! ⭐',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade500,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+
+
+
+
+            Center(
+              child:Text(
+                'Your input helps us create better tools for dementia care and support.',
+                style:TextStyle(
+                  fontSize:16,
+                  color:Colors.black,
+                ),
+                textAlign: TextAlign.center,
+
+              ),
+            ),
+            SizedBox(height: 30),
+
+               Container(
+                 width: double.infinity,
+                 padding:EdgeInsets.all(20),
+                 decoration: BoxDecoration(
+                   color:Colors.grey.shade50,
+                   borderRadius: BorderRadius.circular(10),
+                   border:Border.all(
+                     color:Colors.grey.shade300,
+                     width: 1,
+                   ),
+                 ),
+                 child:Center(
                             child:Text(
                                 'Form fields will go here! 📝\n\nNext step: Add user type dropdown',
                               style:TextStyle(
@@ -308,4 +445,9 @@ class FeedbackScreenState extends State<FeedbackScreen>{
 
   }
 }
+// HELPER FUNCTION to check if email is valid
+bool _isValidEmail(String email) {
+  return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
+}
+
 
