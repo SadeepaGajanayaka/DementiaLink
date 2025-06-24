@@ -21,9 +21,22 @@ class MyApp extends StatelessWidget{
 
 }
 
-class FeedbackScreen extends StatelessWidget{
+class FeedbackScreen extends StatefulWidget {
   @override
+  FeedbackScreenState createState() => FeedbackScreenState();
+}
+  @override
+class FeedbackScreenState extends State<FeedbackScreen>{
 
+  String? selectedUserType;
+
+  final List<String>userTypeOptions=[
+    'Person with dementia',
+    'Family caregiver',
+    'Professional caregiver',
+    'Healthcare provider',
+    'Family member/friend',
+  ];
   Widget build(BuildContext context){
     return Scaffold(
       body: Container(
@@ -134,6 +147,110 @@ class FeedbackScreen extends StatelessWidget{
                         ),
 
                         SizedBox(height: 15),
+
+                        Container(
+                          width: double.infinity,
+                          padding:EdgeInsets.all(15),
+                          decoration:BoxDecoration(
+                            color:Colors.green,
+                            borderRadius: BorderRadius.circular(10),
+                            border:Border.all(
+                              color:Colors.green.shade50,
+                              width: 1,
+                            ),
+                          ),
+                          child:Text(
+                            '👤 About You',
+                            style:TextStyle(
+                              fontSize:18,
+                              fontWeight: FontWeight.bold,
+                              color:Colors.green.shade800,
+                            ),
+                          ),
+                        ),
+                          SizedBox(height: 20),
+                  Text(
+                    'I am a : ',
+                  style:TextStyle(
+                      fontSize:16,
+                      color:Colors.black,
+                      fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                SizedBox(height: 8,),
+
+                DropdownButtonFormField<String>(
+                  value:selectedUserType,
+                  decoration:InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.green, width: 2),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    hintText: 'Please select your role...',
+                    hintStyle: TextStyle(color: Colors.grey.shade500),
+                  ),
+                  items: userTypeOptions.map<DropdownMenuItem<String>>((String value){
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child:Text(
+                        value,
+                        style:TextStyle(fontSize:16),
+                      ),
+                    );
+                  }
+                  ).toList(),
+
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedUserType = newValue;
+                    });
+
+                    // Show what was selected (for testing)
+                    print('User selected: $newValue');
+                  },
+                ),
+
+                    SizedBox(height: 20),
+
+                    // SHOW SELECTED VALUE (for testing)
+                    if (selectedUserType != null)
+              Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Text(
+                '✅ You selected: $selectedUserType',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.blue.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
+
+
+
+
+
+
+
+
+
 
                         Center(
                           child:Text(
