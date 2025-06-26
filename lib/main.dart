@@ -27,6 +27,8 @@ class FeedbackScreenState extends State<FeedbackScreen> {
   String emailText = '';
   int usefulnessRating = 0;
   int easeOfUseRating = 0;
+  bool isSubmitting = false;
+  bool hasSubmitted = true;
 
   Map<String, bool> selectedFeatures={
     'Memory exercises and games': false,
@@ -141,308 +143,324 @@ class FeedbackScreenState extends State<FeedbackScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: Text(
-                          "We value your feedback! 💬",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade700,
+
+                      // SUCCESS MESSAGE (NEW!)
+                      if (hasSubmitted)
+                        _buildSuccessMessage()
+                      else ...[
+                      // Welcome message
+                        Center(
+                          child: Text(
+                            "We value your feedback! 💬",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: 30),
+                        SizedBox(height: 30),
 
-                      _buildSectionHeader('👤 About You'),
-                      SizedBox(height: 20),
+                        _buildSectionHeader('👤 About You'),
+                        SizedBox(height: 20),
 
-                      _buildLabel('I am a: *'),
-                      SizedBox(height: 8),
-                      _buildDropdown(),
-                      SizedBox(height: 20),
+                        _buildLabel('I am a: *'),
+                        SizedBox(height: 8),
+                        _buildDropdown(),
+                        SizedBox(height: 20),
 
-                      // Show selected value
-                      if (selectedUserType != null)
+                        // Show selected value
+                        if (selectedUserType != null)
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Text(
+                              '✅ You selected: $selectedUserType',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.blue.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        SizedBox(height: 20),
+
+                        _buildLabel('Email (optional):'),
+                        SizedBox(height: 8),
+                        _buildEmailField(),
+                        SizedBox(height: 20),
+
+                        // Email validation helper
+                        if (emailText.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _isValidEmail(emailText) ? Colors.green.shade50 : Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _isValidEmail(emailText) ? Colors.green.shade300 : Colors.red.shade300,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _isValidEmail(emailText) ? Icons.check_circle : Icons.error,
+                                  color: _isValidEmail(emailText) ? Colors.green : Colors.red,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  _isValidEmail(emailText)
+                                      ? 'Email format looks good!'
+                                      : 'Please enter a valid email format',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: _isValidEmail(emailText) ? Colors.green.shade700 : Colors.red.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        SizedBox(height: 30),
+
+                        _buildSectionHeader('⭐ Rate the App'),
+                        SizedBox(height: 20),
+
+                        // Usefulness Rating
                         Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(15),
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'How useful would this app be for you?',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              SizedBox(height: 15),
+                              _buildStarRating(
+                                currentRating: usefulnessRating,
+                                onRatingChanged: (rating) {
+                                  setState(() {
+                                    usefulnessRating = rating;
+                                  });
+                                  print('Usefulness rating: $rating stars');
+                                },
+                              ),
+                              SizedBox(height: 10),
+                              if (usefulnessRating > 0)
+                                Text(
+                                  'You rated: $usefulnessRating star${usefulnessRating == 1 ? '' : 's'}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.amber.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 20),
+
+                        // Ease of Use Rating
+                        Container(
+                          padding: EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.blue.shade200),
                           ),
-                          child: Text(
-                            '✅ You selected: $selectedUserType',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.blue.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'How easy is the app to use?',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              SizedBox(height: 15),
+                              _buildStarRating(
+                                currentRating: easeOfUseRating,
+                                onRatingChanged: (rating) {
+                                  setState(() {
+                                    easeOfUseRating = rating;
+                                  });
+                                  print('Ease of use rating: $rating stars');
+                                },
+                              ),
+                              SizedBox(height: 10),
+                              if (easeOfUseRating > 0)
+                                Text(
+                                  'You rated: $easeOfUseRating star${easeOfUseRating == 1 ? '' : 's'}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.blue.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                      SizedBox(height: 20),
+                        SizedBox(height: 30),
 
-                      _buildLabel('Email (optional):'),
-                      SizedBox(height: 8),
-                      _buildEmailField(),
-                      SizedBox(height: 20),
+                        _buildSectionHeader('✅ Features You Want'),
+                        SizedBox(height: 20,),
 
-                      // Email validation helper
-                      if (emailText.isNotEmpty)
                         Container(
                           width: double.infinity,
-                          padding: EdgeInsets.all(12),
+                          padding:EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: _isValidEmail(emailText) ? Colors.green.shade50 : Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _isValidEmail(emailText) ? Colors.green.shade300 : Colors.red.shade300,
-                            ),
+                            color: Colors.indigo.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.indigo.shade200),
                           ),
-                          child: Row(
+                          child:Column(
+                            crossAxisAlignment:CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                _isValidEmail(emailText) ? Icons.check_circle : Icons.error,
-                                color: _isValidEmail(emailText) ? Colors.green : Colors.red,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                _isValidEmail(emailText)
-                                    ? 'Email format looks good!'
-                                    : 'Please enter a valid email format',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: _isValidEmail(emailText) ? Colors.green.shade700 : Colors.red.shade700,
+                              Text('Which features would be most helpful? (Select all that apply)',
+                            style:TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color:Colors.grey.shade700,
+                          ),
+                        ),
+
+                        SizedBox(height: 15),
+                              ...selectedFeatures.keys.map((feature) =>
+                                  _buildCheckboxTile(feature)
+                              ).toList(),
+
+                              SizedBox(height: 15),
+                              // SHOW SELECTED COUNT
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.indigo.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      color: Colors.indigo.shade600,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Selected: ${_getSelectedFeaturesCount()} features',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.indigo.shade700,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      SizedBox(height: 30),
-
-                      _buildSectionHeader('⭐ Rate the App'),
-                      SizedBox(height: 20),
-
-                      // Usefulness Rating
-                      Container(
-                        padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.amber.shade200),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'How useful would this app be for you?',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            SizedBox(height: 15),
-                            _buildStarRating(
-                              currentRating: usefulnessRating,
-                              onRatingChanged: (rating) {
-                                setState(() {
-                                  usefulnessRating = rating;
-                                });
-                                print('Usefulness rating: $rating stars');
-                              },
-                            ),
-                            SizedBox(height: 10),
-                            if (usefulnessRating > 0)
-                              Text(
-                                'You rated: $usefulnessRating star${usefulnessRating == 1 ? '' : 's'}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.amber.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-
-                      // Ease of Use Rating
-                      Container(
-                        padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue.shade200),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'How easy is the app to use?',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            SizedBox(height: 15),
-                            _buildStarRating(
-                              currentRating: easeOfUseRating,
-                              onRatingChanged: (rating) {
-                                setState(() {
-                                  easeOfUseRating = rating;
-                                });
-                                print('Ease of use rating: $rating stars');
-                              },
-                            ),
-                            SizedBox(height: 10),
-                            if (easeOfUseRating > 0)
-                              Text(
-                                'You rated: $easeOfUseRating star${easeOfUseRating == 1 ? '' : 's'}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.blue.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 30),
-                      
-                      _buildSectionHeader('✅ Features You Want'),
-                      SizedBox(height: 20,),
-
-                      Container(
-                        width: double.infinity,
-                        padding:EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.indigo.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.indigo.shade200),
-                        ),
-                        child:Column(
-                          crossAxisAlignment:CrossAxisAlignment.start,
-                          children: [
-                            Text('Which features would be most helpful? (Select all that apply)',
-                          style:TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color:Colors.grey.shade700,
-                        ),
-                      ),
-
-                      SizedBox(height: 15),
-                            ...selectedFeatures.keys.map((feature) =>
-                                _buildCheckboxTile(feature)
-                            ).toList(),
-
-                            SizedBox(height: 15),
-                            // SHOW SELECTED COUNT
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: Colors.indigo.shade600,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Selected: ${_getSelectedFeaturesCount()} features',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.indigo.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
 
 
-                      // SUBMIT BUTTON SECTION (NEW!)
-                      _buildSectionHeader('🚀 Submit Feedback'),
-                      SizedBox(height: 20),
+                        // SUBMIT BUTTON SECTION (NEW!)
+                        _buildSectionHeader('🚀 Submit Feedback'),
+                        SizedBox(height: 20),
 
-                      // VALIDATION CHECKLIST
-                      _buildValidationChecklist(),
+                        // VALIDATION CHECKLIST
+                        _buildValidationChecklist(),
 
-                      SizedBox(height: 20),
+                        SizedBox(height: 20),
 
-                      // Current Form Data Display
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.purple.shade200),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '📝 Current Form Data:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple.shade700,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'User Type: ${selectedUserType ?? "Not selected"}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.purple.shade600,
-                              ),
-                            ),
-                            Text(
-                              'Email: ${emailText.isEmpty ? "Not entered" : emailText}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.purple.shade600,
-                              ),
-                            ),
-                            Text(
-                              'Usefulness: ${usefulnessRating == 0 ? "Not rated" : "$usefulnessRating stars"}',
-                              style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
-                            ),
-                            Text(
-                              'Ease of Use: ${easeOfUseRating == 0 ? "Not rated" : "$easeOfUseRating stars"}',
-                              style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 30),
+                        _buildSubmitButton(),
 
-                      Center(
-                        child: Text(
-                          'Your input helps us create better tools for dementia care and support.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
+                        SizedBox(height: 30),
+
+
+                        // Current Form Data Display
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.purple.shade200),
                           ),
-                          textAlign: TextAlign.center,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '📝 Current Form Data:',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple.shade700,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'User Type: ${selectedUserType ?? "Not selected"}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.purple.shade600,
+                                ),
+                              ),
+                              Text(
+                                'Email: ${emailText.isEmpty ? "Not entered" : emailText}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.purple.shade600,
+                                ),
+                              ),
+                              Text(
+                                'Usefulness: ${usefulnessRating == 0 ? "Not rated" : "$usefulnessRating stars"}',
+                                style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
+                              ),
+                              Text(
+                                'Ease of Use: ${easeOfUseRating == 0 ? "Not rated" : "$easeOfUseRating stars"}',
+                                style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
+                              ),
+                              Text(
+                                'Features: ${_getSelectedFeaturesList()}',
+                                style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        SizedBox(height: 30),
+
+                        Center(
+                          child: Text(
+                            'Your input helps us create better tools for dementia care and support.',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-            ),
+                ),
           ],
         ),
       ),
@@ -850,6 +868,93 @@ class FeedbackScreenState extends State<FeedbackScreen> {
         ],
       ),
     );
+  }
+  // NEW: Build submit button
+  Widget _buildSubmitButton() {
+    bool hasUserType = selectedUserType != null;
+    bool hasValidEmail = emailText.isEmpty || _isValidEmail(emailText);
+    bool canSubmit = hasUserType && hasValidEmail && !isSubmitting;
+
+    return Container(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton(
+        onPressed: canSubmit ? _submitFeedback : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: canSubmit ? Colors.green : Colors.grey.shade400,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: canSubmit ? 8 : 2,
+        ),
+        child: isSubmitting
+            ? Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 2,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Submitting...',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        )
+            : Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.send, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Submit Feedback',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // NEW: Handle form submission
+  Future<void> _submitFeedback() async {
+    setState(() {
+      isSubmitting = true;
+    });
+
+    // Simulate network delay
+    await Future.delayed(Duration(seconds: 2));
+
+    // Print all form data (in real app, this would send to server)
+    print('=== FEEDBACK SUBMITTED ===');
+    print('User Type: $selectedUserType');
+    print('Email: ${emailText.isEmpty ? 'Not provided' : emailText}');
+    print('Usefulness Rating: $usefulnessRating stars');
+    print('Ease of Use Rating: $easeOfUseRating stars');
+    print('Selected Features:');
+    selectedFeatures.forEach((feature, isSelected) {
+      if (isSelected) {
+        print('  - $feature');
+      }
+    });
+    print('========================');
+
+    setState(() {
+      isSubmitting = false;
+      hasSubmitted = true;
+    });
   }
 
   bool _isValidEmail(String email) {
