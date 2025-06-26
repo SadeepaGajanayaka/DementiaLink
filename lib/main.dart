@@ -28,6 +28,17 @@ class FeedbackScreenState extends State<FeedbackScreen> {
   int usefulnessRating = 0;
   int easeOfUseRating = 0;
 
+  Map<String, bool> selectedFeatures={
+    'Memory exercises and games': false,
+    'Medication reminders': false,
+    'Daily routine planner': false,
+    'Emergency contacts': false,
+    'GPS location tracking': false,
+    'Voice commands': false,
+    'Large text and buttons': false,
+    'Family communication tools': false,
+  };
+
   TextEditingController emailController = TextEditingController();
 
   final List<String> userTypeOptions = [
@@ -300,6 +311,64 @@ class FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                       ),
                       SizedBox(height: 30),
+                      
+                      _buildSectionHeader('✅ Features You Want'),
+                      SizedBox(height: 20,),
+
+                      Container(
+                        width: double.infinity,
+                        padding:EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.indigo.shade200),
+                        ),
+                        child:Column(
+                          crossAxisAlignment:CrossAxisAlignment.start,
+                          children: [
+                            Text('Which features would be most helpful? (Select all that apply)',
+                          style:TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color:Colors.grey.shade700,
+                        ),
+                      ),
+
+                      SizedBox(height: 15),
+                            ...selectedFeatures.keys.map((feature) =>
+                                _buildCheckboxTile(feature)
+                            ).toList(),
+
+                            SizedBox(height: 15),
+                            // SHOW SELECTED COUNT
+                            Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.indigo.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Colors.indigo.shade600,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Selected: ${_getSelectedFeaturesCount()} features',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.indigo.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
                       // Current Form Data Display
                       Container(
@@ -498,6 +567,85 @@ class FeedbackScreenState extends State<FeedbackScreen> {
         );
       }),
     );
+  }
+
+  Widget _buildCheckboxTile(String feature) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          setState(() {
+            selectedFeatures[feature] = !selectedFeatures[feature]!;
+          });
+          print('Feature "$feature" is now ${selectedFeatures[feature]! ? "selected" : "unselected"}');
+        },
+        child: Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selectedFeatures[feature]! ? Colors.indigo.shade100 : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selectedFeatures[feature]! ? Colors.indigo.shade300 : Colors.grey.shade300,
+              width: selectedFeatures[feature]! ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: selectedFeatures[feature]! ? Colors.indigo : Colors.white,
+                  border: Border.all(
+                    color: selectedFeatures[feature]! ? Colors.indigo : Colors.grey.shade400,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: selectedFeatures[feature]!
+                    ? Icon(Icons.check, color: Colors.white, size: 16)
+                    : null,
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  feature,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: selectedFeatures[feature]! ? Colors.indigo.shade700 : Colors.grey.shade700,
+                    fontWeight: selectedFeatures[feature]! ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // NEW HELPER FUNCTION: Count selected features
+  int _getSelectedFeaturesCount() {
+    return selectedFeatures.values.where((isSelected) => isSelected).length;
+  }
+
+  // NEW HELPER FUNCTION: Get list of selected features
+  String _getSelectedFeaturesList() {
+    List<String> selected = selectedFeatures.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+
+    if (selected.isEmpty) {
+      return "None selected";
+    }
+
+    if (selected.length <= 2) {
+      return selected.join(', ');
+    } else {
+      return '${selected.take(2).join(', ')} and ${selected.length - 2} more';
+    }
   }
 
   bool _isValidEmail(String email) {
