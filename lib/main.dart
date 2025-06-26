@@ -370,6 +370,16 @@ class FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                       ),
 
+
+                      // SUBMIT BUTTON SECTION (NEW!)
+                      _buildSectionHeader('🚀 Submit Feedback'),
+                      SizedBox(height: 20),
+
+                      // VALIDATION CHECKLIST
+                      _buildValidationChecklist(),
+
+                      SizedBox(height: 20),
+
                       // Current Form Data Display
                       Container(
                         width: double.infinity,
@@ -646,6 +656,200 @@ class FeedbackScreenState extends State<FeedbackScreen> {
     } else {
       return '${selected.take(2).join(', ')} and ${selected.length - 2} more';
     }
+  }
+
+  // NEW: Build success message after submission
+  Widget _buildSuccessMessage() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade50, Colors.green.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.green.shade300, width: 2),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check,
+              color: Colors.white,
+              size: 50,
+            ),
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Thank You! 🎉',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Your feedback has been submitted successfully!',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.green.shade700,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20),
+          Text(
+            'We appreciate you taking the time to help us improve the Dementia Support App. Your input will help us create better tools for people with dementia and their caregivers.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.green.shade600,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                hasSubmitted = false;
+                selectedUserType = null;
+                emailText = '';
+                usefulnessRating = 0;
+                easeOfUseRating = 0;
+                selectedFeatures.updateAll((key, value) => false);
+                emailController.clear();
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              'Submit Another Feedback',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValidationChecklist() {
+    bool hasUserType = selectedUserType != null;
+    bool hasValidEmail = emailText.isEmpty || _isValidEmail(emailText);
+    bool canSubmit = hasUserType && hasValidEmail;
+
+    return Container(
+      padding: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: canSubmit ? Colors.green.shade50 : Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: canSubmit ? Colors.green.shade200 : Colors.orange.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Before you submit:',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          SizedBox(height: 10),
+
+          _buildValidationItem(
+            'User type selected',
+            hasUserType,
+            'Please select your role from the dropdown',
+          ),
+
+          _buildValidationItem(
+            'Email format valid (if provided)',
+            hasValidEmail,
+            'Please enter a valid email or leave blank',
+          ),
+
+          SizedBox(height: 10),
+
+          Row(
+            children: [
+              Icon(
+                canSubmit ? Icons.check_circle : Icons.warning,
+                color: canSubmit ? Colors.green : Colors.orange,
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Text(
+                canSubmit ? 'Ready to submit!' : 'Please complete required fields',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: canSubmit ? Colors.green.shade700 : Colors.orange.shade700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // NEW: Build individual validation item
+  Widget _buildValidationItem(String text, bool isValid, String helpText) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.cancel,
+            color: isValid ? Colors.green : Colors.red,
+            size: 18,
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (!isValid)
+                  Text(
+                    helpText,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   bool _isValidEmail(String email) {
