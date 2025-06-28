@@ -30,6 +30,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   // VARIABLES to remember form data
   String? selectedUserType;
   String emailText = '';
+  String feedbackText = '';         // NEW: Store user's written feedback
   int usefulnessRating = 0;
   int easeOfUseRating = 0;
   bool isSubmitting = false;        // NEW: Track if form is being submitted
@@ -49,6 +50,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   // Controller for email field
   TextEditingController emailController = TextEditingController();
+  // NEW: Controller for feedback text field
+  TextEditingController feedbackController = TextEditingController();
 
   // List of dropdown options
   final List<String> userTypeOptions = [
@@ -62,6 +65,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   void dispose() {
     emailController.dispose();
+    feedbackController.dispose();  // NEW: Dispose feedback controller
     super.dispose();
   }
 
@@ -179,6 +183,62 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ),
 
                         SizedBox(height: 30),
+
+                        // FEEDBACK TEXT SECTION (NEW!)
+                        _buildSectionHeader('💭 Your Feedback'),
+                        SizedBox(height: 20),
+
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.teal.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tell us more about your thoughts (optional):',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              SizedBox(height: 15),
+
+                              // FEEDBACK TEXT FIELD
+                              _buildFeedbackTextField(),
+
+                              SizedBox(height: 15),
+
+                              // CHARACTER COUNT
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Share your suggestions, concerns, or ideas',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.teal.shade600,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${feedbackText.length}/500',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: feedbackText.length > 450 ? Colors.red : Colors.teal.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
 
                         // ABOUT YOU SECTION
                         _buildSectionHeader('👤 About You'),
@@ -353,6 +413,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                 'Features: ${_getSelectedFeaturesList()}',
                                 style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
                               ),
+                              Text(
+                                'Feedback: ${feedbackText.isEmpty ? "Not provided" : "${feedbackText.length} characters"}',
+                                style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
+                              ),
                             ],
                           ),
                         ),
@@ -469,10 +533,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 hasSubmitted = false;
                 selectedUserType = null;
                 emailText = '';
+                feedbackText = '';         // NEW: Reset feedback text
                 usefulnessRating = 0;
                 easeOfUseRating = 0;
                 selectedFeatures.updateAll((key, value) => false);
                 emailController.clear();
+                feedbackController.clear(); // NEW: Clear feedback controller
               });
             },
             style: ElevatedButton.styleFrom(
@@ -674,6 +740,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     print('Email: ${emailText.isEmpty ? 'Not provided' : emailText}');
     print('Usefulness Rating: $usefulnessRating stars');
     print('Ease of Use Rating: $easeOfUseRating stars');
+    print('Written Feedback: ${feedbackText.isEmpty ? 'Not provided' : feedbackText}');
     print('Selected Features:');
     selectedFeatures.forEach((feature, isSelected) {
       if (isSelected) {
@@ -688,7 +755,57 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     });
   }
 
-  // HELPER FUNCTION: Build section headers
+  // NEW: Build feedback text field
+  Widget _buildFeedbackTextField() {
+    return TextField(
+      controller: feedbackController,
+      maxLines: 5,  // Multiple lines for longer feedback
+      maxLength: 500,  // Character limit
+      keyboardType: TextInputType.multiline,
+      textCapitalization: TextCapitalization.sentences,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.teal, width: 2),
+        ),
+        contentPadding: EdgeInsets.all(16),
+        hintText: 'What features would you like to see? Any issues or suggestions? How could we make the app more helpful for you or your loved ones?',
+        hintStyle: TextStyle(
+          color: Colors.grey.shade500,
+          fontSize: 15,
+          height: 1.4,
+        ),
+        helperText: 'Your feedback helps us create better tools for dementia care',
+        helperStyle: TextStyle(
+          color: Colors.teal.shade600,
+          fontSize: 12,
+        ),
+        counterText: '', // Hide default counter, we'll show our own
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(top: 12, left: 12, right: 8),
+          child: Icon(
+            Icons.edit_outlined,
+            color: Colors.teal.shade500,
+            size: 20,
+          ),
+        ),
+      ),
+      onChanged: (String value) {
+        setState(() {
+          feedbackText = value;
+        });
+        print('Feedback typed: ${value.length} characters');
+      },
+    );
+  }
   Widget _buildSectionHeader(String title) {
     return Container(
       width: double.infinity,
