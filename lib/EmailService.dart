@@ -7,6 +7,7 @@ class EmailService {
   static const String _formspreeUrl = 'https://formspree.io/f/xyzjokan';
 
   static Future<bool> sendFeedback({
+    required String name,
     required String userType,
     required String userEmail,
     required String feedbackText,
@@ -35,6 +36,7 @@ class EmailService {
           '_replyto': userEmail.isNotEmpty ? userEmail : 'noreply@example.com',
 
           // Form data
+          'user_name': name.isEmpty ? 'Not provided' : name,
           'user_type': userType,
           'user_email': userEmail.isEmpty ? 'Not provided' : userEmail,
           'usefulness_rating': '$usefulnessRating out of 5 stars',

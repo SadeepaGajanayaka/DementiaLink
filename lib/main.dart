@@ -2,10 +2,6 @@ import 'package:dementialink/EmailService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
-
-
-
 main() {
   runApp(MyApp());
 }
@@ -27,6 +23,7 @@ class FeedbackScreen extends StatefulWidget {
 
 class FeedbackScreenState extends State<FeedbackScreen> {
   String? selectedUserType;
+  String nameText = ''; // Added name field
   String emailText = '';
   String feedbackText = '';
 
@@ -43,6 +40,7 @@ class FeedbackScreenState extends State<FeedbackScreen> {
     'Large text and buttons': false,
   };
 
+  TextEditingController nameController = TextEditingController(); // Added name controller
   TextEditingController emailController = TextEditingController();
   TextEditingController feedbackController = TextEditingController();
 
@@ -56,6 +54,7 @@ class FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   void dispose() {
+    nameController.dispose(); // Added name controller disposal
     emailController.dispose();
     feedbackController.dispose();
     super.dispose();
@@ -90,16 +89,17 @@ class FeedbackScreenState extends State<FeedbackScreen> {
                 children: [
                   SizedBox(height: 20),
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Icon(
-                      Icons.psychology_outlined,
-                      color: Colors.white,
-                      size: 30,
+                    child: ClipRRect(
+                      borderRadius:BorderRadius.circular(16),
+                      child: Image.asset(
+                        'lib/assets/logo.png',
+                      ),
                     ),
                   ),
                   SizedBox(height: 16),
@@ -140,6 +140,10 @@ class FeedbackScreenState extends State<FeedbackScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildLabel('Name: *'), // Made name required
+                            SizedBox(height: 12),
+                            _buildNameField(), // Added name field
+                            SizedBox(height: 20),
                             _buildLabel('I am a: *'),
                             SizedBox(height: 12),
                             _buildDropdown(),
@@ -272,6 +276,32 @@ class FeedbackScreenState extends State<FeedbackScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Added name field widget
+  Widget _buildNameField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: TextField(
+        controller: nameController,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          hintText: 'Please enter your name *',
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(Icons.person_outline, color: Color(0xFF8B5FBF)),
+        ),
+        onChanged: (String value) {
+          setState(() {
+            nameText = value;
+          });
+        },
       ),
     );
   }
@@ -546,8 +576,9 @@ class FeedbackScreenState extends State<FeedbackScreen> {
 
   Widget _buildSubmitButton() {
     bool hasUserType = selectedUserType != null;
+    bool hasName = nameText.trim().isNotEmpty; // Check if name is provided
     bool hasValidEmail = emailText.isEmpty || _isValidEmail(emailText);
-    bool canSubmit = hasUserType && hasValidEmail && !isSubmitting;
+    bool canSubmit = hasUserType && hasName && hasValidEmail && !isSubmitting;
 
     return Container(
       width: double.infinity,
@@ -651,11 +682,13 @@ class FeedbackScreenState extends State<FeedbackScreen> {
               setState(() {
                 hasSubmitted = false;
                 selectedUserType = null;
+                nameText = ''; // Reset name field
                 emailText = '';
                 feedbackText = '';
                 usefulnessRating = 0;
                 easeOfUseRating = 0;
                 selectedFeatures.updateAll((key, value) => false);
+                nameController.clear(); // Clear name controller
                 emailController.clear();
                 feedbackController.clear();
               });
@@ -679,6 +712,17 @@ class FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   Future<void> _submitFeedback() async {
+    // Check if name is provided
+    if (nameText.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter your name'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Check if email is valid when not empty
     if (emailText.isNotEmpty && !_isValidEmail(emailText)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -702,6 +746,7 @@ class FeedbackScreenState extends State<FeedbackScreen> {
 
     // Send feedback via Formspree
     bool emailSent = await EmailService.sendFeedback(
+      name: nameText, // Match the parameter name in EmailService
       userType: selectedUserType!,
       userEmail: emailText,
       feedbackText: feedbackText,
@@ -742,6 +787,4 @@ class FeedbackScreenState extends State<FeedbackScreen> {
   bool _isValidEmail(String email) {
     return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
   }
-
-
 }
