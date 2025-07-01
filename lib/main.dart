@@ -1,1078 +1,747 @@
-  import 'package:flutter/material.dart';
-  import 'package:flutter/services.dart';
-  import 'package:firebase_core/firebase_core.dart';
-  import 'package:firebase_auth/firebase_auth.dart';
-  import 'firebase_options.dart';
+import 'package:dementialink/EmailService.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 
 
-  main() {
-    runApp(MyApp());
+
+
+main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Dementia Support Feedback',
+      home: FeedbackScreen(),
+    );
+  }
+}
+
+class FeedbackScreen extends StatefulWidget {
+  @override
+  FeedbackScreenState createState() => FeedbackScreenState();
+}
+
+class FeedbackScreenState extends State<FeedbackScreen> {
+  String? selectedUserType;
+  String emailText = '';
+  String feedbackText = '';
+
+  int usefulnessRating = 0;
+  int easeOfUseRating = 0;
+  bool isSubmitting = false;
+  bool hasSubmitted = false;
+
+  Map<String, bool> selectedFeatures = {
+    'Memory exercises and games': false,
+    'Medication reminders': false,
+    'Daily routine planner': false,
+    'GPS location tracking': false,
+    'Large text and buttons': false,
+  };
+
+  TextEditingController emailController = TextEditingController();
+  TextEditingController feedbackController = TextEditingController();
+
+  final List<String> userTypeOptions = [
+    'Person with dementia',
+    'Family caregiver',
+    'Professional caregiver',
+    'Healthcare provider',
+    'Family member/friend',
+  ];
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    feedbackController.dispose();
+    super.dispose();
   }
 
-  class MyApp extends StatelessWidget {
-    @override
-    Widget build(BuildContext context) {
-      return MaterialApp(
-        home: FeedbackScreen(),
-      );
-    }
-  }
-
-  class FeedbackScreen extends StatefulWidget {
-    @override
-    FeedbackScreenState createState() => FeedbackScreenState();
-  }
-
-  class FeedbackScreenState extends State<FeedbackScreen> {
-    String? selectedUserType;
-    String emailText = '';
-    String feedbackText = '';
-
-    int usefulnessRating = 0;
-    int easeOfUseRating = 0;
-    bool isSubmitting = false;
-    bool hasSubmitted = false;
-
-    Map<String, bool> selectedFeatures = {
-      'Memory exercises and games': false,
-      'Medication reminders': false,
-      'Daily routine planner': false,
-      'Emergency contacts': false,
-      'GPS location tracking': false,
-      'Voice commands': false,
-      'Large text and buttons': false,
-      'Family communication tools': false,
-    };
-
-    TextEditingController emailController = TextEditingController();
-    TextEditingController feedbackController = TextEditingController();
-
-    final List<String> userTypeOptions = [
-      'Person with dementia',
-      'Family caregiver',
-      'Professional caregiver',
-      'Healthcare provider',
-      'Family member/friend',
-    ];
-
-    @override
-    void dispose() {
-      emailController.dispose();
-      feedbackController.dispose();
-      super.dispose();
-    }
-
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF667eea),
-                Color(0xFF764ba2)
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(25),
-                margin: EdgeInsets.only(top: 50),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF4CAF50), // Green
-                      Color(0xFF45a049), // Darker green
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
-                      spreadRadius: 5,
-                      blurRadius: 7,
-                      offset: Offset(0, 3),
-                    ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFFF8F7FC),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header section
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF8B5FBF),
+                    Color(0xFF6A4C93),
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                children: [
+                  SizedBox(height: 20),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      Icons.psychology_outlined,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Dementia Support',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Share your feedback to help us improve',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '🧠 Dementia Support App',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                    if (hasSubmitted)
+                      _buildSuccessMessage()
+                    else ...[
+                      _buildSectionCard(
+                        '👤 About You',
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('I am a: *'),
+                            SizedBox(height: 12),
+                            _buildDropdown(),
+                            SizedBox(height: 20),
+                            _buildLabel('Email (optional):'),
+                            SizedBox(height: 12),
+                            _buildEmailField(),
+                          ],
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Help us improve with your feedback',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        fontStyle: FontStyle.italic,
+
+                      SizedBox(height: 24),
+
+                      _buildSectionCard(
+                        '⭐ Rate the App',
+                        Column(
+                          children: [
+                            _buildRatingCard(
+                              'How useful would this app be for you?',
+                              usefulnessRating,
+                              Color(0xFFFFF3E0),
+                              Color(0xFFFF9800),
+                                  (rating) {
+                                setState(() {
+                                  usefulnessRating = rating;
+                                });
+                              },
+                            ),
+
+                            SizedBox(height: 20),
+
+                            _buildRatingCard(
+                              'How easy is the app to use?',
+                              easeOfUseRating,
+                              Color(0xFFE3F2FD),
+                              Color(0xFF2196F3),
+                                  (rating) {
+                                setState(() {
+                                  easeOfUseRating = rating;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+
+                      SizedBox(height: 24),
+
+                      _buildSectionCard(
+                        '✅ Features You Want',
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Which features would be most helpful?',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF424242),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            ...selectedFeatures.keys.map((feature) =>
+                                _buildFeatureCheckbox(feature)
+                            ).toList(),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 24),
+
+                      _buildSectionCard(
+                        '💭 Your Feedback',
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tell us more about your thoughts (optional):',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF424242),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            _buildFeedbackTextField(),
+                            SizedBox(height: 12),
+                            Text(
+                              'Share your suggestions and ideas',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF757575),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 32),
+
+                      _buildSubmitButton(),
+
+                      SizedBox(height: 32),
+
+                      // Bottom message
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Color(0xFFE0E0E0)),
+                        ),
+                        child: Text(
+                          '💜 Your input helps us create better tools for dementia care and support.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF8B5FBF),
+                            fontWeight: FontWeight.w500,
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              Expanded(
-                child: Container(
-                  margin: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        spreadRadius: 3,
-                        blurRadius: 7,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(String title, Widget content) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF8B5FBF).withOpacity(0.1),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF8B5FBF).withOpacity(0.1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8B5FBF),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: content,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingCard(String question, int rating, Color bgColor, Color accentColor, Function(int) onChanged) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF424242),
+            ),
+          ),
+          SizedBox(height: 16),
+          _buildStarRating(
+            currentRating: rating,
+            onRatingChanged: onChanged,
+            starColor: accentColor,
+          ),
+          if (rating > 0)
+            SizedBox(height: 12),
+          if (rating > 0)
+            Text(
+              'You rated: $rating star${rating == 1 ? '' : 's'}',
+              style: TextStyle(
+                fontSize: 14,
+                color: accentColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureCheckbox(String feature) {
+    bool isSelected = selectedFeatures[feature]!;
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() {
+            selectedFeatures[feature] = !selectedFeatures[feature]!;
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? Color(0xFF8B5FBF).withOpacity(0.1) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Color(0xFF8B5FBF) : Colors.grey.shade300,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isSelected ? Color(0xFF8B5FBF) : Colors.white,
+                  border: Border.all(
+                    color: isSelected ? Color(0xFF8B5FBF) : Colors.grey.shade400,
+                    width: 2,
                   ),
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(30),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // SUCCESS MESSAGE
-                        if (hasSubmitted)
-                          _buildSuccessMessage()
-                        else ...[
-                          // Welcome message
-                          Center(
-                            child: Text(
-                              "We value your feedback! 💬",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 30),
-
-                          // FEEDBACK TEXT SECTION
-                          _buildSectionHeader('💭 Your Feedback'),
-                          SizedBox(height: 20),
-
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.teal.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.teal.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Tell us more about your thoughts (optional):',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-
-                                // FEEDBACK TEXT FIELD
-                                _buildFeedbackTextField(),
-
-                                SizedBox(height: 15),
-
-                                // CHARACTER COUNT
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Share your suggestions, concerns, or ideas',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.teal.shade600,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${feedbackText.length}/500',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: feedbackText.length > 450 ? Colors.red : Colors.teal.shade600,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: 30),
-
-                          _buildSectionHeader('👤 About You'),
-                          SizedBox(height: 20),
-
-                          _buildLabel('I am a: *'),
-                          SizedBox(height: 8),
-                          _buildDropdown(),
-                          SizedBox(height: 20),
-
-                          // Show selected value
-                          if (selectedUserType != null)
-                            Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.blue.shade200),
-                              ),
-                              child: Text(
-                                '✅ You selected: $selectedUserType',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.blue.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          SizedBox(height: 20),
-
-                          _buildLabel('Email (optional):'),
-                          SizedBox(height: 8),
-                          _buildEmailField(),
-                          SizedBox(height: 20),
-
-                          // Email validation helper
-                          if (emailText.isNotEmpty)
-                            Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: _isValidEmail(emailText) ? Colors.green.shade50 : Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: _isValidEmail(emailText) ? Colors.green.shade300 : Colors.red.shade300,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _isValidEmail(emailText) ? Icons.check_circle : Icons.error,
-                                    color: _isValidEmail(emailText) ? Colors.green : Colors.red,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    _isValidEmail(emailText)
-                                        ? 'Email format looks good!'
-                                        : 'Please enter a valid email format',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: _isValidEmail(emailText) ? Colors.green.shade700 : Colors.red.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          SizedBox(height: 30),
-
-                          _buildSectionHeader('⭐ Rate the App'),
-                          SizedBox(height: 20),
-
-                          // Usefulness Rating
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'How useful would this app be for you?',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                _buildStarRating(
-                                  currentRating: usefulnessRating,
-                                  onRatingChanged: (rating) {
-                                    setState(() {
-                                      usefulnessRating = rating;
-                                    });
-                                    print('Usefulness rating: $rating stars');
-                                  },
-                                ),
-                                SizedBox(height: 10),
-                                if (usefulnessRating > 0)
-                                  Text(
-                                    'You rated: $usefulnessRating star${usefulnessRating == 1 ? '' : 's'}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.amber.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20),
-
-                          // Ease of Use Rating
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.blue.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'How easy is the app to use?',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                _buildStarRating(
-                                  currentRating: easeOfUseRating,
-                                  onRatingChanged: (rating) {
-                                    setState(() {
-                                      easeOfUseRating = rating;
-                                    });
-                                    print('Ease of use rating: $rating stars');
-                                  },
-                                ),
-                                SizedBox(height: 10),
-                                if (easeOfUseRating > 0)
-                                  Text(
-                                    'You rated: $easeOfUseRating star${easeOfUseRating == 1 ? '' : 's'}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.blue.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 30),
-
-                          _buildSectionHeader('✅ Features You Want'),
-                          SizedBox(height: 20),
-
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.indigo.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.indigo.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Which features would be most helpful? (Select all that apply)',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                ...selectedFeatures.keys.map((feature) =>
-                                    _buildCheckboxTile(feature)
-                                ).toList(),
-                                SizedBox(height: 15),
-                                // SHOW SELECTED COUNT
-                                Container(
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.indigo.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        color: Colors.indigo.shade600,
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Selected: ${_getSelectedFeaturesCount()} features',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.indigo.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: 30),
-
-                          // SUBMIT BUTTON SECTION
-                          _buildSectionHeader('🚀 Submit Feedback'),
-                          SizedBox(height: 20),
-
-                          // VALIDATION CHECKLIST
-                          _buildValidationChecklist(),
-
-                          SizedBox(height: 20),
-
-                          _buildSubmitButton(),
-
-                          SizedBox(height: 30),
-
-                          // Current Form Data Display
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.purple.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '📝 Current Form Data:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple.shade700,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'User Type: ${selectedUserType ?? "Not selected"}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.purple.shade600,
-                                  ),
-                                ),
-                                Text(
-                                  'Email: ${emailText.isEmpty ? "Not entered" : emailText}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.purple.shade600,
-                                  ),
-                                ),
-                                Text(
-                                  'Usefulness: ${usefulnessRating == 0 ? "Not rated" : "$usefulnessRating stars"}',
-                                  style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
-                                ),
-                                Text(
-                                  'Ease of Use: ${easeOfUseRating == 0 ? "Not rated" : "$easeOfUseRating stars"}',
-                                  style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
-                                ),
-                                Text(
-                                  'Features: ${_getSelectedFeaturesList()}',
-                                  style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
-                                ),
-                                Text(
-                                  'Feedback: ${feedbackText.isEmpty ? "Not provided" : "${feedbackText.length} characters"}',
-                                  style: TextStyle(fontSize: 14, color: Colors.purple.shade600),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 30),
-
-                          Center(
-                            child: Text(
-                              'Your input helps us create better tools for dementia care and support.',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: isSelected
+                    ? Icon(Icons.check, color: Colors.white, size: 16)
+                    : null,
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  feature,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isSelected ? Color(0xFF8B5FBF) : Color(0xFF424242),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
             ],
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    Widget _buildSectionHeader(String title) {
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.green.shade50,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.green.shade200, width: 1),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.green.shade800,
-          ),
-        ),
-      );
-    }
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF424242),
+      ),
+    );
+  }
 
-    Widget _buildLabel(String text) {
-      return Text(
-        text,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey.shade700,
-        ),
-      );
-    }
-
-    Widget _buildDropdown() {
-      return DropdownButtonFormField<String>(
+  Widget _buildDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButtonFormField<String>(
         value: selectedUserType,
         decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.green, width: 2),
-          ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           hintText: 'Please select your role...',
           hintStyle: TextStyle(color: Colors.grey.shade500),
         ),
         items: userTypeOptions.map<DropdownMenuItem<String>>((String value) {
           return DropdownMenuItem<String>(
             value: value,
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 16),
-            ),
+            child: Text(value, style: TextStyle(fontSize: 16)),
           );
         }).toList(),
         onChanged: (String? newValue) {
           setState(() {
             selectedUserType = newValue;
           });
-          print('User selected: $newValue');
         },
-      );
-    }
+      ),
+    );
+  }
 
-    Widget _buildEmailField() {
-      return TextField(
+  Widget _buildEmailField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: TextField(
         controller: emailController,
         keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.blue, width: 2),
-          ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           hintText: 'your.email@example.com',
           hintStyle: TextStyle(color: Colors.grey.shade500),
-          prefixIcon: Icon(
-            Icons.email_outlined,
-            color: Colors.grey.shade500,
-          ),
+          prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF8B5FBF)),
         ),
         onChanged: (String value) {
           setState(() {
             emailText = value;
           });
-          print('Email typed: $emailText');
         },
-      );
-    }
+      ),
+    );
+  }
 
-    Widget _buildStarRating({
-      required int currentRating,
-      required Function(int) onRatingChanged,
-    }) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(5, (index) {
-          int starNumber = index + 1;
-          bool isSelected = starNumber <= currentRating;
-
-          return GestureDetector(
-            onTap: () {
-              onRatingChanged(starNumber);
-            },
-            child: Container(
-              padding: EdgeInsets.all(4),
-              child: Icon(
-                Icons.star,
-                size: 40,
-                color: isSelected ? Colors.amber : Colors.grey.shade300,
-              ),
-            ),
-          );
-        }),
-      );
-    }
-
-    Widget _buildCheckboxTile(String feature) {
-      return Container(
-        margin: EdgeInsets.only(bottom: 8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: () {
-            setState(() {
-              selectedFeatures[feature] = !selectedFeatures[feature]!;
-            });
-            print('Feature "$feature" is now ${selectedFeatures[feature]! ? "selected" : "unselected"}');
-          },
-          child: Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: selectedFeatures[feature]! ? Colors.indigo.shade100 : Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: selectedFeatures[feature]! ? Colors.indigo.shade300 : Colors.grey.shade300,
-                width: selectedFeatures[feature]! ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: selectedFeatures[feature]! ? Colors.indigo : Colors.white,
-                    border: Border.all(
-                      color: selectedFeatures[feature]! ? Colors.indigo : Colors.grey.shade400,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: selectedFeatures[feature]!
-                      ? Icon(Icons.check, color: Colors.white, size: 16)
-                      : null,
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    feature,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: selectedFeatures[feature]! ? Colors.indigo.shade700 : Colors.grey.shade700,
-                      fontWeight: selectedFeatures[feature]! ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    int _getSelectedFeaturesCount() {
-      return selectedFeatures.values.where((isSelected) => isSelected).length;
-    }
-
-    String _getSelectedFeaturesList() {
-      List<String> selected = selectedFeatures.entries
-          .where((entry) => entry.value)
-          .map((entry) => entry.key)
-          .toList();
-
-      if (selected.isEmpty) {
-        return "None selected";
-      }
-
-      if (selected.length <= 2) {
-        return selected.join(', ');
-      } else {
-        return '${selected.take(2).join(', ')} and ${selected.length - 2} more';
-      }
-    }
-
-    Widget _buildSuccessMessage() {
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(30),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.green.shade100],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.green.shade300, width: 2),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 50,
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Thank You! 🎉',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.green.shade800,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Your feedback has been submitted successfully!',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.green.shade700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20),
-            Text(
-              'We appreciate you taking the time to help us improve the Dementia Support App. Your input will help us create better tools for people with dementia and their caregivers.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.green.shade600,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  hasSubmitted = false;
-                  selectedUserType = null;
-                  emailText = '';
-                  feedbackText = '';
-                  usefulnessRating = 0;
-                  easeOfUseRating = 0;
-                  selectedFeatures.updateAll((key, value) => false);
-                  emailController.clear();
-                  feedbackController.clear();
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                'Submit Another Feedback',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    Widget _buildValidationChecklist() {
-      bool hasUserType = selectedUserType != null;
-      bool hasValidEmail = emailText.isEmpty || _isValidEmail(emailText);
-      bool canSubmit = hasUserType && hasValidEmail;
-
-      return Container(
-        padding: EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: canSubmit ? Colors.green.shade50 : Colors.orange.shade50,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: canSubmit ? Colors.green.shade200 : Colors.orange.shade200,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Before you submit:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            SizedBox(height: 10),
-
-            _buildValidationItem(
-              'User type selected',
-              hasUserType,
-              'Please select your role from the dropdown',
-            ),
-
-            _buildValidationItem(
-              'Email format valid (if provided)',
-              hasValidEmail,
-              'Please enter a valid email or leave blank',
-            ),
-
-            SizedBox(height: 10),
-
-            Row(
-              children: [
-                Icon(
-                  canSubmit ? Icons.check_circle : Icons.warning,
-                  color: canSubmit ? Colors.green : Colors.orange,
-                  size: 20,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  canSubmit ? 'Ready to submit!' : 'Please complete required fields',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: canSubmit ? Colors.green.shade700 : Colors.orange.shade700,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    Widget _buildValidationItem(String text, bool isValid, String helpText) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              isValid ? Icons.check_circle : Icons.cancel,
-              color: isValid ? Colors.green : Colors.red,
-              size: 18,
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (!isValid)
-                    Text(
-                      helpText,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.red.shade600,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    Widget _buildSubmitButton() {
-      bool hasUserType = selectedUserType != null;
-      bool hasValidEmail = emailText.isEmpty || _isValidEmail(emailText);
-      bool canSubmit = hasUserType && hasValidEmail && !isSubmitting;
-
-      return Container(
-        width: double.infinity,
-        height: 60,
-        child: ElevatedButton(
-          onPressed: canSubmit ? _submitFeedback : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: canSubmit ? Colors.green : Colors.grey.shade400,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: canSubmit ? 8 : 2,
-          ),
-          child: isSubmitting
-              ? Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2,
-                ),
-              ),
-              SizedBox(width: 12),
-              Text(
-                'Submitting...',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          )
-              : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.send, size: 24),
-              SizedBox(width: 8),
-              Text(
-                'Submit Feedback',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    Future<void> _submitFeedback() async {
-      setState(() {
-        isSubmitting = true;
-      });
-
-      // Simulate network delay
-      await Future.delayed(Duration(seconds: 2));
-
-      // Print all form data (in real app, this would send to server)
-      print('=== FEEDBACK SUBMITTED ===');
-      print('User Type: $selectedUserType');
-      print('Email: ${emailText.isEmpty ? 'Not provided' : emailText}');
-      print('Feedback: ${feedbackText.isEmpty ? 'Not provided' : feedbackText}');
-      print('Usefulness Rating: $usefulnessRating stars');
-      print('Ease of Use Rating: $easeOfUseRating stars');
-      print('Selected Features:');
-      selectedFeatures.forEach((feature, isSelected) {
-        if (isSelected) {
-          print('  - $feature');
-        }
-      });
-      print('========================');
-
-      setState(() {
-        isSubmitting = false;
-        hasSubmitted = true;
-      });
-    }
-
-    Widget _buildFeedbackTextField() {
-      return TextField(
+  Widget _buildFeedbackTextField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: TextField(
         controller: feedbackController,
-        maxLines: 5,  // Multiple lines for longer feedback
-        maxLength: 500,  // Character limit
-        keyboardType: TextInputType.multiline,
-        textCapitalization: TextCapitalization.sentences,
+        maxLines: 5,
+        maxLength: 500,
         decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.teal, width: 2),
-          ),
+          border: InputBorder.none,
           contentPadding: EdgeInsets.all(16),
-          hintText: 'What features would you like to see? Any issues or suggestions? How could we make the app more helpful for you or your loved ones?',
+          hintText: 'What features would you like to see? Any issues or suggestions? How could we make the app more helpful?',
           hintStyle: TextStyle(
             color: Colors.grey.shade500,
             fontSize: 15,
             height: 1.4,
           ),
-          helperText: 'Your feedback helps us create better tools for dementia care',
-          helperStyle: TextStyle(
-            color: Colors.teal.shade600,
-            fontSize: 12,
-          ),
-          counterText: '', // Hide default counter, we'll show our own
-          prefixIcon: Padding(
-            padding: EdgeInsets.only(top: 12, left: 12, right: 8),
-            child: Icon(
-              Icons.edit_outlined,
-              color: Colors.teal.shade500,
-              size: 20,
-            ),
-          ),
+          counterText: '',
         ),
         onChanged: (String value) {
           setState(() {
             feedbackText = value;
           });
-          print('Feedback typed: ${value.length} characters');
         },
+      ),
+    );
+  }
+
+  Widget _buildStarRating({
+    required int currentRating,
+    required Function(int) onRatingChanged,
+    Color? starColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        int starNumber = index + 1;
+        bool isSelected = starNumber <= currentRating;
+
+        return GestureDetector(
+          onTap: () => onRatingChanged(starNumber),
+          child: Container(
+            padding: EdgeInsets.all(4),
+            child: Icon(
+              Icons.star_rounded,
+              size: 36,
+              color: isSelected ? (starColor ?? Colors.amber) : Colors.grey.shade300,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    bool hasUserType = selectedUserType != null;
+    bool hasValidEmail = emailText.isEmpty || _isValidEmail(emailText);
+    bool canSubmit = hasUserType && hasValidEmail && !isSubmitting;
+
+    return Container(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: canSubmit ? _submitFeedback : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: canSubmit ? Color(0xFF8B5FBF) : Colors.grey.shade400,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: canSubmit ? 8 : 2,
+        ),
+        child: isSubmitting
+            ? Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 2,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Sending...',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        )
+            : Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.send_rounded, size: 24),
+            SizedBox(width: 12),
+            Text(
+              'Submit Feedback',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuccessMessage() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Color(0xFF8B5FBF).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Color(0xFF8B5FBF).withOpacity(0.3), width: 2),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Color(0xFF8B5FBF),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.check_rounded, color: Colors.white, size: 50),
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Thank You! 🎉',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF8B5FBF),
+            ),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Your feedback has been sent successfully!',
+            style: TextStyle(
+              fontSize: 18,
+              color: Color(0xFF424242),
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20),
+          Text(
+            'We received your feedback and it has been automatically sent to our team. Thank you for helping us improve the Dementia Support App!',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF757575),
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                hasSubmitted = false;
+                selectedUserType = null;
+                emailText = '';
+                feedbackText = '';
+                usefulnessRating = 0;
+                easeOfUseRating = 0;
+                selectedFeatures.updateAll((key, value) => false);
+                emailController.clear();
+                feedbackController.clear();
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF8B5FBF),
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              'Submit Another Feedback',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitFeedback() async {
+    // Check if email is valid when not empty
+    if (emailText.isNotEmpty && !_isValidEmail(emailText)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter a valid email address'),
+          backgroundColor: Colors.red,
+        ),
       );
+      return;
     }
 
-    bool _isValidEmail(String email) {
-      return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
+    setState(() {
+      isSubmitting = true;
+    });
+
+    // Get selected features list
+    List<String> features = selectedFeatures.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+
+    // Send feedback via Formspree
+    bool emailSent = await EmailService.sendFeedback(
+      userType: selectedUserType!,
+      userEmail: emailText,
+      feedbackText: feedbackText,
+      usefulnessRating: usefulnessRating,
+      easeOfUseRating: easeOfUseRating,
+      selectedFeatures: features,
+    );
+
+    setState(() {
+      isSubmitting = false;
+    });
+
+    if (emailSent) {
+      // Success - email sent automatically
+      setState(() {
+        hasSubmitted = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Feedback sent successfully! Check your email for confirmation.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } else {
+      // Failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send feedback. Please check your internet connection and try again.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
     }
   }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
+  }
+
+
+}
