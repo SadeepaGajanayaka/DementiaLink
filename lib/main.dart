@@ -98,7 +98,11 @@ class FeedbackScreenState extends State<FeedbackScreen> {
                     child: ClipRRect(
                       borderRadius:BorderRadius.circular(16),
                       child: Image.asset(
-                        'lib/assets/logo.png',
+                        'assets/Amitha.png',
+                        fit:BoxFit.cover,
+                        errorBuilder: (context,error,stackTrace){
+                          return Icon(Icons.image_not_supported,color: Colors.white,size: 50,);
+                        }
                       ),
                     ),
                   ),
